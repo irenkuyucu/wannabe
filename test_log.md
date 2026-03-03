@@ -16,3 +16,11 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - User feedback: use this field only if the user provides additonal comments beyond observed behavior descriptions.
 
 ---
+
+- Date: 2026-03-03.
+- Test ID: T-1.
+- Milestone/task reference: M2-T1 gate.
+- Scenario: User-owned prompt content validation of the 50-item seed set (tone/safety, identity-role format fit, variety, and product-fit acceptability).
+- Expected behavior: Prompt seed is playful/socially acceptable, conforms to "Would you rather be [Side A] or [Side B]" role framing, provides adequate variety, and is acceptable as canonical initial seed.
+- Observed behavior: Observed behavior matches expected behavior.
+- Result: `PASS`
