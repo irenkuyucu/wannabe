@@ -7,11 +7,13 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M1 — Foundation and Local Tooling
-- Task: M1-T2 — Firebase local setup
-- Gate status: PASS — Emulator config/env templates added and smoke test passed.
+- Task: M1-T3 — Functions scaffold
+- Gate status: PASS — Cloud Functions v2 TypeScript scaffold and callable framework added; checks passed.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
+(Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- 6747bb4 on main — Add Firebase emulator config and local env templates.
 - 05e5016 on main — Scaffold Next.js app with Tailwind and base UI primitives.
 - 2e89f9e on main — Initialize Wannabe planning docs.
 
@@ -21,15 +23,15 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Tailwind CSS v4 is configured with base theme tokens in `src/app/globals.css`.
 - Base shadcn-style primitive setup exists via `src/components/ui/button.tsx` and `src/lib/utils.ts`.
 - Firebase local emulator configuration exists (`firebase.json`, Firestore rules/indexes, `.firebaserc`).
-- Environment template exists in `.env.example` with emulator host defaults.
+- Functions package scaffold exists with TypeScript sources and callable framework in `functions/src/*`.
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Added Firebase emulator configuration: `firebase.json`, `.firebaserc`, `firestore.rules`, `firestore.indexes.json`.
-- Added env template file `.env.example` and unignored it in `.gitignore`.
-- Added placeholder `functions/.gitkeep` for upcoming Functions scaffold.
-- Replaced `README.md` with project-specific setup instructions for env/emulators/checks.
-- Updated `STATE.md` for M1-T2 gate tracking.
+- Added workspace configuration for functions package in `pnpm-workspace.yaml`.
+- Added functions package files: `functions/package.json`, `functions/tsconfig.json`, `functions/eslint.config.mjs`.
+- Added callable scaffold and shared constants in `functions/src/index.ts`, `functions/src/shared/*`.
+- Updated `.gitignore` for workspace `node_modules` and expanded README quality-check instructions.
+- Updated `STATE.md` for M1-T3 gate tracking.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
@@ -40,4 +42,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- M1-T3 — Add Cloud Functions v2 TypeScript scaffold and callable handler framework.
+- M1-T4 — Define baseline verify scripts (`typecheck`, `lint`, `test`, `test:rules`, `verify`) and run them.

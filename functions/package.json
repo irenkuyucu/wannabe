@@ -1,0 +1,25 @@
+{
+  "name": "@wannabe/functions",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^6.6.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^20.19.24",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
+  }
+}
