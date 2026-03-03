@@ -6,8 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck:web": "tsc --noEmit",
+    "typecheck:functions": "pnpm --dir functions typecheck",
+    "typecheck": "pnpm typecheck:web && pnpm typecheck:functions",
+    "lint:web": "eslint",
+    "lint:functions": "pnpm --dir functions lint",
+    "lint": "pnpm lint:web && pnpm lint:functions",
+    "test:web": "node --test tests/*.test.mjs",
+    "test:functions": "pnpm --dir functions test",
+    "test": "pnpm test:web && pnpm test:functions",
+    "test:rules": "firebase emulators:exec --only firestore \"echo rules-ok\"",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm run test:rules"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
