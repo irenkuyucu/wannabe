@@ -1,0 +1,223 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { HttpsError } from "firebase-functions/v2/https";
+
+import type {
+  PlayerRecord,
+  RoomCodeRecord,
+  RoomLifecycleStore,
+  RoomRecord,
+} from "../src/domain/room-lifecycle";
+import {
+  RoomLifecycleService,
+  validateDisplayName,
+  validateRoomCode,
+} from "../src/domain/room-lifecycle";
+
+const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
+
+class InMemoryRoomStore implements RoomLifecycleStore {
+  private roomIdCounter = 0;
+  private readonly roomCodes = new Map<string, RoomCodeRecord>();
+  private readonly rooms = new Map<string, RoomRecord>();
+  private readonly players = new Map<string, Map<string, PlayerRecord>>();
+
+  generateRoomId(): string {
+    this.roomIdCounter += 1;
+    return `room-${this.roomIdCounter}`;
+  }
+
+  async reserveRoomCode(record: RoomCodeRecord): Promise<boolean> {
+    if (this.roomCodes.has(record.roomCode)) {
+      return false;
+    }
+    this.roomCodes.set(record.roomCode, { ...record });
+    return true;
+  }
+
+  async getRoomCode(roomCode: string): Promise<RoomCodeRecord | null> {
+    const record = this.roomCodes.get(roomCode);
+    return record ? { ...record } : null;
+  }
+
+  async updateRoomCode(roomCode: string, patch: Partial<RoomCodeRecord>): Promise<void> {
+    const record = this.roomCodes.get(roomCode);
+    if (!record) {
+      return;
+    }
+    this.roomCodes.set(roomCode, { ...record, ...patch });
+  }
+
+  async createRoom(record: RoomRecord): Promise<void> {
+    this.rooms.set(record.roomId, { ...record });
+  }
+
+  async getRoom(roomId: string): Promise<RoomRecord | null> {
+    const room = this.rooms.get(roomId);
+    return room ? { ...room } : null;
+  }
+
+  async updateRoom(roomId: string, patch: Partial<RoomRecord>): Promise<void> {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return;
+    }
+    this.rooms.set(roomId, { ...room, ...patch });
+  }
+
+  async getPlayer(roomId: string, playerId: string): Promise<PlayerRecord | null> {
+    const roomPlayers = this.players.get(roomId);
+    const player = roomPlayers?.get(playerId);
+    return player ? { ...player } : null;
+  }
+
+  async setPlayer(roomId: string, player: PlayerRecord): Promise<void> {
+    const roomPlayers = this.players.get(roomId) ?? new Map<string, PlayerRecord>();
+    roomPlayers.set(player.playerId, { ...player });
+    this.players.set(roomId, roomPlayers);
+  }
+
+  async listPlayers(roomId: string): Promise<PlayerRecord[]> {
+    const roomPlayers = this.players.get(roomId);
+    if (!roomPlayers) {
+      return [];
+    }
+    return [...roomPlayers.values()].map((player) => ({ ...player }));
+  }
+
+  async deletePlayer(roomId: string, playerId: string): Promise<void> {
+    this.players.get(roomId)?.delete(playerId);
+  }
+}
+
+function assertHttpsErrorCode(error: unknown, code: HttpsError["code"]): boolean {
+  return error instanceof HttpsError && error.code === code;
+}
+
+test("display name validation enforces MVP rules", () => {
+  assert.equal(validateDisplayName("Alex"), "Alex");
+  assert.equal(validateDisplayName("O'Neil"), "O'Neil");
+  assert.equal(validateDisplayName("Jean-Luc"), "Jean-Luc");
+
+  assert.throws(
+    () => validateDisplayName(" Alex"),
+    (error: unknown) => assertHttpsErrorCode(error, "invalid-argument"),
+  );
+  assert.throws(
+    () => validateDisplayName("Al3x"),
+    (error: unknown) => assertHttpsErrorCode(error, "invalid-argument"),
+  );
+  assert.throws(
+    () => validateDisplayName("Çağla"),
+    (error: unknown) => assertHttpsErrorCode(error, "invalid-argument"),
+  );
+});
+
+test("room code validation enforces 6-digit numeric values", () => {
+  assert.equal(validateRoomCode("123456"), "123456");
+  assert.throws(
+    () => validateRoomCode("12345"),
+    (error: unknown) => assertHttpsErrorCode(error, "invalid-argument"),
+  );
+  assert.throws(
+    () => validateRoomCode("12ab56"),
+    (error: unknown) => assertHttpsErrorCode(error, "invalid-argument"),
+  );
+});
+
+test("room lifecycle supports create/join collisions/ready/start", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.000123);
+
+  const created = await service.createRoom({
+    uid: "host-uid",
+    displayName: "Alex",
+    avatarId: "avatar-1",
+  });
+  assert.equal(created.roomCode, "000123");
+
+  const join2 = await service.joinRoom({
+    uid: "p2",
+    roomCode: created.roomCode,
+    displayName: "Alex",
+  });
+  assert.equal(join2.assignedDisplayName, "Alex (2)");
+
+  const join3 = await service.joinRoom({
+    uid: "p3",
+    roomCode: created.roomCode,
+    displayName: "Alex",
+  });
+  assert.equal(join3.assignedDisplayName, "Alex (3)");
+
+  await service.setReady({ uid: "host-uid", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p3", roomId: created.roomId, ready: true });
+
+  const started = await service.startGame({ uid: "host-uid", roomId: created.roomId });
+  assert.deepEqual(started, {
+    roundIndex: 0,
+    phase: "choice",
+    deadlineAtMs: now + 60_000,
+  });
+
+  const room = await store.getRoom(created.roomId);
+  assert.equal(room?.status, "inGame");
+  assert.equal(room?.phase, "choice");
+  assert.equal(room?.phaseDeadlineAtMs, now + 60_000);
+});
+
+test("start game enforces host/all-ready/joinable constraints", async () => {
+  const store = new InMemoryRoomStore();
+  const service = new RoomLifecycleService(store, () => 1_710_000_000_000, () => 0.5);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+
+  await assert.rejects(
+    () => service.startGame({ uid: "host-uid", roomId: created.roomId }),
+    (error: unknown) => assertHttpsErrorCode(error, "failed-precondition"),
+  );
+
+  await service.setReady({ uid: "host-uid", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+
+  await assert.rejects(
+    () => service.startGame({ uid: "p2", roomId: created.roomId }),
+    (error: unknown) => assertHttpsErrorCode(error, "permission-denied"),
+  );
+
+  await service.startGame({ uid: "host-uid", roomId: created.roomId });
+
+  await assert.rejects(
+    () => service.joinRoom({ uid: "p3", roomCode: created.roomCode, displayName: "Casey" }),
+    (error: unknown) => assertHttpsErrorCode(error, "failed-precondition"),
+  );
+});
+
+test("leave room handles host reassignment and ended state", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.3);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+
+  const hostLeft = await service.leaveRoom({ uid: "host-uid", roomId: created.roomId });
+  assert.equal(hostLeft.roomStatus, "lobby");
+
+  const roomAfterHostLeave = await store.getRoom(created.roomId);
+  assert.equal(roomAfterHostLeave?.hostPlayerId, "p2");
+
+  const finalLeave = await service.leaveRoom({ uid: "p2", roomId: created.roomId });
+  assert.equal(finalLeave.roomStatus, "ended");
+
+  const roomAfterFinalLeave = await store.getRoom(created.roomId);
+  const roomCodeAfterFinalLeave = await store.getRoomCode(created.roomCode);
+  assert.equal(roomAfterFinalLeave?.status, "ended");
+  assert.equal(roomCodeAfterFinalLeave?.status, "ended");
+  assert.equal(roomAfterFinalLeave?.expiresAtMs, now + ROOM_TTL_MS);
+  assert.equal(roomCodeAfterFinalLeave?.expiresAtMs, now + ROOM_TTL_MS);
+});

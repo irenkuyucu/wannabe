@@ -10,7 +10,8 @@
     "build": "tsc -p tsconfig.json",
     "lint": "eslint \"{src,tests}/**/*.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node --import tsx --test tests/*.test.ts"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:room-lifecycle:emulator": "node --import tsx --test tests/room-lifecycle-emulator.spec.ts"
   },
   "dependencies": {
     "firebase-admin": "^13.6.0",
