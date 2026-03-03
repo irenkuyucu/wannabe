@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Wannabe
 
-## Getting Started
+Wannabe is a synchronous, room-based party game companion web app.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20.x
+- pnpm 10.x
+- Firebase CLI
+- Java Runtime (required by Firestore emulator)
+
+## Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy `.env.example` to `.env.local` and fill the Firebase Web App values when frontend Firebase initialization is introduced.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+By default, the template is set for local emulator usage:
 
-To learn more about Next.js, take a look at the following resources:
+- `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`
+- Auth emulator host: `127.0.0.1:9099`
+- Firestore emulator host: `127.0.0.1:8080`
+- Functions emulator host: `127.0.0.1:5001`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Emulator Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Firebase project is configured as:
 
-## Deploy on Vercel
+- default project: `wannabe-game`
+- Firestore rules file: `firestore.rules`
+- Firestore indexes file: `firestore.indexes.json`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Start local emulators:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+firebase emulators:start --only auth,firestore,functions
+```
+
+Run a quick smoke test:
+
+```bash
+firebase emulators:exec --only auth,firestore "echo emulators-ok"
+```
+
+Emulator UI will be available at [http://127.0.0.1:4000](http://127.0.0.1:4000).
+
+## Quality Checks
+
+```bash
+pnpm typecheck
+pnpm lint
+```
