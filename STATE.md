@@ -6,13 +6,14 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 ---
 
 ## 1. Current status
-- Milestone: M2 — Prompt Seed Bridge
-- Task: M2-T2 — Prompt loader wiring
-- Gate status: PASS — Deterministic prompt loader/sampler added and without-replacement tests passed.
+- Milestone: M3 — Authoritative Backend Game Engine
+- Task: M3-T1 — Domain engine
+- Gate status: PASS — Pure TS game domain engine added with transition/scoring/penalty unit coverage and full verify pass.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- d9e9480 on main — Add deterministic prompt loader and session deck sampling.
 - 8042eee on main — Add prompt seed dataset and validation tests.
 - 9fd207f on main — Add baseline verify scripts and smoke tests.
 - 04b53d5 on main — Scaffold Firebase functions package and callable framework.
@@ -26,15 +27,15 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Tailwind CSS v4 is configured with base theme tokens in `src/app/globals.css`.
 - Base shadcn-style primitive setup exists via `src/components/ui/button.tsx` and `src/lib/utils.ts`.
 - Firebase local emulator configuration exists (`firebase.json`, Firestore rules/indexes, `.firebaserc`).
-- Prompt seed bridge now includes canonical seed file and deterministic sampling helper/test coverage.
+- Prompt seed bridge includes canonical seed file and deterministic sampling helper/test coverage.
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Added prompt loader utility in `src/lib/prompt-loader.js`.
-- Added deterministic session sampling tests in `tests/prompt-loader.test.mjs`.
-- Verified without-replacement and deterministic behavior via `pnpm test`.
-- Ran full agent-owned checks via `pnpm verify`.
-- Updated `STATE.md` for M2-T2 PASS gate status.
+- Added pure TS game domain engine module in `functions/src/domain/game-domain.ts`.
+- Added domain unit tests in `functions/tests/game-domain.test.ts` and migrated functions smoke test to TypeScript.
+- Updated `functions/package.json` scripts/dependencies for TS-based Node test runner (`tsx`) and test lint coverage.
+- Updated lockfile and removed legacy `functions/tests/smoke.test.mjs`.
+- Updated `STATE.md` for M3-T1 PASS gate status.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
@@ -45,4 +46,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- M3-T1 — Implement pure TS domain engine for phase transitions, scoring, dissenter logic, and penalties.
+- M3-T2 — Implement room lifecycle callable APIs (create/join/leave/ready/start) with validations and name collision handling.
