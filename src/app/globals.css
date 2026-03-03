@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f3e8;
+  --foreground: #1b2430;
+  --surface: #fffcf5;
+  --surface-foreground: #151c27;
+  --muted: #ece4d1;
+  --muted-foreground: #5a6472;
+  --border: #ded3bc;
+  --accent: #0f766e;
+  --accent-foreground: #effcf9;
+  --ring: #d97706;
+  --radius: 0.875rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --radius-xl: var(--radius);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  background-image: radial-gradient(
+    circle at 20% 0%,
+    color-mix(in srgb, var(--accent) 10%, transparent) 0%,
+    transparent 42%
+  );
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
