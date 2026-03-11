@@ -138,6 +138,46 @@ export class RoundActionService {
     }
   }
 
+  private async endRoomImmediately(room: RoomRecord): Promise<AdvanceResolutionResult> {
+    await this.store.updateRoom(room.roomId, {
+      status: "ended",
+      phase: null,
+      phaseDeadlineAtMs: null,
+      currentPromptId: null,
+      activeArgumentSide: null,
+      pendingPenaltyPlayerId: null,
+    });
+    await this.store.updateRoomCode(room.roomCode, { status: "ended" });
+
+    return {
+      nextState: "ended",
+      roundIndex: requireActiveRound(room),
+    };
+  }
+
+  private async ensureResolutionHost(room: RoomRecord): Promise<
+    | { players: PlayerRecord[]; hostPlayerId: string }
+    | { endedResult: AdvanceResolutionResult }
+  > {
+    const players = sortPlayers(await this.store.listPlayers(room.roomId));
+    let hostPlayerId = room.hostPlayerId;
+
+    if (players.some((player) => player.playerId === hostPlayerId)) {
+      return { players, hostPlayerId };
+    }
+
+    if (players.length === 0) {
+      return {
+        endedResult: await this.endRoomImmediately(room),
+      };
+    }
+
+    hostPlayerId = players[0].playerId;
+    await this.store.updateRoom(room.roomId, { hostPlayerId });
+
+    return { players, hostPlayerId };
+  }
+
   private async transitionChoiceToArgument(params: {
     room: RoomRecord;
     players: PlayerRecord[];
@@ -458,29 +498,11 @@ export class RoundActionService {
 
     this.requireInGamePhase(room, "resolution");
 
-    const players = sortPlayers(await this.store.listPlayers(roomId));
-    let hostPlayerId = room.hostPlayerId;
-
-    if (!players.some((player) => player.playerId === hostPlayerId)) {
-      if (players.length === 0) {
-        await this.store.updateRoom(roomId, {
-          status: "ended",
-          phase: null,
-          phaseDeadlineAtMs: null,
-          currentPromptId: null,
-          activeArgumentSide: null,
-          pendingPenaltyPlayerId: null,
-        });
-        await this.store.updateRoomCode(room.roomCode, { status: "ended" });
-        return {
-          nextState: "ended",
-          roundIndex: requireActiveRound(room),
-        };
-      }
-
-      hostPlayerId = players[0].playerId;
-      await this.store.updateRoom(roomId, { hostPlayerId });
+    const hostResolution = await this.ensureResolutionHost(room);
+    if ("endedResult" in hostResolution) {
+      return hostResolution.endedResult;
     }
+    const { players, hostPlayerId } = hostResolution;
 
     const caller = players.find((player) => player.playerId === uid);
     if (!caller) {
@@ -493,20 +515,7 @@ export class RoundActionService {
 
     const roundIndex = requireActiveRound(room);
     if (roundIndex + 1 >= room.roundsTotal) {
-      await this.store.updateRoom(roomId, {
-        status: "ended",
-        phase: null,
-        phaseDeadlineAtMs: null,
-        currentPromptId: null,
-        activeArgumentSide: null,
-        pendingPenaltyPlayerId: null,
-      });
-      await this.store.updateRoomCode(room.roomCode, { status: "ended" });
-
-      return {
-        nextState: "ended",
-        roundIndex,
-      };
+      return this.endRoomImmediately(room);
     }
 
     const nextRoundIndex = roundIndex + 1;

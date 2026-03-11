@@ -68,6 +68,37 @@ async function createStartedGame(params?: {
   };
 }
 
+async function advanceToResolution(game: Awaited<ReturnType<typeof createStartedGame>>) {
+  const [hostId, secondPlayerId] = game.playerIds;
+
+  await game.actions.submitChoice({ uid: hostId, roomId: game.created.roomId, side: "A" });
+  await game.actions.submitChoice({
+    uid: secondPlayerId,
+    roomId: game.created.roomId,
+    side: "B",
+  });
+
+  for (const playerId of game.playerIds.slice(2)) {
+    await game.actions.submitChoice({
+      uid: playerId,
+      roomId: game.created.roomId,
+      side: "A",
+    });
+  }
+
+  await game.actions.endArgumentTurn({ uid: hostId, roomId: game.created.roomId });
+  await game.actions.endArgumentTurn({ uid: secondPlayerId, roomId: game.created.roomId });
+  await game.actions.advanceRebuttal({ uid: hostId, roomId: game.created.roomId });
+
+  for (const playerId of game.playerIds) {
+    await game.actions.submitVerdict({
+      uid: playerId,
+      roomId: game.created.roomId,
+      verdict: "DRAW",
+    });
+  }
+}
+
 test("round actions support early progression across round phases", async () => {
   const game = await createStartedGame();
 
@@ -269,5 +300,55 @@ test("advanceResolution ends the room after the final round", async () => {
   assert.equal(room?.status, "ended");
   assert.equal(room?.phase, null);
   assert.equal(room?.currentPromptId, null);
+  assert.equal(roomCode?.status, "ended");
+});
+
+test("advanceResolution auto-promotes the next remaining player when the host is missing", async () => {
+  const game = await createStartedGame({
+    playerIds: ["host", "p2", "p3"],
+  });
+
+  await advanceToResolution(game);
+  await game.store.deletePlayer(game.created.roomId, "host");
+
+  await assert.rejects(
+    () => game.actions.advanceResolution({ uid: "p3", roomId: game.created.roomId }),
+    (error: unknown) => assertHttpsErrorCode(error, "permission-denied"),
+  );
+
+  const roomAfterPromotion = await game.store.getRoom(game.created.roomId);
+  assert.equal(roomAfterPromotion?.hostPlayerId, "p2");
+
+  const result = await game.actions.advanceResolution({
+    uid: "p2",
+    roomId: game.created.roomId,
+  });
+  const roomAfterAdvance = await game.store.getRoom(game.created.roomId);
+
+  assert.deepEqual(result, { nextState: "inGame", roundIndex: 1 });
+  assert.equal(roomAfterAdvance?.hostPlayerId, "p2");
+  assert.equal(roomAfterAdvance?.phase, "choice");
+});
+
+test("advanceResolution ends the room immediately when the host is missing and no players remain", async () => {
+  const game = await createStartedGame({
+    playerIds: ["host", "p2"],
+  });
+
+  await advanceToResolution(game);
+  await game.store.deletePlayer(game.created.roomId, "host");
+  await game.store.deletePlayer(game.created.roomId, "p2");
+
+  const result = await game.actions.advanceResolution({
+    uid: "host",
+    roomId: game.created.roomId,
+  });
+  const room = await game.store.getRoom(game.created.roomId);
+  const roomCode = await game.store.getRoomCode(game.created.roomCode);
+
+  assert.deepEqual(result, { nextState: "ended", roundIndex: 0 });
+  assert.equal(room?.status, "ended");
+  assert.equal(room?.phase, null);
+  assert.equal(room?.pendingPenaltyPlayerId, null);
   assert.equal(roomCode?.status, "ended");
 });

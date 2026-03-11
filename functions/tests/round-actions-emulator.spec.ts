@@ -20,6 +20,69 @@ async function clearFirestoreEmulator(): Promise<void> {
   }
 }
 
+async function createResolutionGame(params?: { playerIds?: string[] }) {
+  let now = 1_710_000_000_000;
+  const store = new FirestoreRoomStore();
+  const lifecycle = new RoomLifecycleService(store, () => now, () => 0.000321);
+  const actions = new RoundActionService(store, () => now, () => 0.5);
+  const playerIds = params?.playerIds ?? ["host", "p2", "p3"];
+  const displayNames = ["Host", "Blake", "Casey", "Devon"];
+
+  const created = await lifecycle.createRoom({
+    uid: playerIds[0],
+    displayName: displayNames[0],
+  });
+
+  for (const [index, playerId] of playerIds.slice(1).entries()) {
+    await lifecycle.joinRoom({
+      uid: playerId,
+      roomCode: created.roomCode,
+      displayName: displayNames[index + 1],
+    });
+  }
+
+  for (const playerId of playerIds) {
+    await lifecycle.setReady({
+      uid: playerId,
+      roomId: created.roomId,
+      ready: true,
+    });
+  }
+
+  await lifecycle.startGame({ uid: playerIds[0], roomId: created.roomId });
+  await actions.submitChoice({ uid: playerIds[0], roomId: created.roomId, side: "A" });
+  await actions.submitChoice({ uid: playerIds[1], roomId: created.roomId, side: "B" });
+
+  for (const playerId of playerIds.slice(2)) {
+    await actions.submitChoice({ uid: playerId, roomId: created.roomId, side: "A" });
+  }
+
+  await actions.endArgumentTurn({ uid: playerIds[0], roomId: created.roomId });
+  await actions.endArgumentTurn({ uid: playerIds[1], roomId: created.roomId });
+  await actions.advanceRebuttal({ uid: playerIds[0], roomId: created.roomId });
+
+  for (const playerId of playerIds) {
+    await actions.submitVerdict({
+      uid: playerId,
+      roomId: created.roomId,
+      verdict: "DRAW",
+    });
+  }
+
+  return {
+    store,
+    actions,
+    created,
+    playerIds,
+    get now() {
+      return now;
+    },
+    set now(value: number) {
+      now = value;
+    },
+  };
+}
+
 runWithEmulator("round actions persist timed transitions in Firestore emulator", async () => {
   await clearFirestoreEmulator();
 
@@ -109,4 +172,31 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   assert.equal(roundZeroSnapshot.get("dissenterPlayerId"), "p3");
   assert.equal(roundOneSnapshot.get("penalizedSide"), "B");
   assert.equal(typeof roundOneSnapshot.get("promptId"), "string");
+});
+
+runWithEmulator("resolution host guardrail promotes the next remaining player in Firestore emulator", async () => {
+  await clearFirestoreEmulator();
+
+  const game = await createResolutionGame();
+  const db = getFirestore();
+
+  await game.store.deletePlayer(game.created.roomId, "host");
+
+  await assert.rejects(
+    () => game.actions.advanceResolution({ uid: "p3", roomId: game.created.roomId }),
+    /Only host can advance from resolution/i,
+  );
+
+  const promotedSnapshot = await db.collection("rooms").doc(game.created.roomId).get();
+  assert.equal(promotedSnapshot.get("hostPlayerId"), "p2");
+
+  const result = await game.actions.advanceResolution({
+    uid: "p2",
+    roomId: game.created.roomId,
+  });
+  const advancedSnapshot = await db.collection("rooms").doc(game.created.roomId).get();
+
+  assert.deepEqual(result, { nextState: "inGame", roundIndex: 1 });
+  assert.equal(advancedSnapshot.get("hostPlayerId"), "p2");
+  assert.equal(advancedSnapshot.get("phase"), "choice");
 });
