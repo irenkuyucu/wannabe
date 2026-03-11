@@ -4,7 +4,7 @@ import test from "node:test";
 import { getFirestore } from "firebase-admin/firestore";
 
 import { FirestoreRoomStore } from "../src/data/firestore-room-store";
-import { RoomLifecycleService } from "../src/domain/room-lifecycle";
+import { ROOM_TTL_MS, RoomLifecycleService } from "../src/domain/room-lifecycle";
 import { RoundActionService } from "../src/domain/round-actions";
 
 const runWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? test : test.skip;
@@ -199,4 +199,68 @@ runWithEmulator("resolution host guardrail promotes the next remaining player in
   assert.deepEqual(result, { nextState: "inGame", roundIndex: 1 });
   assert.equal(advancedSnapshot.get("hostPlayerId"), "p2");
   assert.equal(advancedSnapshot.get("phase"), "choice");
+});
+
+runWithEmulator("final round ending persists ended status and expiry in Firestore emulator", async () => {
+  await clearFirestoreEmulator();
+
+  const now = 1_710_000_000_000;
+  const store = new FirestoreRoomStore();
+  const lifecycle = new RoomLifecycleService(store, () => now, () => 0.000321);
+  const actions = new RoundActionService(store, () => now, () => 0.5);
+  const db = getFirestore();
+
+  const created = await lifecycle.createRoom({
+    uid: "host",
+    displayName: "Host",
+  });
+
+  await lifecycle.joinRoom({
+    uid: "p2",
+    roomCode: created.roomCode,
+    displayName: "Blake",
+  });
+  await lifecycle.setReady({ uid: "host", roomId: created.roomId, ready: true });
+  await lifecycle.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+  await lifecycle.startGame({ uid: "host", roomId: created.roomId });
+  await store.updateRoom(created.roomId, { roundsTotal: 1 });
+
+  await actions.submitChoice({ uid: "host", roomId: created.roomId, side: "A" });
+  await actions.submitChoice({ uid: "p2", roomId: created.roomId, side: "B" });
+  await actions.endArgumentTurn({ uid: "host", roomId: created.roomId });
+  await actions.endArgumentTurn({ uid: "p2", roomId: created.roomId });
+  await actions.advanceRebuttal({ uid: "host", roomId: created.roomId });
+  await actions.submitVerdict({ uid: "host", roomId: created.roomId, verdict: "DRAW" });
+  await actions.submitVerdict({ uid: "p2", roomId: created.roomId, verdict: "DRAW" });
+
+  const result = await actions.advanceResolution({
+    uid: "host",
+    roomId: created.roomId,
+  });
+  const roomSnapshot = await db.collection("rooms").doc(created.roomId).get();
+  const roomCodeSnapshot = await db.collection("roomCodes").doc(created.roomCode).get();
+  const roundSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("rounds")
+    .doc("0")
+    .get();
+
+  assert.deepEqual(result, { nextState: "ended", roundIndex: 0 });
+  assert.equal(roomSnapshot.get("status"), "ended");
+  assert.equal(roomSnapshot.get("phase"), null);
+  assert.equal(roomSnapshot.get("expiresAtMs"), now + ROOM_TTL_MS);
+  assert.equal(roomCodeSnapshot.get("status"), "ended");
+  assert.equal(roomCodeSnapshot.get("expiresAtMs"), now + ROOM_TTL_MS);
+  assert.equal(roundSnapshot.get("outcome"), "DRAW");
+
+  await assert.rejects(
+    () =>
+      lifecycle.joinRoom({
+        uid: "p3",
+        roomCode: created.roomCode,
+        displayName: "Casey",
+      }),
+    /Room is not joinable/i,
+  );
 });

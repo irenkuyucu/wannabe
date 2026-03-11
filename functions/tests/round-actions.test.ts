@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { RoomLifecycleService } from "../src/domain/room-lifecycle";
+import { ROOM_TTL_MS, RoomLifecycleService } from "../src/domain/room-lifecycle";
 import { RoundActionService } from "../src/domain/round-actions";
 import { assertHttpsErrorCode, InMemoryRoomStore } from "./test-helpers";
 
@@ -295,12 +295,34 @@ test("advanceResolution ends the room after the final round", async () => {
   });
   const room = await game.store.getRoom(game.created.roomId);
   const roomCode = await game.store.getRoomCode(game.created.roomCode);
+  const round = await game.store.getRound(game.created.roomId, 0);
 
   assert.deepEqual(result, { nextState: "ended", roundIndex: 0 });
   assert.equal(room?.status, "ended");
   assert.equal(room?.phase, null);
   assert.equal(room?.currentPromptId, null);
+  assert.equal(room?.expiresAtMs, game.now + ROOM_TTL_MS);
   assert.equal(roomCode?.status, "ended");
+  assert.equal(roomCode?.expiresAtMs, game.now + ROOM_TTL_MS);
+  assert.equal(round?.outcome, "DRAW");
+
+  await assert.rejects(
+    () =>
+      game.lifecycle.joinRoom({
+        uid: "p3",
+        roomCode: game.created.roomCode,
+        displayName: "Casey",
+      }),
+    (error: unknown) => assertHttpsErrorCode(error, "failed-precondition"),
+  );
+  await assert.rejects(
+    () =>
+      game.lifecycle.startGame({
+        uid: "host",
+        roomId: game.created.roomId,
+      }),
+    (error: unknown) => assertHttpsErrorCode(error, "failed-precondition"),
+  );
 });
 
 test("advanceResolution auto-promotes the next remaining player when the host is missing", async () => {
@@ -350,5 +372,7 @@ test("advanceResolution ends the room immediately when the host is missing and n
   assert.equal(room?.status, "ended");
   assert.equal(room?.phase, null);
   assert.equal(room?.pendingPenaltyPlayerId, null);
+  assert.equal(room?.expiresAtMs, game.now + ROOM_TTL_MS);
   assert.equal(roomCode?.status, "ended");
+  assert.equal(roomCode?.expiresAtMs, game.now + ROOM_TTL_MS);
 });

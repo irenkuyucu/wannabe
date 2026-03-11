@@ -14,6 +14,7 @@ import {
 } from "./game-domain";
 import {
   CHOICE_PHASE_SECONDS,
+  createEndedRoomState,
   createRoundRecord,
   type GamePhase,
   type PlayerRecord,
@@ -139,15 +140,9 @@ export class RoundActionService {
   }
 
   private async endRoomImmediately(room: RoomRecord): Promise<AdvanceResolutionResult> {
-    await this.store.updateRoom(room.roomId, {
-      status: "ended",
-      phase: null,
-      phaseDeadlineAtMs: null,
-      currentPromptId: null,
-      activeArgumentSide: null,
-      pendingPenaltyPlayerId: null,
-    });
-    await this.store.updateRoomCode(room.roomCode, { status: "ended" });
+    const ended = createEndedRoomState(this.nowMs());
+    await this.store.updateRoom(room.roomId, ended.roomPatch);
+    await this.store.updateRoomCode(room.roomCode, ended.roomCodePatch);
 
     return {
       nextState: "ended",

@@ -99,7 +99,7 @@ const ROUND_COUNT_DEFAULT = 10;
 export const CHOICE_PHASE_SECONDS = 60;
 export const REBUTTAL_PHASE_SECONDS = 60;
 export const VERDICT_PHASE_SECONDS = 60;
-const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
+export const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 
 export function validateDisplayName(displayName: string): string {
   if (typeof displayName !== "string") {
@@ -180,6 +180,38 @@ export function createRoundRecord(params: {
     penalizedSide: null,
     startedAtMs,
     resolvedAtMs: null,
+  };
+}
+
+export function createEndedRoomState(nowMs: number): {
+  roomPatch: Pick<
+    RoomRecord,
+    | "status"
+    | "phase"
+    | "phaseDeadlineAtMs"
+    | "currentPromptId"
+    | "activeArgumentSide"
+    | "pendingPenaltyPlayerId"
+    | "expiresAtMs"
+  >;
+  roomCodePatch: Pick<RoomCodeRecord, "status" | "expiresAtMs">;
+} {
+  const expiresAtMs = nowMs + ROOM_TTL_MS;
+
+  return {
+    roomPatch: {
+      status: "ended",
+      phase: null,
+      phaseDeadlineAtMs: null,
+      currentPromptId: null,
+      activeArgumentSide: null,
+      pendingPenaltyPlayerId: null,
+      expiresAtMs,
+    },
+    roomCodePatch: {
+      status: "ended",
+      expiresAtMs,
+    },
   };
 }
 
@@ -349,17 +381,9 @@ export class RoomLifecycleService {
     const remainingPlayers = await this.store.listPlayers(roomId);
 
     if (remainingPlayers.length === 0) {
-      const expiresAtMs = this.nowMs() + ROOM_TTL_MS;
-      await this.store.updateRoom(roomId, {
-        status: "ended",
-        phase: null,
-        phaseDeadlineAtMs: null,
-        currentPromptId: null,
-        activeArgumentSide: null,
-        pendingPenaltyPlayerId: null,
-        expiresAtMs,
-      });
-      await this.store.updateRoomCode(room.roomCode, { status: "ended", expiresAtMs });
+      const ended = createEndedRoomState(this.nowMs());
+      await this.store.updateRoom(roomId, ended.roomPatch);
+      await this.store.updateRoomCode(room.roomCode, ended.roomCodePatch);
       return { roomStatus: "ended" };
     }
 
