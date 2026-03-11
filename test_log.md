@@ -24,3 +24,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Expected behavior: Prompt seed is playful/socially acceptable, conforms to "Would you rather be [Side A] or [Side B]" role framing, provides adequate variety, and is acceptable as canonical initial seed.
 - Observed behavior: Observed behavior matches expected behavior.
 - Result: `PASS`
+
+- Date: 2026-03-11.
+- Test ID: T-2.
+- Milestone/task reference: M4-T1 gate.
+- Scenario: User-owned visual direction validation of the Milestone 4 homepage review artifact, including the toy-like/mobile-game-inspired styling and representative title/lobby/choice/resolution screens.
+- Expected behavior: The direction should feel workable for the MVP, clearly avoid a SaaS-like visual language, and provide a reusable component system for subsequent frontend tasks.
+- Observed behavior: Observed behavior matches expected behavior.
+- Result: `PASS`
+- User feedback: The direction is solid and workable as a stylistic foundation even though not every detail is fully locked yet; continued refinements remain acceptable in later frontend tasks.
