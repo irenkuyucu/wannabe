@@ -1,99 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { HttpsError } from "firebase-functions/v2/https";
-
-import type {
-  PlayerRecord,
-  RoomCodeRecord,
-  RoomLifecycleStore,
-  RoomRecord,
-} from "../src/domain/room-lifecycle";
 import {
   RoomLifecycleService,
   validateDisplayName,
   validateRoomCode,
 } from "../src/domain/room-lifecycle";
+import { assertHttpsErrorCode, InMemoryRoomStore } from "./test-helpers";
 
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
-
-class InMemoryRoomStore implements RoomLifecycleStore {
-  private roomIdCounter = 0;
-  private readonly roomCodes = new Map<string, RoomCodeRecord>();
-  private readonly rooms = new Map<string, RoomRecord>();
-  private readonly players = new Map<string, Map<string, PlayerRecord>>();
-
-  generateRoomId(): string {
-    this.roomIdCounter += 1;
-    return `room-${this.roomIdCounter}`;
-  }
-
-  async reserveRoomCode(record: RoomCodeRecord): Promise<boolean> {
-    if (this.roomCodes.has(record.roomCode)) {
-      return false;
-    }
-    this.roomCodes.set(record.roomCode, { ...record });
-    return true;
-  }
-
-  async getRoomCode(roomCode: string): Promise<RoomCodeRecord | null> {
-    const record = this.roomCodes.get(roomCode);
-    return record ? { ...record } : null;
-  }
-
-  async updateRoomCode(roomCode: string, patch: Partial<RoomCodeRecord>): Promise<void> {
-    const record = this.roomCodes.get(roomCode);
-    if (!record) {
-      return;
-    }
-    this.roomCodes.set(roomCode, { ...record, ...patch });
-  }
-
-  async createRoom(record: RoomRecord): Promise<void> {
-    this.rooms.set(record.roomId, { ...record });
-  }
-
-  async getRoom(roomId: string): Promise<RoomRecord | null> {
-    const room = this.rooms.get(roomId);
-    return room ? { ...room } : null;
-  }
-
-  async updateRoom(roomId: string, patch: Partial<RoomRecord>): Promise<void> {
-    const room = this.rooms.get(roomId);
-    if (!room) {
-      return;
-    }
-    this.rooms.set(roomId, { ...room, ...patch });
-  }
-
-  async getPlayer(roomId: string, playerId: string): Promise<PlayerRecord | null> {
-    const roomPlayers = this.players.get(roomId);
-    const player = roomPlayers?.get(playerId);
-    return player ? { ...player } : null;
-  }
-
-  async setPlayer(roomId: string, player: PlayerRecord): Promise<void> {
-    const roomPlayers = this.players.get(roomId) ?? new Map<string, PlayerRecord>();
-    roomPlayers.set(player.playerId, { ...player });
-    this.players.set(roomId, roomPlayers);
-  }
-
-  async listPlayers(roomId: string): Promise<PlayerRecord[]> {
-    const roomPlayers = this.players.get(roomId);
-    if (!roomPlayers) {
-      return [];
-    }
-    return [...roomPlayers.values()].map((player) => ({ ...player }));
-  }
-
-  async deletePlayer(roomId: string, playerId: string): Promise<void> {
-    this.players.get(roomId)?.delete(playerId);
-  }
-}
-
-function assertHttpsErrorCode(error: unknown, code: HttpsError["code"]): boolean {
-  return error instanceof HttpsError && error.code === code;
-}
 
 test("display name validation enforces MVP rules", () => {
   assert.equal(validateDisplayName("Alex"), "Alex");
@@ -164,9 +79,15 @@ test("room lifecycle supports create/join collisions/ready/start", async () => {
   });
 
   const room = await store.getRoom(created.roomId);
+  const round = await store.getRound(created.roomId, 0);
   assert.equal(room?.status, "inGame");
   assert.equal(room?.phase, "choice");
   assert.equal(room?.phaseDeadlineAtMs, now + 60_000);
+  assert.equal(room?.currentPromptId, round?.promptId);
+  assert.equal(room?.activeArgumentSide, null);
+  assert.equal(room?.pendingPenaltyPlayerId, null);
+  assert.equal(round?.roundIndex, 0);
+  assert.equal(typeof round?.promptId, "string");
 });
 
 test("start game enforces host/all-ready/joinable constraints", async () => {

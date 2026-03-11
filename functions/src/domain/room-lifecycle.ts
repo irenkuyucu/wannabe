@@ -1,5 +1,8 @@
 import { HttpsError } from "firebase-functions/v2/https";
 
+import type { RoundOutcome, Side, VerdictVote } from "./game-domain";
+import { createSessionPromptIdDeck } from "./prompt-deck";
+
 export type RoomStatus = "lobby" | "inGame" | "ended";
 export type GamePhase = "choice" | "argument" | "rebuttal" | "verdict" | "resolution";
 
@@ -12,6 +15,9 @@ export type RoomRecord = {
   roundIndex: number | null;
   phase: GamePhase | null;
   phaseDeadlineAtMs: number | null;
+  currentPromptId: string | null;
+  activeArgumentSide: Side | null;
+  pendingPenaltyPlayerId: string | null;
   createdAtMs: number;
   expiresAtMs: number | null;
 };
@@ -31,6 +37,20 @@ export type PlayerRecord = {
   ready: boolean;
   score: number;
   joinedAtMs: number;
+};
+
+export type RoundRecord = {
+  roundIndex: number;
+  promptId: string;
+  choicesByPlayer: Partial<Record<string, Side>>;
+  forcedAssignedPlayerId: string | null;
+  forcedAssignedSide: Side | null;
+  verdictsByPlayer: Partial<Record<string, VerdictVote>>;
+  outcome: RoundOutcome | null;
+  dissenterPlayerId: string | null;
+  penalizedSide: Side | null;
+  startedAtMs: number;
+  resolvedAtMs: number | null;
 };
 
 export type CreateRoomResult = {
@@ -60,6 +80,13 @@ export type RoomLifecycleStore = {
   createRoom(record: RoomRecord): Promise<void>;
   getRoom(roomId: string): Promise<RoomRecord | null>;
   updateRoom(roomId: string, patch: Partial<RoomRecord>): Promise<void>;
+  getRound(roomId: string, roundIndex: number): Promise<RoundRecord | null>;
+  setRound(roomId: string, round: RoundRecord): Promise<void>;
+  updateRound(
+    roomId: string,
+    roundIndex: number,
+    patch: Partial<RoundRecord>,
+  ): Promise<void>;
   getPlayer(roomId: string, playerId: string): Promise<PlayerRecord | null>;
   setPlayer(roomId: string, player: PlayerRecord): Promise<void>;
   listPlayers(roomId: string): Promise<PlayerRecord[]>;
@@ -69,7 +96,9 @@ export type RoomLifecycleStore = {
 const ROOM_CODE_REGEX = /^\d{6}$/;
 const DISPLAY_NAME_ALLOWED_REGEX = /^[A-Za-z' -]{1,16}$/;
 const ROUND_COUNT_DEFAULT = 10;
-const CHOICE_PHASE_SECONDS = 60;
+export const CHOICE_PHASE_SECONDS = 60;
+export const REBUTTAL_PHASE_SECONDS = 60;
+export const VERDICT_PHASE_SECONDS = 60;
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 
 export function validateDisplayName(displayName: string): string {
@@ -121,6 +150,37 @@ function generateRoomCode(random: () => number): string {
   return Math.floor(random() * 1_000_000)
     .toString()
     .padStart(6, "0");
+}
+
+export function createRoundRecord(params: {
+  roomId: string;
+  roundIndex: number;
+  roundsTotal: number;
+  startedAtMs: number;
+}): RoundRecord {
+  const { roomId, roundIndex, roundsTotal, startedAtMs } = params;
+  const promptId = createSessionPromptIdDeck({
+    sessionKey: roomId,
+    roundsTotal,
+  })[roundIndex];
+
+  if (!promptId) {
+    throw new HttpsError("internal", "Unable to allocate prompt for round.");
+  }
+
+  return {
+    roundIndex,
+    promptId,
+    choicesByPlayer: {},
+    forcedAssignedPlayerId: null,
+    forcedAssignedSide: null,
+    verdictsByPlayer: {},
+    outcome: null,
+    dissenterPlayerId: null,
+    penalizedSide: null,
+    startedAtMs,
+    resolvedAtMs: null,
+  };
 }
 
 export function assignUniqueDisplayName(
@@ -189,6 +249,9 @@ export class RoomLifecycleService {
         roundIndex: null,
         phase: null,
         phaseDeadlineAtMs: null,
+        currentPromptId: null,
+        activeArgumentSide: null,
+        pendingPenaltyPlayerId: null,
         createdAtMs: now,
         expiresAtMs: null,
       });
@@ -291,6 +354,9 @@ export class RoomLifecycleService {
         status: "ended",
         phase: null,
         phaseDeadlineAtMs: null,
+        currentPromptId: null,
+        activeArgumentSide: null,
+        pendingPenaltyPlayerId: null,
         expiresAtMs,
       });
       await this.store.updateRoomCode(room.roomCode, { status: "ended", expiresAtMs });
@@ -363,15 +429,26 @@ export class RoomLifecycleService {
       );
     }
 
-    const deadlineAtMs = this.nowMs() + CHOICE_PHASE_SECONDS * 1000;
+    const now = this.nowMs();
+    const round = createRoundRecord({
+      roomId,
+      roundIndex: 0,
+      roundsTotal: room.roundsTotal,
+      startedAtMs: now,
+    });
+    const deadlineAtMs = now + CHOICE_PHASE_SECONDS * 1000;
     await this.store.updateRoom(roomId, {
       status: "inGame",
       roundIndex: 0,
       phase: "choice",
       phaseDeadlineAtMs: deadlineAtMs,
+      currentPromptId: round.promptId,
+      activeArgumentSide: null,
+      pendingPenaltyPlayerId: null,
       expiresAtMs: null,
     });
     await this.store.updateRoomCode(room.roomCode, { status: "inGame", expiresAtMs: null });
+    await this.store.setRound(roomId, round);
 
     return {
       roundIndex: 0,

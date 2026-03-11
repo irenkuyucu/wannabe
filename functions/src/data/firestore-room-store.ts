@@ -3,6 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 
 import type {
   PlayerRecord,
+  RoundRecord,
   RoomLifecycleStore,
   RoomCodeRecord,
   RoomRecord,
@@ -25,6 +26,10 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
 
   private playerRef(roomId: string, playerId: string) {
     return this.roomRef(roomId).collection("players").doc(playerId);
+  }
+
+  private roundRef(roomId: string, roundIndex: number) {
+    return this.roomRef(roomId).collection("rounds").doc(String(roundIndex));
   }
 
   generateRoomId(): string {
@@ -69,6 +74,26 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
 
   async updateRoom(roomId: string, patch: Partial<RoomRecord>): Promise<void> {
     await this.roomRef(roomId).set(patch, { merge: true });
+  }
+
+  async getRound(roomId: string, roundIndex: number): Promise<RoundRecord | null> {
+    const snapshot = await this.roundRef(roomId, roundIndex).get();
+    if (!snapshot.exists) {
+      return null;
+    }
+    return snapshot.data() as RoundRecord;
+  }
+
+  async setRound(roomId: string, round: RoundRecord): Promise<void> {
+    await this.roundRef(roomId, round.roundIndex).set(round);
+  }
+
+  async updateRound(
+    roomId: string,
+    roundIndex: number,
+    patch: Partial<RoundRecord>,
+  ): Promise<void> {
+    await this.roundRef(roomId, roundIndex).set(patch, { merge: true });
   }
 
   async getPlayer(roomId: string, playerId: string): Promise<PlayerRecord | null> {

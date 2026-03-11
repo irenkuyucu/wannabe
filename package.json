@@ -14,6 +14,7 @@
     "lint": "pnpm lint:web && pnpm lint:functions",
     "test:web": "node --test tests/*.test.mjs",
     "test:functions": "pnpm --dir functions test",
+    "test:functions:round-actions:emulator": "firebase emulators:exec --only firestore \"pnpm --dir functions run test:round-actions:emulator\"",
     "test:functions:room-lifecycle:emulator": "firebase emulators:exec --only firestore \"pnpm --dir functions run test:room-lifecycle:emulator\"",
     "test": "pnpm test:web && pnpm test:functions",
     "test:rules": "firebase emulators:exec --only firestore \"echo rules-ok\"",
