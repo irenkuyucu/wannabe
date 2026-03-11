@@ -17,7 +17,7 @@
     "test:functions:round-actions:emulator": "firebase emulators:exec --only firestore \"pnpm --dir functions run test:round-actions:emulator\"",
     "test:functions:room-lifecycle:emulator": "firebase emulators:exec --only firestore \"pnpm --dir functions run test:room-lifecycle:emulator\"",
     "test": "pnpm test:web && pnpm test:functions",
-    "test:rules": "firebase emulators:exec --only firestore \"echo rules-ok\"",
+    "test:rules": "firebase emulators:exec --only firestore \"node --test tests/firestore.rules.spec.mjs\"",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm run test:rules"
   },
   "dependencies": {
@@ -29,12 +29,14 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "firebase": "^12.10.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

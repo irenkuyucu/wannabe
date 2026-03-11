@@ -7,17 +7,17 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M3 — Authoritative Backend Game Engine
-- Task: M3-T4 — Host guardrail behavior
-- Gate status: PASS — Resolution host guardrail is hardened behind dedicated helper logic with green direct and Firestore-emulator integration coverage for host-missing promotion and no-player shutdown.
+- Task: M3-T5 — Security rules
+- Gate status: PASS — Firestore security rules now enforce member-only room reads and deny direct client writes to authoritative room, player, round, and room-code documents, with a green emulator rules matrix.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- 2b638bc on main — Harden resolution host guardrail behavior.
 - 57a6c03 on main — Add callable round phase actions and persistence.
 - 7d82980 on main — Add room lifecycle callables with validated Firestore service.
 - 9de99da on main — Add domain engine for round transitions and scoring.
 - d9e9480 on main — Add deterministic prompt loader and session deck sampling.
-- 8042eee on main — Add prompt seed dataset and validation tests.
 
 ## 3. Project snapshot (max 5)
 (Brief facts about the working state of the project/codebase. No rationale.)
@@ -25,13 +25,14 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Firebase callable foundation is in place with authenticated callable helper utilities.
 - Prompt seed bridge includes canonical seed file and deterministic sampling helper/test coverage.
 - Game domain engine includes deterministic transition/scoring helpers with unit coverage.
-- Firestore-backed backend now persists round docs, timed phase state, and resolution host-guardrail transitions across lifecycle + round action APIs.
+- Firestore-backed backend now includes member-read security rules plus authoritative-write denial over room lifecycle and round state.
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Extracted dedicated resolution host-guardrail helpers in `functions/src/domain/round-actions.ts` to centralize auto-promotion and immediate room shutdown when the host is missing.
-- Added direct integration coverage for resolution host-guardrail promotion and zero-player shutdown in `functions/tests/round-actions.test.ts`.
-- Added Firestore emulator coverage for resolution host auto-promotion in `functions/tests/round-actions-emulator.spec.ts`.
+- Added member-aware Firestore rules in `firestore.rules` for room, player, and round reads while denying all direct client writes and room-code reads.
+- Replaced the placeholder rules smoke script with an emulator-backed rules matrix in root `package.json`.
+- Added `tests/firestore.rules.spec.mjs` covering member reads, non-member/guest read denial, room-code read denial, and authoritative write denial.
+- Added root dev dependencies `@firebase/rules-unit-testing` and `firebase`, updating `pnpm-lock.yaml` for the rules test harness.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
@@ -42,4 +43,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- M3-T5 — Implement Firestore security rules enforcing member reads and denying authoritative client writes.
+- M3-T6 — Implement end-of-life lifecycle logic for ended rooms and expiry semantics.

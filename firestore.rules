@@ -2,6 +2,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isRoomMember(roomId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
+    }
+
+    match /roomCodes/{roomCode} {
+      allow read, write: if false;
+    }
+
+    match /rooms/{roomId} {
+      allow get: if isRoomMember(roomId);
+      allow create, update, delete: if false;
+
+      match /players/{playerId} {
+        allow get, list: if isRoomMember(roomId);
+        allow create, update, delete: if false;
+      }
+
+      match /rounds/{roundIndex} {
+        allow get, list: if isRoomMember(roomId);
+        allow create, update, delete: if false;
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
