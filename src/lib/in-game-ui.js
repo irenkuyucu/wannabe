@@ -113,11 +113,14 @@ export function buildPhaseViewModel({
         ? (TIMED_PHASE_SECONDS[room.phase] ?? null)
         : null;
   const secondsRemaining = getCountdownSeconds(room?.phaseDeadlineAtMs, nowMs);
-  const progressRatio = getCountdownProgress({
-    deadlineAtMs: room?.phaseDeadlineAtMs,
-    nowMs,
-    totalSeconds: timedPhaseSeconds,
-  });
+  const progressRatio =
+    room?.phase === "resolution"
+      ? 1
+      : getCountdownProgress({
+          deadlineAtMs: room?.phaseDeadlineAtMs,
+          nowMs,
+          totalSeconds: timedPhaseSeconds,
+        });
   const selectedChoice = currentPlayerId ? round?.choicesByPlayer?.[currentPlayerId] ?? null : null;
   const selectedVerdict = currentPlayerId
     ? round?.verdictsByPlayer?.[currentPlayerId] ?? null

@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 
+import { GameOverPanel } from "@/components/game-over-panel";
 import { InGamePanel } from "@/components/in-game-panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import {
   getAvatarStyle,
 } from "@/lib/avatar-options";
 import {
+  advanceResolution,
   advanceRebuttal,
   createRoom,
   endArgumentTurn,
@@ -69,6 +71,7 @@ export function WannabeApp() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [room, setRoom] = useState<RoomDoc | null>(null);
   const [round, setRound] = useState<RoundDoc | null>(null);
+  const [latestRound, setLatestRound] = useState<RoundDoc | null>(null);
   const [players, setPlayers] = useState<PlayerDoc[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
@@ -110,6 +113,7 @@ export function WannabeApp() {
       setRoom(null);
       setPlayers([]);
       setRound(null);
+      setLatestRound(null);
       return undefined;
     }
 
@@ -156,6 +160,9 @@ export function WannabeApp() {
         onRound: (nextRound) => {
           startTransition(() => {
             setRound(nextRound);
+            if (nextRound) {
+              setLatestRound(nextRound);
+            }
           });
         },
         onError: (message) => {
@@ -338,7 +345,7 @@ export function WannabeApp() {
 
     try {
       await startGame({ roomId });
-      setNoticeMessage("Game started. Live timed round screens are active.");
+      setNoticeMessage("Game started. The live round flow is active.");
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -414,6 +421,28 @@ export function WannabeApp() {
     }
   }
 
+  async function handleAdvanceResolution() {
+    if (!roomId) {
+      return;
+    }
+
+    setPendingAction("advance-resolution");
+    setErrorMessage(null);
+
+    try {
+      const result = await advanceResolution({ roomId });
+      setNoticeMessage(
+        result.nextState === "ended"
+          ? "Game over. Final scoreboard is live."
+          : "Next round started.",
+      );
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function handleLeaveRoom() {
     if (!roomId) {
       return;
@@ -427,6 +456,7 @@ export function WannabeApp() {
       setRoomId(null);
       setRoom(null);
       setRound(null);
+      setLatestRound(null);
       setPlayers([]);
       window.history.replaceState({}, "", "/");
       setNoticeMessage("Left the room.");
@@ -435,6 +465,17 @@ export function WannabeApp() {
     } finally {
       setPendingAction(null);
     }
+  }
+
+  function handleReturnToMain() {
+    setRoomId(null);
+    setRoom(null);
+    setRound(null);
+    setLatestRound(null);
+    setPlayers([]);
+    setErrorMessage(null);
+    window.history.replaceState({}, "", "/");
+    setNoticeMessage("Back on main.");
   }
 
   async function handleCopyShareLink() {
@@ -465,10 +506,10 @@ export function WannabeApp() {
             <section className="space-y-5">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="hud-pill bg-[#0c47a9] text-white">
-                  Milestone 4 / Task 3
+                  Milestone 4 / Task 4
                 </span>
                 <span className="hud-pill bg-[#56efff] text-[#0d3560]">
-                  live round flow
+                  full session flow
                 </span>
               </div>
 
@@ -479,17 +520,19 @@ export function WannabeApp() {
                       Room {room.roomCode} is live.
                     </h1>
                     <p className="mt-4 max-w-xl text-base leading-7 text-[#d8ecff] sm:text-lg">
-                      The entry surface collapses during active rounds so the phase panel gets more room on desktop while mobile stays unchanged.
+                      Resolution, scoreboard, and game-over messaging now share the same live room
+                      surface while the desktop layout still prioritizes the active phase panel.
                     </p>
                   </>
                 ) : (
                   <>
                     <h1 className="max-w-3xl text-balance text-5xl font-black uppercase leading-[0.9] tracking-[-0.04em] text-white drop-shadow-[0_4px_0_rgba(11,49,116,0.95)] sm:text-6xl lg:text-7xl">
-                      Launch the room. Then run the round in real time.
+                      Launch the room. Then play the full session in real time.
                     </h1>
                     <p className="mt-4 max-w-2xl text-lg leading-8 text-[#d8ecff] sm:text-xl">
-                      Entry, lobby, and the first live in-game phases now share the same toy-like
-                      surface. Choice, argument, rebuttal, and verdict all read directly from Firebase room state.
+                      Entry, lobby, round phases, resolution, and game over now share the same
+                      toy-like surface. The live UI reads directly from Firebase room state from
+                      first join through final scoreboard.
                     </p>
                   </>
                 )}
@@ -785,6 +828,7 @@ export function WannabeApp() {
                 <InGamePanel
                   currentPlayer={currentPlayer}
                   nowMs={nowMs}
+                  onAdvanceResolution={() => void handleAdvanceResolution()}
                   onAdvanceRebuttal={() => void handleAdvanceRebuttal()}
                   onEndArgumentTurn={() => void handleEndArgumentTurn()}
                   onSubmitChoice={(side) => void handleSubmitChoice(side)}
@@ -795,31 +839,13 @@ export function WannabeApp() {
                   round={round}
                 />
               ) : roomId && room?.status === "ended" ? (
-                <div className="flex min-h-[30rem] flex-col items-start justify-center gap-4 rounded-[1.8rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10">
-                  <p className="section-banner bg-linear-to-r from-[#ff8be5] to-[#b55dff] text-white">
-                    Room ended
-                  </p>
-                  <h2 className="text-4xl font-black uppercase tracking-[-0.04em] text-white">
-                    This room is no longer joinable.
-                  </h2>
-                  <p className="max-w-xl text-lg leading-8 text-[#d8ecff]">
-                    Ended-room handling is working. You can go back and create a
-                    new room from here.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setRoomId(null);
-                      setRoom(null);
-                      setRound(null);
-                      setPlayers([]);
-                      window.history.replaceState({}, "", "/");
-                    }}
-                    size="lg"
-                    variant="secondary"
-                  >
-                    Back to main
-                  </Button>
-                </div>
+                <GameOverPanel
+                  currentPlayerId={currentPlayer?.playerId ?? null}
+                  latestRound={latestRound}
+                  onReturnToMain={handleReturnToMain}
+                  players={players}
+                  room={room}
+                />
               ) : roomId && room?.status === "inGame" ? (
                 <div className="flex min-h-[30rem] flex-col items-center justify-center gap-4 rounded-[1.8rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10">
                   <p className="section-banner bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]">
@@ -855,7 +881,7 @@ export function WannabeApp() {
                     <div className="toy-chip-panel rounded-[1.7rem] px-4 py-4">
                       <div className="score-pill max-w-fit">Round flow</div>
                       <p className="mt-4 text-xl font-black uppercase text-white">
-                        Choice, argument, rebuttal, and verdict now stream live from room state.
+                        Choice through game over now stream live from room state.
                       </p>
                     </div>
                   </div>

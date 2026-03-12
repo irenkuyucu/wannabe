@@ -1,18 +1,20 @@
 "use client";
 
 import { HoldButton } from "@/components/hold-button";
-import { Button } from "@/components/ui/button";
+import { SessionScoreboard } from "@/components/session-scoreboard";
 import {
   buildPhaseViewModel,
   getArgumentBudgetSeconds,
 } from "@/lib/in-game-ui";
 import { getAvatarOption, getAvatarStyle } from "@/lib/avatar-options";
 import { getPromptById } from "@/lib/prompt-catalog";
+import { buildResolutionSummary } from "@/lib/session-summary";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
 type InGamePanelProps = {
   currentPlayer: PlayerDoc;
   nowMs: number;
+  onAdvanceResolution: () => void;
   onAdvanceRebuttal: () => void;
   onEndArgumentTurn: () => void;
   onSubmitChoice: (side: "A" | "B") => void;
@@ -52,10 +54,10 @@ const PHASE_COPY: Record<
       "Each player submits one locked verdict. Missing votes become abstains automatically at timeout.",
   },
   resolution: {
-    badge: "Resolution bridge",
-    title: "Round resolved. Full summary lands in M4-T4.",
+    badge: "Resolution phase",
+    title: "The round is scored. Debrief before moving on.",
     description:
-      "Scores and next-round controls are intentionally held for the next task. This bridge confirms the timed phase loop is complete.",
+      "Check the outcome, score swing, and any bonus or dissenter notes before the host advances.",
   },
 };
 
@@ -101,6 +103,18 @@ function formatVerdictLabel(verdict: "A_WON" | "B_WON" | "DRAW") {
   }
 
   return "Draw";
+}
+
+function getOutcomeTone(outcome: "A_WON" | "B_WON" | "DRAW" | null) {
+  if (outcome === "A_WON") {
+    return "bg-linear-to-r from-[#8cff56] to-[#36d51d] text-[#114f1c]";
+  }
+
+  if (outcome === "B_WON") {
+    return "bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]";
+  }
+
+  return "bg-linear-to-r from-[#ff8be5] to-[#b55dff] text-white";
 }
 
 function PlayerBadge({
@@ -189,6 +203,7 @@ function SideRoster({
 export function InGamePanel({
   currentPlayer,
   nowMs,
+  onAdvanceResolution,
   onAdvanceRebuttal,
   onEndArgumentTurn,
   onSubmitChoice,
@@ -210,12 +225,13 @@ export function InGamePanel({
   const phaseCopy = PHASE_COPY[phase];
   const sideAPenalty = getArgumentBudgetSeconds(round?.penalizedSide ?? null, "A");
   const sideBPenalty = getArgumentBudgetSeconds(round?.penalizedSide ?? null, "B");
+  const resolutionSummary = buildResolutionSummary({ room, round, players });
 
   return (
     <div className="flex min-h-[30rem] flex-col gap-5 rounded-[1.8rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="hud-pill bg-[#0c47a9] text-white">Milestone 4 / Task 3</span>
+          <span className="hud-pill bg-[#0c47a9] text-white">Milestone 4 / Task 4</span>
           <span className="hud-pill bg-[#56efff] text-[#0d3560]">{phaseCopy.badge}</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -491,15 +507,130 @@ export function InGamePanel({
       ) : null}
 
       {phase === "resolution" ? (
-        <section className="phase-roster">
-          <p className="text-base font-black uppercase text-white">Next task boundary</p>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#d8ecff]">
-            The timed round flow reached resolution successfully. `M4-T4` will replace this bridge with the real scoreboard, winner messaging, and host progression controls.
-          </p>
-          <div className="mt-4">
-            <Button disabled size="lg" variant="secondary">
-              Resolution UI lands in M4-T4
-            </Button>
+        <section className="grid gap-4 xl:grid-cols-[1fr_1.08fr]">
+          <div className="grid gap-4">
+            <div className="phase-roster">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-base font-black uppercase text-white">Round result</p>
+                <span
+                  className={`choice-tag ${getOutcomeTone(resolutionSummary.outcome)}`}
+                >
+                  {resolutionSummary.outcomeLabel}
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
+                {resolutionSummary.outcomeReason}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                    Non-abstaining votes
+                  </p>
+                  <p className="mt-2 text-3xl font-black uppercase text-white">
+                    {resolutionSummary.nonAbstainingCount}
+                  </p>
+                </div>
+                <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                    Round state
+                  </p>
+                  <p className="mt-2 text-2xl font-black uppercase text-white">
+                    {resolutionSummary.isFinalRound ? "Final round" : "Next round ready"}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="phase-player-card">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                      Verdict board
+                    </p>
+                    <p className="mt-2 text-sm text-white">
+                      A won {resolutionSummary.verdictCounts.A_WON}
+                    </p>
+                    <p className="mt-1 text-sm text-white">
+                      B won {resolutionSummary.verdictCounts.B_WON}
+                    </p>
+                  </div>
+                </div>
+                <div className="phase-player-card">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                      Missing or split
+                    </p>
+                    <p className="mt-2 text-sm text-white">
+                      Draw {resolutionSummary.verdictCounts.DRAW}
+                    </p>
+                    <p className="mt-1 text-sm text-white">
+                      Abstain {resolutionSummary.verdictCounts.ABSTAIN}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {resolutionSummary.bonusPlayer ? (
+                <div className="status-callout mt-4">
+                  Lone-side bonus stayed with {resolutionSummary.bonusPlayer.displayName}. If
+                  that player won the round, the scoreboard reflects the extra point.
+                </div>
+              ) : null}
+              {resolutionSummary.dissenterPlayer ? (
+                <div className="status-callout mt-4">
+                  {resolutionSummary.dissenterPlayer.displayName} is the dissenter this round and
+                  carries the next-round argument penalty.
+                </div>
+              ) : null}
+            </div>
+
+            <div className="phase-roster">
+              <p className="text-base font-black uppercase text-white">Host control</p>
+              <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
+                {resolutionSummary.isFinalRound
+                  ? "The scoreboard is final. The host sends everyone to game over from here."
+                  : "Once the room is ready, the host launches the next prompt from resolution."}
+              </p>
+              <div className="mt-4">
+                {room.hostPlayerId === currentPlayer.playerId ? (
+                  <HoldButton
+                    disabled={pendingAction === "advance-resolution"}
+                    holdingLabel="Keep holding..."
+                    idleLabel={
+                      pendingAction === "advance-resolution"
+                        ? "Advancing..."
+                        : resolutionSummary.isFinalRound
+                          ? "Host hold 2s for game over"
+                          : "Host hold 2s for next round"
+                    }
+                    onHoldComplete={onAdvanceResolution}
+                    size="lg"
+                  />
+                ) : (
+                  <div className="status-callout">
+                    Waiting for the host to {resolutionSummary.isFinalRound ? "open game over." : "advance to the next round."}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="phase-roster">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-base font-black uppercase text-white">Scoreboard</p>
+              <span className="score-pill text-white">
+                Round {viewModel.roundNumber ?? "-"} / {viewModel.totalRounds}
+              </span>
+            </div>
+            <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
+              Points are already applied. Badges show forced assignments, lone-side bonus status,
+              and the dissenter if one was identified.
+            </p>
+            <div className="mt-4">
+              <SessionScoreboard
+                currentPlayerId={currentPlayer.playerId}
+                entries={resolutionSummary.scoreboard}
+                players={players}
+                showRoundMeta
+              />
+            </div>
           </div>
         </section>
       ) : null}

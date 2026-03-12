@@ -162,3 +162,27 @@ test("phase view model exposes rebuttal host control and verdict lock state", ()
   assert.equal(verdictView.selectedVerdict, "A_WON");
   assert.deepEqual(verdictView.verdictCounts, { A_WON: 1, B_WON: 0, DRAW: 1 });
 });
+
+test("phase view model marks resolution as fully progressed", () => {
+  const resolutionView = buildPhaseViewModel({
+    room: {
+      roundIndex: 4,
+      roundsTotal: 10,
+      phase: "resolution",
+      phaseDeadlineAtMs: null,
+      hostPlayerId: "host",
+      activeArgumentSide: null,
+    },
+    round: {
+      choicesByPlayer: { host: "A", p2: "B" },
+      verdictsByPlayer: { host: "DRAW", p2: "DRAW" },
+      penalizedSide: null,
+    },
+    currentPlayerId: "host",
+    players: [{ playerId: "host" }, { playerId: "p2" }],
+    nowMs: 600_000,
+  });
+
+  assert.equal(resolutionView.secondsRemaining, null);
+  assert.equal(resolutionView.progressRatio, 1);
+});

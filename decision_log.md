@@ -72,3 +72,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: This preserves player agency for explicit picks, fixes lopsided timeout outcomes caused by the earlier single-force-player model, and aligns the bonus with the actual high-risk lone-side role rather than the implementation detail of how that player got there.
 - Alternatives considered: Keeping the previous single forced-player bonus model, rebalancing all uneven explicit splits, or dropping the lone-side bonus entirely.
 - Impacted files/modules: `SPEC.md`, `PLAN.md`, `decision_log.md`, `functions/src/domain/game-domain.ts`, `functions/src/domain/room-lifecycle.ts`, `functions/src/domain/round-actions.ts`.
+
+- Date: 2026-03-12.
+- Decision ID: D-8.
+- Spec/Plan reference: `AGENTS.md` §§3-6 and `PLAN.md` M4-T4.
+- Decision: Commit and push the current M4-T4 implementation before user-owned validation is complete, while explicitly keeping the task gate open and resuming validation after Codex relaunch with Playwright/MCP support.
+- Rationale: The user needs to relaunch the Codex app to activate advanced browser-testing capabilities, and preserving the current implementation on the branch avoids losing state while still honoring that M4-T4 remains pending.
+- Alternatives considered: Waiting to commit until the normal post-validation point, or leaving the changes uncommitted during the relaunch and relying on the local working tree.
+- Impacted files/modules: `STATE.md`, `decision_log.md`, `package.json`, `pnpm-lock.yaml`, `src/components/wannabe-app.tsx`, `src/components/in-game-panel.tsx`, `src/components/game-over-panel.tsx`, `src/components/session-scoreboard.tsx`, `src/lib/session-summary.js`.
