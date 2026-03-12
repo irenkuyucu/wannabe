@@ -51,3 +51,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Observed behavior matches expected behavior.
 - Result: `PASS`
 - User feedback: The balancing logic now works as intended, the current desktop/dev UI is passable for continued work, bonus-specific outcome checks can wait until Resolution is wired, and host-promotion outside Resolution remains acceptable to defer for now.
+
+- Date: 2026-03-12.
+- Test ID: T-5.
+- Milestone/task reference: M4-T4 gate.
+- Scenario: User-owned validation of the remaining M4-T4 checks, focused on end-of-round comprehension and game-over winner/scoreboard communication after the delegated Playwright browser scenarios passed.
+- Expected behavior: Resolution and Game Over should function correctly end to end, with understandable outcome/winner communication and no blockers to beginning the responsive polish pass.
+- Observed behavior: Observed behavior matches expected behavior with caveats. The flow works and looks broadly intended, but several desktop surfaces are oversized at 100% zoom, some screens cannot fit fully without zooming out, and some desktop components still appear visually broken.
+- Result: `PASS`
+- User feedback: Major retouches and polishing are expected next in M4-T5, especially reducing oversized components at normal desktop zoom and fixing remaining broken-looking desktop layouts.

@@ -80,3 +80,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The user needs to relaunch the Codex app to activate advanced browser-testing capabilities, and preserving the current implementation on the branch avoids losing state while still honoring that M4-T4 remains pending.
 - Alternatives considered: Waiting to commit until the normal post-validation point, or leaving the changes uncommitted during the relaunch and relying on the local working tree.
 - Impacted files/modules: `STATE.md`, `decision_log.md`, `package.json`, `pnpm-lock.yaml`, `src/components/wannabe-app.tsx`, `src/components/in-game-panel.tsx`, `src/components/game-over-panel.tsx`, `src/components/session-scoreboard.tsx`, `src/lib/session-summary.js`.
+
+- Date: 2026-03-12.
+- Decision ID: D-9.
+- Spec/Plan reference: `PLAN.md` M4-T4 follow-up and forthcoming M4-T5/M5 validation work.
+- Decision: Keep the current Playwright setup intentionally minimal and task-scoped for now, and defer broader multiplayer test architecture, stronger Playwright best-practice layering, and auditable artifact workflow design until later coverage expansion requires them.
+- Rationale: The current harness already covers the delegated M4-T4 browser scenarios and unblocks immediate frontend progress; pushing further into full 4-6 player architecture, codegen-assisted selector workflow, and artifact policy now would expand scope before the responsive polish and later end-to-end needs are fully shaped.
+- Alternatives considered: Expanding immediately into a larger Playwright fixture/screen-model system with richer multiplayer abstractions and audit outputs before closing M4-T4.
+- Impacted files/modules: `STATE.md`, `decision_log.md`, `playwright.config.ts`, `tests/e2e/`.

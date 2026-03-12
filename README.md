@@ -86,3 +86,26 @@ Emulator UI will be available at [http://127.0.0.1:4000](http://127.0.0.1:4000).
 ```bash
 pnpm verify
 ```
+
+## Playwright
+
+Playwright is configured for repo-local browser checks with Chromium.
+
+Run the default e2e suite:
+
+```bash
+pnpm test:e2e
+```
+
+Useful variants:
+
+```bash
+pnpm test:e2e:headed
+pnpm test:e2e:ui
+```
+
+Notes:
+
+- The config starts both the Firebase emulator trio (`auth`, `firestore`, `functions`) and `pnpm dev`, and expects the app at `http://localhost:3000` by default.
+- Override the target URL with `PLAYWRIGHT_BASE_URL` if you want Playwright to attach to an already-running server.
+- The suite includes a main-entry smoke spec plus emulator-backed `M4-T4` resolution/game-over coverage.
