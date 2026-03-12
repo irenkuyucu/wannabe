@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated functions build output should not be linted by the app config.
+    "functions/lib/**",
   ]),
 ]);
 

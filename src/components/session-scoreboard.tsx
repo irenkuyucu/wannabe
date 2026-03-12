@@ -56,19 +56,19 @@ export function SessionScoreboard({
 
         return (
           <div
-            className="toy-list-row flex flex-col gap-3 rounded-[1.4rem] px-4 py-4 sm:flex-row sm:items-center"
+            className="toy-list-row flex flex-col gap-3 rounded-[1.2rem] px-3.5 py-3 sm:flex-row sm:items-center"
             key={entry.playerId}
           >
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div
-                className="avatar-orb flex size-12 shrink-0 items-center justify-center rounded-full text-2xl"
+                className="avatar-orb flex size-10 shrink-0 items-center justify-center rounded-full text-xl"
                 style={getAvatarStyle(avatar)}
               >
                 {avatar.emoji}
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-lg font-black uppercase text-white">
+                  <p className="truncate text-base font-black uppercase text-white">
                     {entry.displayName}
                   </p>
                   <span className="score-pill text-white">#{entry.rank}</span>
@@ -99,11 +99,11 @@ export function SessionScoreboard({
                   {entry.scoreDelta > 0 ? `+${entry.scoreDelta} this round` : "No round points"}
                 </span>
               ) : null}
-              <span className="phase-timer-bubble min-w-[6.5rem] px-4 py-3">
+              <span className="phase-timer-bubble min-w-[5.75rem] px-3 py-2.5">
                 <span className="block text-xs uppercase tracking-[0.16em] text-[#d9eeff]">
                   Score
                 </span>
-                <span className="mt-1 block text-2xl font-black uppercase text-white">
+                <span className="mt-1 block text-xl font-black uppercase text-white">
                   {entry.score}
                 </span>
               </span>

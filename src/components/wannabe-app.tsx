@@ -77,6 +77,7 @@ export function WannabeApp() {
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [copiedShareLink, setCopiedShareLink] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const tickingPhaseKeyRef = useRef<string | null>(null);
 
@@ -114,6 +115,7 @@ export function WannabeApp() {
       setPlayers([]);
       setRound(null);
       setLatestRound(null);
+      setShowDetails(false);
       return undefined;
     }
 
@@ -494,61 +496,88 @@ export function WannabeApp() {
 
   const showLobby = Boolean(roomId && room?.status === "lobby" && currentPlayer);
   const showInGame = Boolean(roomId && room?.status === "inGame" && currentPlayer);
-  const showCompactRoomSidebar = Boolean(showInGame && room && currentPlayer);
+  const showCompactRoomSidebar = Boolean(roomId && room && currentPlayer);
+  const roomStatusLabel =
+    room?.status === "lobby"
+      ? "Lobby open"
+      : room?.status === "inGame"
+        ? "Round in motion"
+        : room?.status === "ended"
+          ? "Session ended"
+          : "Main menu";
+  const roomHeroTitle =
+    room?.status === "lobby"
+      ? `Room ${room.roomCode} is readying up.`
+      : room?.status === "inGame"
+        ? `Room ${room.roomCode} is live.`
+        : room?.status === "ended"
+          ? `Room ${room.roomCode} has wrapped.`
+          : "Launch the room. Then play the full session in real time.";
+  const roomHeroDescription =
+    room?.status === "lobby"
+      ? "Ready checks, share-link handoff, and host controls stay tight while the main panel focuses on the live lobby."
+      : room?.status === "inGame"
+        ? "The left rail keeps room context visible while the main panel stays dedicated to the active phase."
+        : room?.status === "ended"
+          ? "Final messaging and the scoreboard stay centered in the main panel while the room summary remains nearby."
+          : "Entry, lobby, round phases, resolution, and game over now share the same toy-like surface. The live UI reads directly from Firebase room state from first join through final scoreboard.";
 
   return (
     <main className="toy-page min-h-screen px-4 py-5 sm:px-6 sm:py-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 lg:gap-6">
-        <section className="toy-shell overflow-hidden rounded-[2rem] px-5 py-5 sm:px-7 sm:py-7">
+      <div className="mx-auto flex w-full max-w-[108rem] flex-col gap-4 lg:gap-5">
+        <section className="toy-shell overflow-hidden rounded-[2rem] px-4 py-4 sm:px-6 sm:py-6 lg:px-7 lg:py-7">
           <div
-            className={`grid gap-6 ${showCompactRoomSidebar ? "xl:grid-cols-[0.72fr_1.28fr]" : "xl:grid-cols-[0.98fr_1.02fr]"}`}
+            className={`grid items-start gap-4 lg:gap-5 ${showCompactRoomSidebar ? "lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.28fr)]" : "lg:grid-cols-[minmax(19rem,0.76fr)_minmax(0,1.24fr)]"}`}
           >
             <section className="space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="hud-pill bg-[#0c47a9] text-white">
-                  Milestone 4 / Task 4
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="section-banner bg-linear-to-r from-[#56efff] to-[#4d8cff] text-[#14356b]">
+                  Wannabe
                 </span>
-                <span className="hud-pill bg-[#56efff] text-[#0d3560]">
-                  full session flow
-                </span>
+                {showCompactRoomSidebar ? (
+                  <button
+                    className="ghost-control"
+                    onClick={() => setShowDetails((current) => !current)}
+                    type="button"
+                  >
+                    {showDetails ? "Hide details" : "Show details"}
+                  </button>
+                ) : null}
               </div>
 
               <div>
                 {showCompactRoomSidebar && room && currentPlayer ? (
                   <>
-                    <h1 className="max-w-2xl text-balance text-4xl font-black uppercase leading-[0.92] tracking-[-0.04em] text-white drop-shadow-[0_4px_0_rgba(11,49,116,0.95)] sm:text-5xl">
-                      Room {room.roomCode} is live.
+                    <h1 className="max-w-lg text-balance text-[clamp(1.95rem,2.6vw,3.1rem)] font-black uppercase leading-[0.94] tracking-[-0.045em] text-white drop-shadow-[0_3px_0_rgba(11,49,116,0.95)]">
+                      {roomHeroTitle}
                     </h1>
-                    <p className="mt-4 max-w-xl text-base leading-7 text-[#d8ecff] sm:text-lg">
-                      Resolution, scoreboard, and game-over messaging now share the same live room
-                      surface while the desktop layout still prioritizes the active phase panel.
+                    <p className="mt-3 max-w-lg text-sm leading-6 text-[#d8ecff] sm:text-[0.95rem] sm:leading-7">
+                      {roomHeroDescription}
                     </p>
                   </>
                 ) : (
                   <>
-                    <h1 className="max-w-3xl text-balance text-5xl font-black uppercase leading-[0.9] tracking-[-0.04em] text-white drop-shadow-[0_4px_0_rgba(11,49,116,0.95)] sm:text-6xl lg:text-7xl">
-                      Launch the room. Then play the full session in real time.
+                    <h1 className="max-w-2xl text-balance text-[clamp(2.4rem,4.2vw,4rem)] font-black uppercase leading-[0.9] tracking-[-0.055em] text-white drop-shadow-[0_3px_0_rgba(11,49,116,0.95)]">
+                      {roomHeroTitle}
                     </h1>
-                    <p className="mt-4 max-w-2xl text-lg leading-8 text-[#d8ecff] sm:text-xl">
-                      Entry, lobby, round phases, resolution, and game over now share the same
-                      toy-like surface. The live UI reads directly from Firebase room state from
-                      first join through final scoreboard.
+                    <p className="mt-3 max-w-xl text-sm leading-6 text-[#d8ecff] sm:text-[0.98rem] sm:leading-7">
+                      {roomHeroDescription}
                     </p>
                   </>
                 )}
               </div>
 
               {showCompactRoomSidebar && room && currentPlayer ? (
-                <div className="toy-chip-panel rounded-[1.8rem] p-4">
+                <div className="toy-chip-panel rounded-[1.45rem] p-3.5 lg:p-4">
                   <div className="flex items-center gap-3">
                     <div
-                      className="avatar-orb flex size-14 items-center justify-center rounded-full text-3xl"
+                      className="avatar-orb flex size-12 items-center justify-center rounded-full text-2xl"
                       style={getAvatarStyle(getAvatarOption(currentPlayer.avatarId))}
                     >
                       {getAvatarOption(currentPlayer.avatarId).emoji}
                     </div>
                     <div>
-                      <p className="text-lg font-black uppercase text-white">
+                      <p className="text-base font-black uppercase text-white">
                         {currentPlayer.displayName}
                       </p>
                       <p className="text-sm text-[#d8ecff]">
@@ -557,43 +586,77 @@ export function WannabeApp() {
                     </div>
                   </div>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="phase-roster">
                       <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
                         Room code
                       </p>
-                      <p className="mt-2 text-2xl font-black uppercase text-white">
+                      <p className="mt-1.5 text-xl font-black uppercase text-white">
                         {room.roomCode}
                       </p>
                     </div>
                     <div className="phase-roster">
                       <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                        Phase
+                        Players
                       </p>
-                      <p className="mt-2 text-2xl font-black uppercase text-white">
-                        {room.phase ?? "Lobby"}
+                      <p className="mt-1.5 text-xl font-black uppercase text-white">
+                        {players.length}
                       </p>
                     </div>
-                    <div className="phase-roster">
+                    <div className="phase-roster sm:col-span-2">
                       <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                        Round
+                        Current focus
                       </p>
-                      <p className="mt-2 text-2xl font-black uppercase text-white">
-                        {(room.roundIndex ?? 0) + 1} / {room.roundsTotal}
-                      </p>
-                    </div>
-                    <div className="phase-roster">
-                      <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                        Auth
-                      </p>
-                      <p className="mt-2 text-2xl font-black uppercase text-white">
-                        {authUid ? "Ready" : "Syncing"}
+                      <p className="mt-1.5 text-lg font-black uppercase text-white">
+                        {room.status === "inGame"
+                          ? room.phase ?? "Live round"
+                          : room.status === "ended"
+                            ? "Session complete"
+                            : "Ready up"}
                       </p>
                     </div>
+                    {showDetails ? (
+                      <>
+                        <div className="phase-roster">
+                          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                            Room state
+                          </p>
+                          <p className="mt-1.5 text-xl font-black uppercase text-white">
+                            {roomStatusLabel}
+                          </p>
+                        </div>
+                        <div className="phase-roster">
+                          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                            Your state
+                          </p>
+                          <p className="mt-1.5 text-xl font-black uppercase text-white">
+                            {room.status === "lobby"
+                              ? currentPlayer.ready
+                                ? "Ready"
+                                : "Waiting"
+                              : currentPlayer.playerId === room.hostPlayerId
+                                ? "Host"
+                                : "Player"}
+                          </p>
+                        </div>
+                        <div className="phase-roster sm:col-span-2">
+                          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                            Progress
+                          </p>
+                          <p className="mt-1.5 text-lg font-black uppercase text-white">
+                            {room.status === "inGame"
+                              ? `Round ${(room.roundIndex ?? 0) + 1} of ${room.roundsTotal}`
+                              : room.status === "ended"
+                                ? "The room is readable but closed."
+                                : "Waiting for everyone to ready up."}
+                          </p>
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 </div>
               ) : (
-                <div className="toy-chip-panel rounded-[1.8rem] p-4">
+                <div className="toy-chip-panel rounded-[1.55rem] p-4">
                   <div className="flex flex-wrap gap-3">
                     <button
                       className={`section-banner ${entryMode === "create" ? "bg-linear-to-r from-[#8cff56] to-[#36d51d] text-[#114f1c]" : "bg-[#104391] text-white"}`}
@@ -647,7 +710,7 @@ export function WannabeApp() {
                     <p className="text-sm font-black uppercase tracking-[0.16em] text-[#d8ecff]">
                       Pick an avatar
                     </p>
-                    <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
+                    <div className="mt-3 grid grid-cols-3 gap-2.5 sm:grid-cols-6">
                       {AVATAR_OPTIONS.map((avatar) => (
                         <button
                           className={`avatar-choice ${selectedAvatarId === avatar.id ? "avatar-choice-active" : ""}`}
@@ -656,7 +719,7 @@ export function WannabeApp() {
                           style={getAvatarStyle(avatar)}
                           type="button"
                         >
-                          <span className="text-3xl">{avatar.emoji}</span>
+                          <span className="text-[1.6rem]">{avatar.emoji}</span>
                         </button>
                       ))}
                     </div>
@@ -698,7 +761,7 @@ export function WannabeApp() {
               ) : null}
             </section>
 
-            <section className="toy-shell rounded-[1.9rem] bg-[#0b3d95]/70 px-4 py-4 sm:px-5">
+            <section className="toy-shell rounded-[1.7rem] bg-[#0b3d95]/70 px-4 py-4 sm:px-5 lg:px-6">
               {showLobby && room ? (
                 <>
                   <div className="flex items-center justify-between gap-3">
@@ -706,7 +769,7 @@ export function WannabeApp() {
                       <p className="text-sm font-black uppercase tracking-[0.16em] text-[#d8ecff]">
                         Lobby
                       </p>
-                      <p className="mt-2 text-4xl font-black uppercase tracking-[-0.04em] text-white">
+                      <p className="mt-2 text-[clamp(1.8rem,2.8vw,2.7rem)] font-black uppercase tracking-[-0.04em] text-white">
                         Room {room.roomCode}
                       </p>
                     </div>
@@ -719,7 +782,7 @@ export function WannabeApp() {
                     </button>
                   </div>
 
-                  <div className="mt-5 rounded-[1.5rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10">
+                  <div className="mt-5 rounded-[1.25rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
@@ -744,18 +807,18 @@ export function WannabeApp() {
 
                       return (
                         <div
-                          className="toy-list-row flex items-center justify-between gap-3 rounded-[1.4rem] px-4 py-3"
+                          className="toy-list-row flex items-center justify-between gap-3 rounded-[1.2rem] px-3.5 py-3"
                           key={player.playerId}
                         >
                           <div className="flex min-w-0 items-center gap-3">
                             <div
-                              className="avatar-orb flex size-12 items-center justify-center rounded-full text-2xl"
+                              className="avatar-orb flex size-10 items-center justify-center rounded-full text-xl"
                               style={getAvatarStyle(avatar)}
                             >
                               {avatar.emoji}
                             </div>
                             <div className="min-w-0">
-                              <p className="truncate text-lg font-black uppercase text-white">
+                              <p className="truncate text-base font-black uppercase text-white">
                                 {player.displayName}
                               </p>
                               <p className="text-sm text-[#d9eeff]">
@@ -777,42 +840,25 @@ export function WannabeApp() {
                     })}
                   </div>
 
-                  <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto] md:items-start">
-                    <div className="rounded-[1.5rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10">
-                      <p className="text-sm font-black uppercase tracking-[0.16em] text-white">
-                        Ready state
-                      </p>
-                      <p className="mt-2 text-sm text-[#d8ecff]">
-                        Every player needs to toggle ready before the host can begin.
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <Button
-                          onClick={() => void handleReadyToggle(!currentPlayer?.ready)}
-                          variant={currentPlayer?.ready ? "secondary" : "default"}
-                        >
-                          {pendingAction === "ready"
-                            ? "Updating..."
-                            : currentPlayer?.ready
-                              ? "Mark not ready"
-                              : "Mark ready"}
-                        </Button>
-                        <div className="score-pill">
-                          <span className="text-[#9ad9ff]">Status</span>
-                          <span className="ml-2 text-white">
-                            {currentPlayer?.ready ? "Ready" : "Waiting"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[1.5rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10">
-                      <p className="text-sm font-black uppercase tracking-[0.16em] text-white">
-                        Host controls
-                      </p>
-                      <p className="mt-2 max-w-xs text-sm text-[#d8ecff]">
-                        {startState.reason}
-                      </p>
-                      <div className="mt-4">
+                  <div className="mt-5 rounded-[1.25rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10">
+                    <p className="text-sm font-black uppercase tracking-[0.16em] text-white">
+                      Lobby actions
+                    </p>
+                    <p className="mt-2 text-sm text-[#d8ecff]">
+                      Everyone must ready up before the host can start the game.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Button
+                        onClick={() => void handleReadyToggle(!currentPlayer?.ready)}
+                        variant={currentPlayer?.ready ? "secondary" : "default"}
+                      >
+                        {pendingAction === "ready"
+                          ? "Updating..."
+                          : currentPlayer?.ready
+                            ? "Mark not ready"
+                            : "Mark ready"}
+                      </Button>
+                      {currentPlayer?.playerId === room.hostPlayerId ? (
                         <Button
                           disabled={!startState.canStart || pendingAction === "start"}
                           onClick={() => void handleStartGame()}
@@ -820,8 +866,9 @@ export function WannabeApp() {
                         >
                           {pendingAction === "start" ? "Starting..." : "Start game"}
                         </Button>
-                      </div>
+                      ) : null}
                     </div>
+                    <p className="mt-3 text-sm text-[#d8ecff]">{startState.reason}</p>
                   </div>
                 </>
               ) : showInGame && room && currentPlayer ? (
@@ -837,6 +884,7 @@ export function WannabeApp() {
                   players={players}
                   room={room}
                   round={round}
+                  showDetails={showDetails}
                 />
               ) : roomId && room?.status === "ended" ? (
                 <GameOverPanel
@@ -847,7 +895,7 @@ export function WannabeApp() {
                   room={room}
                 />
               ) : roomId && room?.status === "inGame" ? (
-                <div className="flex min-h-[30rem] flex-col items-center justify-center gap-4 rounded-[1.8rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10">
+                <div className="flex min-h-[20rem] flex-col items-center justify-center gap-4 rounded-[1.5rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10 lg:min-h-[24rem]">
                   <p className="section-banner bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]">
                     Syncing round
                   </p>
@@ -856,32 +904,38 @@ export function WannabeApp() {
                   </p>
                 </div>
               ) : (
-                <div className="flex min-h-[30rem] flex-col justify-between rounded-[1.8rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10">
+                <div className="flex min-h-[20rem] flex-col justify-between rounded-[1.5rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10 lg:min-h-[24rem]">
                   <div>
                     <p className="section-banner bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]">
-                      Main screen
+                      How it works
                     </p>
-                    <h2 className="mt-5 text-4xl font-black uppercase leading-[0.92] tracking-[-0.04em] text-white">
+                    <h2 className="mt-5 max-w-2xl text-[clamp(1.75rem,2.6vw,2.8rem)] font-black uppercase leading-[0.94] tracking-[-0.04em] text-white">
                       Pick a name, choose an avatar, and create or join with a code.
                     </h2>
-                    <p className="mt-4 max-w-xl text-lg leading-8 text-[#d8ecff]">
+                    <p className="mt-4 max-w-2xl text-base leading-7 text-[#d8ecff] sm:text-lg sm:leading-8">
                       Share-link joins use the query format `?room=482901`. Once
                       you are in a lobby, this panel turns into the live room
                       surface and continues into the timed round screens after start.
                     </p>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="toy-chip-panel rounded-[1.7rem] px-4 py-4">
-                      <div className="score-pill max-w-fit">Main flow</div>
-                      <p className="mt-4 text-xl font-black uppercase text-white">
-                        Room creation and join use the actual Firebase callables.
+                  <div className="grid gap-4 xl:grid-cols-3">
+                    <div className="toy-chip-panel rounded-[1.35rem] px-4 py-4">
+                      <div className="score-pill max-w-fit">Step 1</div>
+                      <p className="mt-3 text-lg font-black uppercase text-white">
+                        Create a room or join with a six-digit code.
                       </p>
                     </div>
-                    <div className="toy-chip-panel rounded-[1.7rem] px-4 py-4">
-                      <div className="score-pill max-w-fit">Round flow</div>
-                      <p className="mt-4 text-xl font-black uppercase text-white">
-                        Choice through game over now stream live from room state.
+                    <div className="toy-chip-panel rounded-[1.35rem] px-4 py-4">
+                      <div className="score-pill max-w-fit">Step 2</div>
+                      <p className="mt-3 text-lg font-black uppercase text-white">
+                        Ready up in the lobby and let the host start the session.
+                      </p>
+                    </div>
+                    <div className="toy-chip-panel rounded-[1.35rem] px-4 py-4">
+                      <div className="score-pill max-w-fit">Step 3</div>
+                      <p className="mt-3 text-lg font-black uppercase text-white">
+                        Follow the phase prompts from choice to final scoreboard.
                       </p>
                     </div>
                   </div>

@@ -108,7 +108,7 @@ Goal: deliver full playable UX with repeated user-owned checks.
 | M4-T2 | Entry + lobby UI | main screen, create/join, lobby list, ready toggles, start controls, share-link copy UX (query format), and join-via-share-link handling | component/integration tests | Validate clarity/usability on real device(s), including share-link flow | PENDING until approval; then PASS/FAIL |
 | M4-T3 | In-game phase screens | choice, argument, rebuttal, verdict screens with countdowns and controls | component/integration tests for phase-state UI correctness | Validate in-person flow timing and control ergonomics | PENDING until approval; then PASS/FAIL |
 | M4-T4 | Resolution + game over | scoreboard, winner/ties, return-main flow, ended-room messaging | component/integration tests | Validate end-of-round and end-of-game comprehension | PENDING until approval; then PASS/FAIL |
-| M4-T5 | Responsive polish pass | mobile-first and desktop sanity, spacing/contrast/tap-target tuning | regression checks + `pnpm verify` | Validate visual quality and responsiveness across target devices | PENDING until approval; then PASS/FAIL |
+| M4-T5 | Production-adjacent UI simplification + responsive polish | simplify default UI to player-facing phase screens, move non-essential state inspection behind an explicit details/debug toggle, and complete mobile/desktop polish | regression checks + `pnpm verify` | Validate visual quality, responsiveness, and default player-facing clarity across target devices | PENDING until approval; then PASS/FAIL |
 
 ### Milestone M5 — End-to-End Reliability and Release Readiness
 Goal: finalize correctness and deployment readiness.

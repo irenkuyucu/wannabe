@@ -23,7 +23,7 @@ export function GameOverPanel({
   const summary = buildGameOverSummary(players, latestRound);
 
   return (
-    <div className="flex min-h-[30rem] flex-col gap-4 rounded-[1.8rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10">
+    <div className="flex min-h-[20rem] flex-col gap-4 rounded-[1.5rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10 sm:px-5 sm:py-5 lg:min-h-[24rem]">
       <div className="flex flex-wrap items-center gap-3">
         <p className="section-banner bg-linear-to-r from-[#ff8be5] to-[#b55dff] text-white">
           Game over
@@ -37,10 +37,10 @@ export function GameOverPanel({
             <p className="text-sm font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
               Session complete
             </p>
-            <h2 className="mt-3 text-4xl font-black uppercase tracking-[-0.04em] text-white">
+            <h2 className="mt-3 text-[clamp(1.6rem,2.2vw,2.5rem)] font-black uppercase tracking-[-0.04em] text-white">
               {summary.headline}
             </h2>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-[#d8ecff]">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d8ecff] sm:text-base sm:leading-7">
               {summary.supportingText} The room stays readable for a short window but cannot be
               rejoined.
             </p>
@@ -49,16 +49,16 @@ export function GameOverPanel({
             <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
               Final round
             </p>
-            <p className="mt-2 text-2xl font-black uppercase text-white">
+            <p className="mt-2 text-xl font-black uppercase text-white">
               {latestRound ? formatOutcomeLabel(latestRound.outcome) : "Complete"}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_1.08fr]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_1.08fr]">
         <div className="phase-roster">
-          <p className="text-base font-black uppercase text-white">Ended room message</p>
+          <p className="text-sm font-black uppercase text-white">Ended room message</p>
           <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
             This game session is finished. Return to main to start or join a different room. The
             old room is ended and cannot resume.
@@ -72,7 +72,7 @@ export function GameOverPanel({
 
         <div className="phase-roster">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-base font-black uppercase text-white">Final scoreboard</p>
+            <p className="text-sm font-black uppercase text-white">Final scoreboard</p>
             <span className="score-pill text-white">
               {summary.winners.length === 1 ? "Single winner" : "Tie allowed"}
             </span>

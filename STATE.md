@@ -7,18 +7,17 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M4 — Frontend UX with High-Cadence User Validation
-- Task: M4-T4 — Resolution + game over
-- Gate status: PASS — User validation confirmed M4-T4 works end to end, with explicit caveats that oversized desktop scaling and broken-looking desktop layouts need major retouching in M4-T5.
+- Task: M4-T5 — Production-adjacent UI simplification + responsive polish
+- Gate status: PENDING — Agent-owned checks passed on the production-adjacent UI simplification pass; awaiting user-owned validation of the new default player-facing surfaces and the optional details/debug reveal.
 - Active branch: codex/m4-ui-foundation
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- e81241f on codex/m4-ui-foundation — Add Playwright resolution flow coverage.
 - 2e12f09 on codex/m4-ui-foundation — Add resolution and game-over frontend flow and Playwright setup.
 - 3e2a723 on codex/m4-ui-foundation — Add live phase screens with balanced choice resolution.
 - cba2e56 on codex/m4-ui-foundation — Add live entry and lobby room flow.
 - bb03e05 on codex/m4-ui-foundation — Add frontend UI direction board.
-- 763d27a on main — Add ended room expiry lifecycle handling.
-- bfffbb9 on main — Add Firestore member read security rules.
 
 ## 3. Project snapshot (max 5)
 (Brief facts about the working state of the project/codebase. No rationale.)
@@ -30,18 +29,18 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Expanded Playwright bootstrapping so `pnpm test:e2e` now starts the Firebase emulator trio plus `pnpm dev`, with explicit shutdown handling between runs.
-- Added emulator-backed helpers and `tests/e2e/m4-t4-resolution.spec.ts` to automate the delegated M4-T4 checks: non-final resolution host advance vs. non-host waiting state, final-round resolution opening game over, and return-to-main/non-resumable ended-room behavior.
-- Validated the new delegated browser coverage with passing runs of `pnpm exec playwright test tests/e2e/m4-t4-resolution.spec.ts` and a passing narrowed rerun of the non-final resolution scenario while debugging selector/hold-state issues.
-- Updated Playwright README guidance to reflect the automatic emulator startup and the expanded e2e suite surface.
-- Closed M4-T4 with user PASS feedback plus explicit polish caveats for M4-T5: oversized desktop scaling, incomplete full-screen fit at 100% zoom, and broken-looking desktop component layouts.
+- Updated `PLAN.md` so M4-T5 now explicitly covers production-adjacent UI simplification, with the player-facing default UI change recorded in `decision_log.md` rather than expanded in `SPEC.md`.
+- Reworked the root route into a more player-facing default UI: simpler entry messaging, a leaner lobby action surface, compact joined-room summary rail, and no default milestone/task chrome.
+- Simplified the in-game default surfaces so choice/argument/rebuttal/verdict/resolution emphasize the current player action first, while the previous state-heavy inspection UI now sits behind the optional details toggle.
+- Kept and reused the details layer for room-state diagnostics, live lock-in boards, side rosters, vote boards, and similar debugging aids instead of deleting that utility entirely.
+- Added `tests/e2e/responsive.spec.ts` to cover entry and lobby usability plus horizontal-overflow regressions at mobile and desktop widths.
+- Validated the revised pass with passing runs of `pnpm exec playwright test tests/e2e/responsive.spec.ts` and a clean `pnpm verify`.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
 - Firebase CLI project linking for deploy workflows is intentionally deferred to later milestones. — Owner: user
 - Host auto-promotion outside the Resolution phase remains unimplemented and out of scope under the current `SPEC.md`; only the Resolution host guardrail exists today. — Owner: team
-- `pnpm lint:web` still fails on pre-existing `functions/lib/*.js` `require()` import violations outside `M4-T4`; task-scoped lint for touched frontend files passed. — Owner: team
-- M4-T5 needs major desktop polish work: several UI surfaces are oversized at 100% zoom, some screens do not fit fully without zooming out, and some desktop components still look visually broken. — Owner: team
+- M4-T5 still needs user-owned confirmation that the new default player-facing UI is the right direction on real target devices and browsers before the gate can close. — Owner: user
 - Broader Playwright best-practice work is intentionally deferred: richer multiplayer architecture, codegen-assisted workflow where helpful, and auditable test artifact design should be expanded later when end-to-end coverage scope grows. — Owner: team
 
 ## 6. Blockers (max 5)
@@ -49,4 +48,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- M4-T5 — Responsive polish pass.
+- Await M4-T5 user-owned responsive/visual validation; if PASS, proceed to M5-T1 — Full emulator scenarios.

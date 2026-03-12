@@ -23,6 +23,7 @@ type InGamePanelProps = {
   players: PlayerDoc[];
   room: RoomDoc;
   round: RoundDoc | null;
+  showDetails: boolean;
 };
 
 const PHASE_COPY: Record<
@@ -133,16 +134,16 @@ function PlayerBadge({
   return (
     <div className="phase-player-card">
       <div
-        className="avatar-orb flex size-11 items-center justify-center rounded-full text-2xl"
+        className="avatar-orb flex size-9 items-center justify-center rounded-full text-[1.15rem]"
         style={getAvatarStyle(avatar)}
       >
         {avatar.emoji}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-black uppercase text-white">
+        <p className="truncate text-[0.82rem] font-black uppercase text-white">
           {player.displayName}
         </p>
-        <p className="text-xs text-[#d8ecff]">
+        <p className="text-[0.72rem] text-[#d8ecff]">
           {isCurrentPlayer
             ? "You"
             : side
@@ -179,7 +180,7 @@ function SideRoster({
   return (
     <div className={`phase-roster ${active ? "phase-roster-active" : ""}`}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-base font-black uppercase text-white">{title}</p>
+        <p className="text-sm font-black uppercase text-white">{title}</p>
         <span className="hud-pill bg-[#103f8f] text-white">{roster.length}</span>
       </div>
       <div className="mt-3 space-y-2">
@@ -212,6 +213,7 @@ export function InGamePanel({
   players,
   room,
   round,
+  showDetails,
 }: InGamePanelProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -228,11 +230,15 @@ export function InGamePanel({
   const resolutionSummary = buildResolutionSummary({ room, round, players });
 
   return (
-    <div className="flex min-h-[30rem] flex-col gap-5 rounded-[1.8rem] bg-[#082f76] px-5 py-5 ring-1 ring-white/10">
+    <div className="flex min-h-[20rem] flex-col gap-3.5 rounded-[1.5rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10 sm:px-5 sm:py-5 lg:min-h-[24rem]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="hud-pill bg-[#0c47a9] text-white">Milestone 4 / Task 4</span>
           <span className="hud-pill bg-[#56efff] text-[#0d3560]">{phaseCopy.badge}</span>
+          {showDetails ? (
+            <span className="hud-pill bg-[#0c47a9] text-white">
+              {prompt?.id ?? room.currentPromptId ?? "Live prompt"}
+            </span>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="score-pill">
@@ -243,7 +249,7 @@ export function InGamePanel({
           </div>
           <div className="phase-timer-bubble">
             <span className="text-xs uppercase tracking-[0.16em] text-[#d9eeff]">Timer</span>
-            <span className="mt-1 block text-2xl font-black uppercase text-white">
+            <span className="mt-1 block text-xl font-black uppercase text-white">
               {formatTimer(viewModel.secondsRemaining)}
             </span>
           </div>
@@ -253,13 +259,10 @@ export function InGamePanel({
       <section className="phase-hero-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
-            <p className="text-sm font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-              {prompt?.id ?? room.currentPromptId ?? "Live prompt"}
-            </p>
-            <h2 className="mt-3 text-4xl font-black uppercase tracking-[-0.04em] text-white">
+            <h2 className="mt-2 text-[clamp(1.55rem,2.1vw,2.45rem)] font-black uppercase tracking-[-0.04em] text-white">
               {phaseCopy.title}
             </h2>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-[#d8ecff]">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d8ecff] sm:text-base sm:leading-7">
               {phaseCopy.description}
             </p>
           </div>
@@ -273,7 +276,7 @@ export function InGamePanel({
           </div>
         </div>
 
-        <div className="mt-5 rounded-[1.6rem] bg-[#0b3b8f] px-4 py-4 ring-1 ring-white/10">
+        <div className="mt-3 rounded-[1.3rem] bg-[#0b3b8f] px-4 py-4 ring-1 ring-white/10">
           <p className="text-sm font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
             Would you rather be
           </p>
@@ -292,8 +295,8 @@ export function InGamePanel({
       </section>
 
       {phase === "choice" ? (
-        <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="space-y-4">
+        <section className="grid gap-4">
+          <div className="grid gap-4 xl:grid-cols-2">
             <button
               className={`choice-card ${viewModel.selectedChoice === "A" ? "choice-card-active" : ""}`}
               disabled={!viewModel.canSubmitChoice || pendingAction === "choice-A"}
@@ -303,13 +306,15 @@ export function InGamePanel({
               <span className="choice-tag bg-linear-to-r from-[#8cff56] to-[#36d51d] text-[#114f1c]">
                 Side A
               </span>
-              <span className="mt-4 block text-2xl font-black uppercase text-white">
+              <span className="mt-3 block text-[1.45rem] font-black uppercase text-white">
                 {prompt?.sideA ?? "Loading"}
               </span>
-              <span className="mt-3 block text-sm text-[#d8ecff]">
+              <span className="mt-2 block text-sm text-[#d8ecff]">
                 {viewModel.selectedChoice === "A"
                   ? "Locked in. You are committed to Side A for this round."
-                  : `${viewModel.choiceCounts.A} player${viewModel.choiceCounts.A === 1 ? "" : "s"} locked here.`}
+                  : showDetails
+                    ? `${viewModel.choiceCounts.A} player${viewModel.choiceCounts.A === 1 ? "" : "s"} locked here.`
+                    : "Choose the side you want to defend this round."}
               </span>
             </button>
 
@@ -322,66 +327,50 @@ export function InGamePanel({
               <span className="choice-tag bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]">
                 Side B
               </span>
-              <span className="mt-4 block text-2xl font-black uppercase text-white">
+              <span className="mt-3 block text-[1.45rem] font-black uppercase text-white">
                 {prompt?.sideB ?? "Loading"}
               </span>
-              <span className="mt-3 block text-sm text-[#d8ecff]">
+              <span className="mt-2 block text-sm text-[#d8ecff]">
                 {viewModel.selectedChoice === "B"
                   ? "Locked in. You are committed to Side B for this round."
-                  : `${viewModel.choiceCounts.B} player${viewModel.choiceCounts.B === 1 ? "" : "s"} locked here.`}
+                  : showDetails
+                    ? `${viewModel.choiceCounts.B} player${viewModel.choiceCounts.B === 1 ? "" : "s"} locked here.`
+                    : "Choose the side you want to defend this round."}
               </span>
             </button>
           </div>
 
-          <div className="phase-roster">
-            <p className="text-base font-black uppercase text-white">Live lock-in</p>
-            <p className="mt-2 text-sm text-[#d8ecff]">
-              Choices are visible here as players commit. Once you lock, you cannot switch sides.
-            </p>
-            <div className="mt-4 space-y-2">
-              {players.map((player) => (
-                <PlayerBadge
-                  badgeLabel={round?.choicesByPlayer[player.playerId] ?? "WAIT"}
-                  isCurrentPlayer={player.playerId === currentPlayer.playerId}
-                  key={player.playerId}
-                  player={player}
-                  side={round?.choicesByPlayer[player.playerId] ?? null}
-                />
-              ))}
+          {showDetails ? (
+            <div className="phase-roster">
+              <p className="text-sm font-black uppercase text-white">Live lock-in</p>
+              <p className="mt-2 text-sm text-[#d8ecff]">
+                Choices are visible here as players commit. Once you lock, you cannot switch sides.
+              </p>
+              <div className="mt-4 space-y-2">
+                {players.map((player) => (
+                  <PlayerBadge
+                    badgeLabel={round?.choicesByPlayer[player.playerId] ?? "WAIT"}
+                    isCurrentPlayer={player.playerId === currentPlayer.playerId}
+                    key={player.playerId}
+                    player={player}
+                    side={round?.choicesByPlayer[player.playerId] ?? null}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </section>
       ) : null}
 
       {phase === "argument" ? (
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="grid gap-4 md:grid-cols-2">
-            <SideRoster
-              active={room.activeArgumentSide === "A"}
-              currentPlayerId={currentPlayer.playerId}
-              players={players}
-              round={round}
-              side="A"
-              title={`Side A · ${sideAPenalty}s budget`}
-            />
-            <SideRoster
-              active={room.activeArgumentSide === "B"}
-              currentPlayerId={currentPlayer.playerId}
-              players={players}
-              round={round}
-              side="B"
-              title={`Side B · ${sideBPenalty}s budget`}
-            />
-          </div>
-
+        <section className="grid gap-4">
           <div className="phase-roster">
-            <p className="text-base font-black uppercase text-white">Turn state</p>
-            <p className="mt-3 text-2xl font-black uppercase text-white">
+            <p className="text-sm font-black uppercase text-white">Current turn</p>
+            <p className="mt-3 text-[1.55rem] font-black uppercase text-white">
               {room.activeArgumentSide ? `${formatSide(room.activeArgumentSide)} is speaking.` : "Waiting"}
             </p>
             <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
-              Round order is {formatSide(viewModel.argumentOrder[0])} first, then{" "}
-              {formatSide(viewModel.argumentOrder[1])}. This phase flips every round.
+              Keep the floor with the current side until the timer ends or an eligible player ends the turn early.
             </p>
             {round?.penalizedSide ? (
               <div className="status-callout mt-4">
@@ -404,33 +393,66 @@ export function InGamePanel({
               )}
             </div>
           </div>
+
+          {showDetails ? (
+            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="grid gap-4 md:grid-cols-2">
+                <SideRoster
+                  active={room.activeArgumentSide === "A"}
+                  currentPlayerId={currentPlayer.playerId}
+                  players={players}
+                  round={round}
+                  side="A"
+                  title={`Side A · ${sideAPenalty}s budget`}
+                />
+                <SideRoster
+                  active={room.activeArgumentSide === "B"}
+                  currentPlayerId={currentPlayer.playerId}
+                  players={players}
+                  round={round}
+                  side="B"
+                  title={`Side B · ${sideBPenalty}s budget`}
+                />
+              </div>
+
+              <div className="phase-roster">
+                <p className="text-sm font-black uppercase text-white">Turn details</p>
+                <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
+                  Round order is {formatSide(viewModel.argumentOrder[0])} first, then{" "}
+                  {formatSide(viewModel.argumentOrder[1])}. This phase flips every round.
+                </p>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
       {phase === "rebuttal" ? (
         <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="phase-roster">
-            <p className="text-base font-black uppercase text-white">Rebuttal brief</p>
-            <p className="mt-3 text-2xl font-black uppercase text-white">
+            <p className="text-sm font-black uppercase text-white">Rebuttal brief</p>
+            <p className="mt-3 text-[1.55rem] font-black uppercase text-white">
               Everyone talks. Nobody owns the floor.
             </p>
             <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
               Use this minute for crossfire, callbacks, and closing pushes before the vote starts.
             </p>
-            <div className="mt-4 grid gap-2">
-              {players.map((player) => (
-                <PlayerBadge
-                  isCurrentPlayer={player.playerId === currentPlayer.playerId}
-                  key={player.playerId}
-                  player={player}
-                  side={round?.choicesByPlayer[player.playerId] ?? null}
-                />
-              ))}
-            </div>
+            {showDetails ? (
+              <div className="mt-4 grid gap-2">
+                {players.map((player) => (
+                  <PlayerBadge
+                    isCurrentPlayer={player.playerId === currentPlayer.playerId}
+                    key={player.playerId}
+                    player={player}
+                    side={round?.choicesByPlayer[player.playerId] ?? null}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="phase-roster">
-            <p className="text-base font-black uppercase text-white">Host control</p>
+            <p className="text-sm font-black uppercase text-white">Host control</p>
             <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
               The timer will auto-advance to verdict, but the host can cut rebuttal short if the room is done.
             </p>
@@ -459,7 +481,7 @@ export function InGamePanel({
       ) : null}
 
       {phase === "verdict" ? (
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <section className="grid gap-4">
           <div className="grid gap-4">
             {VERDICT_OPTIONS.map((option) => (
               <button
@@ -479,39 +501,42 @@ export function InGamePanel({
             ))}
           </div>
 
-          <div className="phase-roster">
-            <p className="text-base font-black uppercase text-white">Live vote board</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              {VERDICT_OPTIONS.map((option) => (
-                <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4" key={option.id}>
-                  <p className="text-sm font-black uppercase text-white">
-                    {formatVerdictLabel(option.id)}
-                  </p>
-                  <p className="mt-2 text-3xl font-black uppercase text-white">
-                    {viewModel.verdictCounts[option.id]}
-                  </p>
-                </div>
-              ))}
+          {viewModel.selectedVerdict && viewModel.selectedVerdict !== "ABSTAIN" ? (
+            <div className="status-callout">
+              Your verdict is locked as {formatVerdictLabel(viewModel.selectedVerdict)}.
             </div>
-            {viewModel.selectedVerdict && viewModel.selectedVerdict !== "ABSTAIN" ? (
-              <div className="status-callout mt-4">
-                Your verdict is locked as {formatVerdictLabel(viewModel.selectedVerdict)}.
+          ) : (
+            <div className="status-callout">
+              Submit before timeout. Missing votes turn into abstains automatically.
+            </div>
+          )}
+
+          {showDetails ? (
+            <div className="phase-roster">
+              <p className="text-sm font-black uppercase text-white">Live vote board</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                {VERDICT_OPTIONS.map((option) => (
+                  <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4" key={option.id}>
+                    <p className="text-sm font-black uppercase text-white">
+                      {formatVerdictLabel(option.id)}
+                    </p>
+                    <p className="mt-2 text-2xl font-black uppercase text-white">
+                      {viewModel.verdictCounts[option.id]}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <div className="status-callout mt-4">
-                Submit before timeout. Missing votes turn into abstains automatically.
-              </div>
-            )}
-          </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
       {phase === "resolution" ? (
-        <section className="grid gap-4 xl:grid-cols-[1fr_1.08fr]">
+        <section className="grid gap-4 lg:grid-cols-[1fr_1.08fr]">
           <div className="grid gap-4">
             <div className="phase-roster">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-base font-black uppercase text-white">Round result</p>
+                <p className="text-sm font-black uppercase text-white">Round result</p>
                 <span
                   className={`choice-tag ${getOutcomeTone(resolutionSummary.outcome)}`}
                 >
@@ -521,68 +546,72 @@ export function InGamePanel({
               <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
                 {resolutionSummary.outcomeReason}
               </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                    Non-abstaining votes
-                  </p>
-                  <p className="mt-2 text-3xl font-black uppercase text-white">
-                    {resolutionSummary.nonAbstainingCount}
-                  </p>
-                </div>
-                <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                    Round state
-                  </p>
-                  <p className="mt-2 text-2xl font-black uppercase text-white">
-                    {resolutionSummary.isFinalRound ? "Final round" : "Next round ready"}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="phase-player-card">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                      Verdict board
-                    </p>
-                    <p className="mt-2 text-sm text-white">
-                      A won {resolutionSummary.verdictCounts.A_WON}
-                    </p>
-                    <p className="mt-1 text-sm text-white">
-                      B won {resolutionSummary.verdictCounts.B_WON}
-                    </p>
+              {showDetails ? (
+                <>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                        Non-abstaining votes
+                      </p>
+                      <p className="mt-2 text-2xl font-black uppercase text-white">
+                        {resolutionSummary.nonAbstainingCount}
+                      </p>
+                    </div>
+                    <div className="toy-chip-panel rounded-[1.4rem] px-4 py-4">
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                        Round state
+                      </p>
+                      <p className="mt-2 text-xl font-black uppercase text-white">
+                        {resolutionSummary.isFinalRound ? "Final round" : "Next round ready"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="phase-player-card">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                      Missing or split
-                    </p>
-                    <p className="mt-2 text-sm text-white">
-                      Draw {resolutionSummary.verdictCounts.DRAW}
-                    </p>
-                    <p className="mt-1 text-sm text-white">
-                      Abstain {resolutionSummary.verdictCounts.ABSTAIN}
-                    </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="phase-player-card">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                          Verdict board
+                        </p>
+                        <p className="mt-2 text-sm text-white">
+                          A won {resolutionSummary.verdictCounts.A_WON}
+                        </p>
+                        <p className="mt-1 text-sm text-white">
+                          B won {resolutionSummary.verdictCounts.B_WON}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="phase-player-card">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
+                          Missing or split
+                        </p>
+                        <p className="mt-2 text-sm text-white">
+                          Draw {resolutionSummary.verdictCounts.DRAW}
+                        </p>
+                        <p className="mt-1 text-sm text-white">
+                          Abstain {resolutionSummary.verdictCounts.ABSTAIN}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              {resolutionSummary.bonusPlayer ? (
-                <div className="status-callout mt-4">
-                  Lone-side bonus stayed with {resolutionSummary.bonusPlayer.displayName}. If
-                  that player won the round, the scoreboard reflects the extra point.
-                </div>
-              ) : null}
-              {resolutionSummary.dissenterPlayer ? (
-                <div className="status-callout mt-4">
-                  {resolutionSummary.dissenterPlayer.displayName} is the dissenter this round and
-                  carries the next-round argument penalty.
-                </div>
+                  {resolutionSummary.bonusPlayer ? (
+                    <div className="status-callout mt-4">
+                      Lone-side bonus stayed with {resolutionSummary.bonusPlayer.displayName}. If
+                      that player won the round, the scoreboard reflects the extra point.
+                    </div>
+                  ) : null}
+                  {resolutionSummary.dissenterPlayer ? (
+                    <div className="status-callout mt-4">
+                      {resolutionSummary.dissenterPlayer.displayName} is the dissenter this round and
+                      carries the next-round argument penalty.
+                    </div>
+                  ) : null}
+                </>
               ) : null}
             </div>
 
             <div className="phase-roster">
-              <p className="text-base font-black uppercase text-white">Host control</p>
+              <p className="text-sm font-black uppercase text-white">Host control</p>
               <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
                 {resolutionSummary.isFinalRound
                   ? "The scoreboard is final. The host sends everyone to game over from here."
@@ -614,7 +643,7 @@ export function InGamePanel({
 
           <div className="phase-roster">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-base font-black uppercase text-white">Scoreboard</p>
+              <p className="text-sm font-black uppercase text-white">Scoreboard</p>
               <span className="score-pill text-white">
                 Round {viewModel.roundNumber ?? "-"} / {viewModel.totalRounds}
               </span>

@@ -14,8 +14,8 @@ const buttonVariants = cva(
           "border-[#92d3ff] bg-linear-to-b from-white to-[#dce8ff] text-[#12396f] shadow-[0_7px_0_#7baeff,0_16px_26px_-18px_rgba(0,0,0,0.38)] hover:-translate-y-0.5 hover:brightness-[1.03]",
       },
       size: {
-        default: "h-12 px-5",
-        lg: "h-14 px-6 text-base",
+        default: "h-10 px-4 text-[0.82rem]",
+        lg: "h-12 px-5 text-[0.9rem]",
       },
     },
     defaultVariants: {
