@@ -7,8 +7,8 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M4 — Frontend UX with High-Cadence User Validation
-- Task: M4-T1 — UI direction draft
-- Gate status: PASS — Toy-like frontend direction, shared component styling, and representative title/lobby/choice/resolution screens were approved for Milestone 4 implementation on the M4 feature branch.
+- Task: M4-T2 — Entry + lobby UI
+- Gate status: PASS — The live entry and lobby flow, including create/join/share-link/ready/start interactions, was validated successfully against the M4-T2 checklist on local devices.
 - Active branch: codex/m4-ui-foundation
 
 ## 2. Last commit(s) (max 5)
@@ -26,17 +26,16 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Prompt seed bridge includes canonical seed file and deterministic sampling helper/test coverage.
 - Game domain engine includes deterministic transition/scoring helpers with unit coverage.
 - Firestore-backed backend now stamps room expiry on ended states and blocks rejoin/resume while retaining ended-room data until best-effort cleanup.
-- Frontend homepage now doubles as a direction board for Milestone 4, showing a toy-like proposed visual identity and representative title/lobby/choice/resolution screens.
+- Frontend root route now serves the real entry and lobby flow, backed by anonymous auth, Firebase callables, and Firestore subscriptions.
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Created branch `codex/m4-ui-foundation` for frontend milestone work.
-- Reworked the UI direction board toward a brighter toy-like mobile-game aesthetic instead of the earlier poster-like/web-product treatment.
-- Replaced the homepage sample screens with chunkier title, lobby, choice, and resolution mockups built around arcade/HUD patterns.
-- Refreshed global design tokens, background treatment, motion, and typography stacks to support the new blue-led toy-like visual language.
-- Removed the remaining mono/typewriter-inspired HUD text treatment so labels and controls now use clean sans-serif styling throughout the review artifact.
-- Added a minimal `turbopack.root` config so local production builds validate cleanly from the repo root.
-- User approved the Milestone 4 Task 1 visual direction to unblock real screen implementation.
+- Replaced the M4-T1 direction board with the actual main-screen and lobby experience on the root route.
+- Added frontend Firebase client wiring for anonymous auth bootstrap, callable room actions, and Firestore room/player subscriptions.
+- Implemented create/join, join-via-share-link prefills, lobby player list rendering, ready toggles, host-only start gating, and copyable query-format share links.
+- Added tested lobby/share-link helpers in `src/lib/lobby-utils.js` with web test coverage in `tests/lobby-utils.test.mjs`.
+- Updated README local-review instructions for the now-live frontend Firebase flow, including the required `pnpm --dir functions build` step before running emulators.
+- User validated the full M4-T2 checklist successfully and passed the gate.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
@@ -47,4 +46,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- M4-T2 — Entry + lobby UI.
+- M4-T3 — In-game phase screens.

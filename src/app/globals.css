@@ -242,6 +242,75 @@ button {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
+.toy-input {
+  background: linear-gradient(180deg, #ffffff, #dde8ff);
+  border: 3px solid #8fd6ff;
+  border-radius: 1.2rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 7px 0 rgba(34, 104, 201, 0.8);
+  color: #12376c;
+  font-size: 1.1rem;
+  font-weight: 800;
+  min-height: 3.7rem;
+  outline: none;
+  padding: 0.9rem 1rem;
+}
+
+.toy-input::placeholder {
+  color: #7b97bc;
+}
+
+.toy-input:focus {
+  border-color: #b1f7ff;
+}
+
+.avatar-choice {
+  align-items: center;
+  border: 3px solid transparent;
+  border-radius: 1.5rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 7px 0 rgba(9, 57, 136, 0.72);
+  display: flex;
+  justify-content: center;
+  min-height: 5rem;
+}
+
+.avatar-choice-active {
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.44),
+    0 7px 0 rgba(9, 57, 136, 0.72),
+    0 0 0 3px rgba(157, 247, 255, 0.75);
+  transform: translateY(-2px);
+}
+
+.status-callout {
+  background: linear-gradient(180deg, rgba(16, 69, 151, 0.96), rgba(9, 52, 125, 0.98));
+  border: 2px solid rgba(141, 214, 255, 0.7);
+  border-radius: 1.35rem;
+  color: #e4f4ff;
+  padding: 1rem 1.1rem;
+}
+
+.status-callout-error {
+  border-color: rgba(255, 184, 127, 0.95);
+  color: #ffe8d4;
+}
+
+.ghost-control {
+  background: transparent;
+  border: 2px solid rgba(143, 214, 255, 0.65);
+  border-radius: 999px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  min-height: 2.9rem;
+  padding: 0.6rem 1rem;
+  text-transform: uppercase;
+}
+
 @keyframes toy-float {
   from {
     opacity: 0;

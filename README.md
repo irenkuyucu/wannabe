@@ -17,7 +17,7 @@ pnpm install
 
 ## Environment Setup
 
-Copy `.env.example` to `.env.local` and fill the Firebase Web App values when frontend Firebase initialization is introduced.
+Copy `.env.example` to `.env.local` and fill the Firebase Web App values for the local frontend.
 
 ```bash
 cp .env.example .env.local
@@ -26,9 +26,30 @@ cp .env.example .env.local
 By default, the template is set for local emulator usage:
 
 - `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`
-- Auth emulator host: `127.0.0.1:9099`
-- Firestore emulator host: `127.0.0.1:8080`
-- Functions emulator host: `127.0.0.1:5001`
+- `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`
+- `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`
+- `NEXT_PUBLIC_FUNCTIONS_EMULATOR_HOST=127.0.0.1:5001`
+
+## Frontend Local Review
+
+The entry and lobby UI now use Firebase Anonymous Auth, Functions callables, and Firestore subscriptions in the browser.
+
+For local review:
+
+```bash
+cp .env.example .env.local
+pnpm --dir functions build
+firebase emulators:start --only auth,firestore,functions
+pnpm dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000).
+
+Share links use query-format room links:
+
+```text
+/?room=482901
+```
 
 ## Emulator Setup
 
@@ -41,6 +62,7 @@ Firebase project is configured as:
 Start local emulators:
 
 ```bash
+pnpm --dir functions build
 firebase emulators:start --only auth,firestore,functions
 ```
 

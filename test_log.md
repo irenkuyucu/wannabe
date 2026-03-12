@@ -33,3 +33,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Observed behavior matches expected behavior.
 - Result: `PASS`
 - User feedback: The direction is solid and workable as a stylistic foundation even though not every detail is fully locked yet; continued refinements remain acceptable in later frontend tasks.
+
+- Date: 2026-03-12.
+- Test ID: T-3.
+- Milestone/task reference: M4-T2 gate.
+- Scenario: User-owned validation of the live entry and lobby flow, including create-room, join-by-code, join-via-share-link, ready toggles, host-only start gating, and general usability against the M4-T2 checklist.
+- Expected behavior: The main screen and lobby should work end-to-end against the local Firebase emulators, with the share-link query flow, lobby realtime updates, and start gating all behaving correctly.
+- Observed behavior: Observed behavior matches expected behavior.
+- Result: `PASS`
+- User feedback: All checklist items passed with flying colors and the flow worked as expected once the local frontend and emulator setup were corrected.

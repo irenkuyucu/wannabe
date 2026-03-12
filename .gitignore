@@ -31,6 +31,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 firestore-debug.log
+firebase-debug.log
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -42,3 +43,6 @@ firestore-debug.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated functions build output
+functions/lib/

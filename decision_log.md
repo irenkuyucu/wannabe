@@ -40,3 +40,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The first draft established useful structure but still read too much like a SaaS/web-product interface; correcting the core visual language now is cheaper than propagating the wrong component style through the lobby and in-game screens.
 - Alternatives considered: Accepting the current direction and deferring the visual rework to a later post-implementation polish sprint.
 - Impacted files/modules: `decision_log.md`, `src/app/page.tsx`, `src/app/globals.css`, `src/components/ui/button.tsx`.
+
+- Date: 2026-03-11.
+- Decision ID: D-4.
+- Spec/Plan reference: `PLAN.md` M4-T2 and required automated scenario 16.
+- Decision: The entry and lobby flow live on the root route and share links use the query format `/?room=123456`, with the homepage reading the query to prefill join intent and then switching into the live lobby once a room is joined.
+- Rationale: This keeps room entry friction low, avoids introducing extra route complexity before the in-game screens exist, and gives the share-link review a stable URL format that directly matches the plan.
+- Alternatives considered: Separate join/create routes, a dedicated room route such as `/room/[code]`, or deferring query-format links until after the lobby UI was built.
+- Impacted files/modules: `src/components/wannabe-app.tsx`, `src/lib/lobby-utils.js`, `src/lib/firebase-client.ts`, `README.md`.
