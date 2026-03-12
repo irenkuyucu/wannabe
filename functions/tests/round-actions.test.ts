@@ -200,10 +200,12 @@ test("tickRoom applies choice timeout, verdict timeout, and next-round dissenter
     roundIndex: 0,
     deadlineAtMs: game.now + 120_000,
   });
-  assert.equal(roundZero?.forcedAssignedPlayerId, "p4");
-  assert.equal(roundZero?.forcedAssignedSide, "B");
+  const roundZeroChoices = Object.values(roundZero?.choicesByPlayer ?? {});
+  assert.equal(roundZero?.forceAssignedPlayerIds.length, 0);
+  assert.equal(roundZero?.bonusEligiblePlayerId, null);
+  assert.equal(roundZeroChoices.filter((side) => side === "A").length, 2);
+  assert.equal(roundZeroChoices.filter((side) => side === "B").length, 2);
   assert.equal(roundZero?.choicesByPlayer.host, "A");
-  assert.equal(roundZero?.choicesByPlayer.p4, "B");
   assert.equal(roomAfterChoiceTick?.activeArgumentSide, "A");
 
   game.now += 120_000;

@@ -164,8 +164,14 @@ After Resolution:
 
 ### Timeout handling
 At the end of 60 seconds:
-1. **Assign missing choices**: For each player who did not choose, assign them randomly to A or B (uniform).
-2. **Ensure both sides are populated**: After all choices (explicit or assigned) are finalized, if exactly one side is still empty, randomly select one player from the populated side, force-assign them to the empty side, and mark them bonus-eligible (see Section 8).
+1. **Assign missing choices toward the most balanced final split possible**:
+   - Keep all explicit player choices fixed.
+   - Assign the missing-choice players so that the final Side A / Side B split has the smallest possible absolute difference.
+   - If multiple final assignments are equally balanced, choose randomly among those equally balanced outcomes.
+2. **Ensure both sides are populated only when necessary**:
+   - After missing-choice assignment, if one side is still empty, force-assign the minimum number of players from the populated side needed to make the final split as balanced as possible.
+   - Choose the force-assigned players randomly from the populated side, without replacement.
+   - If both sides are already populated after missing-choice assignment, do not change any explicit or auto-assigned choices further, even if the split is uneven.
 
 ### Advancement
 - The phase ends early only if all players have chosen.
@@ -269,10 +275,13 @@ Resolution phase:
 - If outcome is **DRAW**:
   - No points are awarded.
 
-### 8.2 Forced assignment scoring bonus
-If a player was force-assigned to a side due to an empty side in Choice:
-- If the forced player’s forced side wins the round, that forced player gains **+1 extra point** (total **+2** for that round).
-- This bonus applies only to the forced player and only for that round.
+### 8.2 Lone-side bonus
+At the end of Choice resolution:
+- If the round had fewer than **3** players at Choice resolution time, no bonus applies.
+- Otherwise, if exactly one player is the sole representative of their side after all timeout assignment / empty-side correction is complete, that player becomes **bonus-eligible** for the round.
+- If the bonus-eligible player’s side wins the round, that player gains **+1 extra point** (total **+2** for that round).
+- If the round outcome is **DRAW**, no points are awarded, including the bonus.
+- Bonus eligibility is based on the final resolved side distribution for the round, regardless of whether the lone-side player arrived there via explicit choice, missing-choice auto-assignment, or empty-side force-assignment.
 
 ### 8.3 Dissenter penalty (strict trigger, non-stacking)
 Penalty is **computed during the Resolution phase**, based **only on verdicts submitted in the Verdict phase**, and **ignoring ABSTAIN**.

@@ -42,3 +42,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Observed behavior matches expected behavior.
 - Result: `PASS`
 - User feedback: All checklist items passed with flying colors and the flow worked as expected once the local frontend and emulator setup were corrected.
+
+- Date: 2026-03-12.
+- Test ID: T-4.
+- Milestone/task reference: M4-T3 gate.
+- Scenario: User-owned validation of the live in-game phase flow, including choice timeout balancing, empty-side correction, desktop/dev-layout usability, live lock-in debug state, and overall control ergonomics across choice, argument, rebuttal, and verdict.
+- Expected behavior: Timed phase flow should work end-to-end against the local Firebase emulators, with corrected side balancing, passable desktop/mobile usability for development, and no remaining blockers for advancing to Resolution/Game Over work.
+- Observed behavior: Observed behavior matches expected behavior.
+- Result: `PASS`
+- User feedback: The balancing logic now works as intended, the current desktop/dev UI is passable for continued work, bonus-specific outcome checks can wait until Resolution is wired, and host-promotion outside Resolution remains acceptable to defer for now.

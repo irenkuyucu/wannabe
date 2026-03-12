@@ -166,7 +166,12 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   assert.equal(roomSnapshot.get("activeArgumentSide"), "B");
   assert.equal(roomSnapshot.get("pendingPenaltyPlayerId"), null);
   assert.equal(roomSnapshot.get("phaseDeadlineAtMs"), now + 100_000);
-  assert.equal(roundZeroSnapshot.get("forcedAssignedPlayerId"), "p4");
+  const roundZeroChoices = roundZeroSnapshot.get("choicesByPlayer");
+  const roundZeroSides = Object.values(roundZeroChoices ?? {});
+  assert.equal(roundZeroSnapshot.get("forceAssignedPlayerIds").length, 0);
+  assert.equal(roundZeroSnapshot.get("bonusEligiblePlayerId"), null);
+  assert.equal(roundZeroSides.filter((side) => side === "A").length, 2);
+  assert.equal(roundZeroSides.filter((side) => side === "B").length, 2);
   assert.equal(roundZeroSnapshot.get("verdictsByPlayer.p4"), "ABSTAIN");
   assert.equal(roundZeroSnapshot.get("outcome"), "DRAW");
   assert.equal(roundZeroSnapshot.get("dissenterPlayerId"), "p3");

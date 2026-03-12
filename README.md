@@ -32,7 +32,7 @@ By default, the template is set for local emulator usage:
 
 ## Frontend Local Review
 
-The entry and lobby UI now use Firebase Anonymous Auth, Functions callables, and Firestore subscriptions in the browser.
+The entry, lobby, and in-game phase UI now use Firebase Anonymous Auth, Functions callables, and Firestore subscriptions in the browser.
 
 For local review:
 
@@ -44,6 +44,13 @@ pnpm dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000).
+
+For `M4-T3` review, use at least two browser windows/devices so you can:
+
+- create and join a room,
+- ready both players and start the game,
+- validate choice, argument, rebuttal, and verdict timers,
+- validate the 2-second hold controls for end-turn and host rebuttal advance.
 
 Share links use query-format room links:
 

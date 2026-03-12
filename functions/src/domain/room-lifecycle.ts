@@ -43,8 +43,8 @@ export type RoundRecord = {
   roundIndex: number;
   promptId: string;
   choicesByPlayer: Partial<Record<string, Side>>;
-  forcedAssignedPlayerId: string | null;
-  forcedAssignedSide: Side | null;
+  forceAssignedPlayerIds: string[];
+  bonusEligiblePlayerId: string | null;
   verdictsByPlayer: Partial<Record<string, VerdictVote>>;
   outcome: RoundOutcome | null;
   dissenterPlayerId: string | null;
@@ -172,8 +172,8 @@ export function createRoundRecord(params: {
     roundIndex,
     promptId,
     choicesByPlayer: {},
-    forcedAssignedPlayerId: null,
-    forcedAssignedSide: null,
+    forceAssignedPlayerIds: [],
+    bonusEligiblePlayerId: null,
     verdictsByPlayer: {},
     outcome: null,
     dissenterPlayerId: null,

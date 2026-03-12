@@ -195,8 +195,8 @@ export class RoundActionService {
 
     await this.store.updateRound(room.roomId, roundIndex, {
       choicesByPlayer: resolved.choicesByPlayer,
-      forcedAssignedPlayerId: resolved.forcedAssignedPlayerId,
-      forcedAssignedSide: resolved.forcedAssignedSide,
+      forceAssignedPlayerIds: resolved.forceAssignedPlayerIds,
+      bonusEligiblePlayerId: resolved.bonusEligiblePlayerId,
       penalizedSide,
     });
     await this.store.updateRoom(room.roomId, {
@@ -296,7 +296,7 @@ export class RoundActionService {
     const scoreDeltas = computeScoreDeltas({
       outcome,
       choicesByPlayer: round.choicesByPlayer as Record<string, Side>,
-      forcedAssignedPlayerId: round.forcedAssignedPlayerId,
+      bonusEligiblePlayerId: round.bonusEligiblePlayerId,
     });
 
     await Promise.all(

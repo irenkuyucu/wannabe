@@ -77,8 +77,8 @@ async function seedRoomData() {
         host: "A",
         p2: "B",
       },
-      forcedAssignedPlayerId: null,
-      forcedAssignedSide: null,
+      forceAssignedPlayerIds: [],
+      bonusEligiblePlayerId: null,
       verdictsByPlayer: {
         host: "DRAW",
         p2: "DRAW",

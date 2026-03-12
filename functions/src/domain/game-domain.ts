@@ -10,8 +10,8 @@ type RandomFn = () => number;
 
 export type ChoiceResolutionResult = {
   choicesByPlayer: Record<string, Side>;
-  forcedAssignedPlayerId: string | null;
-  forcedAssignedSide: Side | null;
+  forceAssignedPlayerIds: string[];
+  bonusEligiblePlayerId: string | null;
 };
 
 export function getArgumentTurnOrder(roundIndex: number): [Side, Side] {
@@ -40,38 +40,68 @@ export function resolveChoicePhase(params: {
   }
 
   const choicesByPlayer: Record<string, Side> = {};
+  const missingPlayerIds: string[] = [];
+  let sideACount = 0;
+  let sideBCount = 0;
 
   for (const playerId of playerIds) {
     const selected = lockedChoices[playerId];
-    choicesByPlayer[playerId] = selected === "A" || selected === "B"
-      ? selected
-      : random() < 0.5
-      ? "A"
-      : "B";
+    if (selected === "A" || selected === "B") {
+      choicesByPlayer[playerId] = selected;
+      if (selected === "A") {
+        sideACount += 1;
+      } else {
+        sideBCount += 1;
+      }
+      continue;
+    }
+
+    missingPlayerIds.push(playerId);
   }
 
-  const sideAPlayers = playerIds.filter((playerId) => choicesByPlayer[playerId] === "A");
-  const sideBPlayers = playerIds.filter((playerId) => choicesByPlayer[playerId] === "B");
+  const missingAssignedToA = chooseBalancedMissingAssignments({
+    sideACount,
+    sideBCount,
+    missingCount: missingPlayerIds.length,
+    random,
+  });
 
-  if (sideAPlayers.length > 0 && sideBPlayers.length > 0) {
-    return {
-      choicesByPlayer,
-      forcedAssignedPlayerId: null,
-      forcedAssignedSide: null,
-    };
+  const missingAssignedToAIds = chooseRandomSubset(missingPlayerIds, missingAssignedToA, random);
+  const missingAssignedToAIdSet = new Set(missingAssignedToAIds);
+
+  for (const playerId of missingPlayerIds) {
+    const assignedSide = missingAssignedToAIdSet.has(playerId) ? "A" : "B";
+    choicesByPlayer[playerId] = assignedSide;
   }
 
-  const sourcePlayers = sideAPlayers.length > 0 ? sideAPlayers : sideBPlayers;
-  const forcedAssignedSide: Side = sideAPlayers.length > 0 ? "B" : "A";
-  const randomIndex = Math.floor(random() * sourcePlayers.length);
-  const forcedAssignedPlayerId = sourcePlayers[randomIndex];
+  let sideAPlayers = playerIds.filter((playerId) => choicesByPlayer[playerId] === "A");
+  let sideBPlayers = playerIds.filter((playerId) => choicesByPlayer[playerId] === "B");
+  let forceAssignedPlayerIds: string[] = [];
 
-  choicesByPlayer[forcedAssignedPlayerId] = forcedAssignedSide;
+  if (sideAPlayers.length === 0 || sideBPlayers.length === 0) {
+    const sourcePlayers = sideAPlayers.length > 0 ? sideAPlayers : sideBPlayers;
+    const forcedAssignedSide: Side = sideAPlayers.length > 0 ? "B" : "A";
+    const moveCount = Math.floor(playerIds.length / 2);
+    forceAssignedPlayerIds = chooseRandomSubset(sourcePlayers, moveCount, random).sort();
+
+    for (const playerId of forceAssignedPlayerIds) {
+      choicesByPlayer[playerId] = forcedAssignedSide;
+    }
+
+    sideAPlayers = playerIds.filter((playerId) => choicesByPlayer[playerId] === "A");
+    sideBPlayers = playerIds.filter((playerId) => choicesByPlayer[playerId] === "B");
+  }
+
+  const bonusEligiblePlayerId = getBonusEligiblePlayerId({
+    playerCountAtChoiceResolution: playerIds.length,
+    sideAPlayers,
+    sideBPlayers,
+  });
 
   return {
     choicesByPlayer,
-    forcedAssignedPlayerId,
-    forcedAssignedSide,
+    forceAssignedPlayerIds,
+    bonusEligiblePlayerId,
   };
 }
 
@@ -128,9 +158,9 @@ export function detectDissenter(
 export function computeScoreDeltas(params: {
   outcome: RoundOutcome;
   choicesByPlayer: Record<string, Side>;
-  forcedAssignedPlayerId: string | null;
+  bonusEligiblePlayerId: string | null;
 }): Record<string, number> {
-  const { outcome, choicesByPlayer, forcedAssignedPlayerId } = params;
+  const { outcome, choicesByPlayer, bonusEligiblePlayerId } = params;
   const deltas: Record<string, number> = {};
 
   for (const playerId of Object.keys(choicesByPlayer)) {
@@ -150,10 +180,10 @@ export function computeScoreDeltas(params: {
   }
 
   if (
-    forcedAssignedPlayerId &&
-    choicesByPlayer[forcedAssignedPlayerId] === winningSide
+    bonusEligiblePlayerId &&
+    choicesByPlayer[bonusEligiblePlayerId] === winningSide
   ) {
-    deltas[forcedAssignedPlayerId] += 1;
+    deltas[bonusEligiblePlayerId] += 1;
   }
 
   return deltas;
@@ -176,4 +206,79 @@ export function applyPendingPenalty(params: {
     penalizedSide,
     nextPendingPenaltyPlayerId: null,
   };
+}
+
+function chooseBalancedMissingAssignments(params: {
+  sideACount: number;
+  sideBCount: number;
+  missingCount: number;
+  random: RandomFn;
+}) {
+  const { sideACount, sideBCount, missingCount, random } = params;
+  if (missingCount === 0) {
+    return 0;
+  }
+
+  let bestDiff = Number.POSITIVE_INFINITY;
+  const candidateCountsForA: number[] = [];
+
+  for (let assignToA = 0; assignToA <= missingCount; assignToA += 1) {
+    const finalSideACount = sideACount + assignToA;
+    const finalSideBCount = sideBCount + (missingCount - assignToA);
+    const diff = Math.abs(finalSideACount - finalSideBCount);
+
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      candidateCountsForA.length = 0;
+      candidateCountsForA.push(assignToA);
+      continue;
+    }
+
+    if (diff === bestDiff) {
+      candidateCountsForA.push(assignToA);
+    }
+  }
+
+  const randomIndex = Math.floor(random() * candidateCountsForA.length);
+  return candidateCountsForA[randomIndex] ?? 0;
+}
+
+function chooseRandomSubset<T>(items: T[], count: number, random: RandomFn): T[] {
+  if (count <= 0) {
+    return [];
+  }
+
+  if (count >= items.length) {
+    return items.slice();
+  }
+
+  const shuffled = items.slice();
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled.slice(0, count);
+}
+
+function getBonusEligiblePlayerId(params: {
+  playerCountAtChoiceResolution: number;
+  sideAPlayers: string[];
+  sideBPlayers: string[];
+}) {
+  const { playerCountAtChoiceResolution, sideAPlayers, sideBPlayers } = params;
+
+  if (playerCountAtChoiceResolution < 3) {
+    return null;
+  }
+
+  if (sideAPlayers.length === 1) {
+    return sideAPlayers[0];
+  }
+
+  if (sideBPlayers.length === 1) {
+    return sideBPlayers[0];
+  }
+
+  return null;
 }

@@ -52,6 +52,20 @@ export type PlayerDoc = {
   joinedAtMs: number;
 };
 
+export type RoundDoc = {
+  roundIndex: number;
+  promptId: string;
+  choicesByPlayer: Partial<Record<string, "A" | "B">>;
+  forceAssignedPlayerIds: string[];
+  bonusEligiblePlayerId: string | null;
+  verdictsByPlayer: Partial<Record<string, "A_WON" | "B_WON" | "DRAW" | "ABSTAIN">>;
+  outcome: "A_WON" | "B_WON" | "DRAW" | null;
+  dissenterPlayerId: string | null;
+  penalizedSide: "A" | "B" | null;
+  startedAtMs: number;
+  resolvedAtMs: number | null;
+};
+
 type CreateRoomResult = {
   roomId: string;
   roomCode: string;
@@ -69,6 +83,26 @@ type StartGameResult = {
   roundIndex: number;
   phase: "choice";
   deadlineAtMs: number;
+};
+
+type TickRoomResult = {
+  phase: RoomDoc["phase"];
+  roundIndex: number;
+  deadlineAtMs: number | null;
+};
+
+type EndArgumentTurnResult = {
+  phase: "argument" | "rebuttal";
+  activeArgumentSide?: "A" | "B";
+};
+
+type AdvanceRebuttalResult = {
+  phase: "verdict";
+};
+
+type AdvanceResolutionResult = {
+  nextState: RoomDoc["status"];
+  roundIndex: number;
 };
 
 type FirebaseServices = {
@@ -289,6 +323,94 @@ export function subscribeToLobby(
     unsubRoom();
     unsubPlayers();
   };
+}
+
+export function subscribeToRound(
+  roomId: string,
+  roundIndex: number,
+  callbacks: {
+    onRound: (round: RoundDoc | null) => void;
+    onError: (message: string) => void;
+  },
+): Unsubscribe {
+  const { db } = getFirebaseServices();
+
+  return onSnapshot(
+    doc(db, "rooms", roomId, "rounds", String(roundIndex)),
+    (snapshot) => {
+      callbacks.onRound(snapshot.exists() ? (snapshot.data() as RoundDoc) : null);
+    },
+    (error) => callbacks.onError(getErrorMessage(error)),
+  );
+}
+
+export async function tickRoom(input: { roomId: string }): Promise<TickRoomResult> {
+  const { functions } = getFirebaseServices();
+  const callable = httpsCallable<{ roomId: string }, TickRoomResult>(functions, "tickRoom");
+  const result = await callable(input);
+  return result.data;
+}
+
+export async function submitChoice(input: {
+  roomId: string;
+  side: "A" | "B";
+}): Promise<{ locked: true }> {
+  const { functions } = getFirebaseServices();
+  const callable = httpsCallable<{ roomId: string; side: "A" | "B" }, { locked: true }>(
+    functions,
+    "submitChoice",
+  );
+  const result = await callable(input);
+  return result.data;
+}
+
+export async function endArgumentTurn(input: {
+  roomId: string;
+}): Promise<EndArgumentTurnResult> {
+  const { functions } = getFirebaseServices();
+  const callable = httpsCallable<{ roomId: string }, EndArgumentTurnResult>(
+    functions,
+    "endArgumentTurn",
+  );
+  const result = await callable(input);
+  return result.data;
+}
+
+export async function advanceRebuttal(input: {
+  roomId: string;
+}): Promise<AdvanceRebuttalResult> {
+  const { functions } = getFirebaseServices();
+  const callable = httpsCallable<{ roomId: string }, AdvanceRebuttalResult>(
+    functions,
+    "advanceRebuttal",
+  );
+  const result = await callable(input);
+  return result.data;
+}
+
+export async function submitVerdict(input: {
+  roomId: string;
+  verdict: "A_WON" | "B_WON" | "DRAW";
+}): Promise<{ locked: true }> {
+  const { functions } = getFirebaseServices();
+  const callable = httpsCallable<
+    { roomId: string; verdict: "A_WON" | "B_WON" | "DRAW" },
+    { locked: true }
+  >(functions, "submitVerdict");
+  const result = await callable(input);
+  return result.data;
+}
+
+export async function advanceResolution(input: {
+  roomId: string;
+}): Promise<AdvanceResolutionResult> {
+  const { functions } = getFirebaseServices();
+  const callable = httpsCallable<{ roomId: string }, AdvanceResolutionResult>(
+    functions,
+    "advanceResolution",
+  );
+  const result = await callable(input);
+  return result.data;
 }
 
 export function getErrorMessage(error: unknown) {

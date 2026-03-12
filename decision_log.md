@@ -48,3 +48,27 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: This keeps room entry friction low, avoids introducing extra route complexity before the in-game screens exist, and gives the share-link review a stable URL format that directly matches the plan.
 - Alternatives considered: Separate join/create routes, a dedicated room route such as `/room/[code]`, or deferring query-format links until after the lobby UI was built.
 - Impacted files/modules: `src/components/wannabe-app.tsx`, `src/lib/lobby-utils.js`, `src/lib/firebase-client.ts`, `README.md`.
+
+- Date: 2026-03-12.
+- Decision ID: D-5.
+- Spec/Plan reference: `SPEC.md` §§5, 7.2-7.5 and `PLAN.md` M4-T3.
+- Decision: The live in-game UI derives directly from Firestore room/round snapshots, while timed phase expiry uses a client-side staggered `tickRoom` fallback based on joined-player order to reduce duplicate timeout transitions.
+- Rationale: This keeps backend state authoritative, avoids introducing a separate scheduler before it is justified, and lowers same-deadline callable races compared with having every client tick immediately.
+- Alternatives considered: Host-only timeout driving, all clients ticking immediately at deadline, or building a dedicated backend timeout worker as part of M4-T3.
+- Impacted files/modules: `src/components/wannabe-app.tsx`, `src/components/in-game-panel.tsx`, `src/lib/firebase-client.ts`, `src/lib/in-game-ui.js`.
+
+- Date: 2026-03-12.
+- Decision ID: D-6.
+- Spec/Plan reference: `SPEC.md` §7.2 and `PLAN.md` automated scenario 3.
+- Decision: Choice-phase timeout assignment now fills missing players toward the most balanced side split possible, using randomness only when both side assignments are equally balanced, before applying the existing empty-side force-assignment rule.
+- Rationale: This matches intended gameplay better than purely uniform assignment for every missing player, reduces avoidable lopsided rounds, and still preserves randomness when the room is already balanced.
+- Alternatives considered: Keeping uniform random assignment for every missing choice, or fully deterministic assignment to the smaller side with no randomness in tied cases.
+- Impacted files/modules: `SPEC.md`, `PLAN.md`, `decision_log.md`, `functions/src/domain/game-domain.ts`, `functions/tests/game-domain.test.ts`.
+
+- Date: 2026-03-12.
+- Decision ID: D-7.
+- Spec/Plan reference: `SPEC.md` §§7.2, 8.2 and `PLAN.md` automated scenario 3.
+- Decision: Choice resolution keeps explicit picks fixed unless a side is empty, resolves missing picks to the most balanced final split possible, and if one side remains empty, randomly force-moves the minimum number of players needed for the most balanced non-empty split; round bonus logic is decoupled from forced players and now applies to the sole representative of a side in rounds that started with at least three players.
+- Rationale: This preserves player agency for explicit picks, fixes lopsided timeout outcomes caused by the earlier single-force-player model, and aligns the bonus with the actual high-risk lone-side role rather than the implementation detail of how that player got there.
+- Alternatives considered: Keeping the previous single forced-player bonus model, rebalancing all uneven explicit splits, or dropping the lone-side bonus entirely.
+- Impacted files/modules: `SPEC.md`, `PLAN.md`, `decision_log.md`, `functions/src/domain/game-domain.ts`, `functions/src/domain/room-lifecycle.ts`, `functions/src/domain/round-actions.ts`.

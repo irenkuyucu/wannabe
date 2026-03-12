@@ -311,6 +311,111 @@ button {
   text-transform: uppercase;
 }
 
+.phase-hero-card {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(16, 80, 182, 0.95), rgba(8, 49, 124, 0.98));
+  border: 2px solid rgba(136, 208, 255, 0.65);
+  border-radius: 1.7rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  padding: 1.2rem;
+}
+
+.phase-progress {
+  min-width: min(100%, 18rem);
+  width: min(100%, 18rem);
+}
+
+.phase-side-pill {
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-radius: 1.25rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 7px 0 rgba(0, 0, 0, 0.14);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.4;
+  min-height: 4.5rem;
+  padding: 1rem 1.1rem;
+  text-transform: uppercase;
+}
+
+.choice-card {
+  background: linear-gradient(180deg, rgba(31, 102, 208, 0.96), rgba(11, 58, 143, 0.98));
+  border: 3px solid rgba(130, 203, 255, 0.72);
+  border-radius: 1.6rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 8px 0 rgba(8, 53, 128, 0.82);
+  padding: 1.1rem;
+  text-align: left;
+}
+
+.choice-card:disabled {
+  opacity: 0.72;
+}
+
+.choice-card-active {
+  border-color: rgba(255, 229, 102, 0.96);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.15),
+    0 8px 0 rgba(8, 53, 128, 0.82),
+    0 0 0 3px rgba(255, 215, 75, 0.32);
+  transform: translateY(-2px);
+}
+
+.choice-tag {
+  border: 3px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 5px 0 rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  padding: 0.5rem 0.8rem;
+  text-transform: uppercase;
+}
+
+.phase-roster {
+  background: linear-gradient(180deg, rgba(18, 72, 160, 0.96), rgba(8, 43, 111, 0.98));
+  border: 2px solid rgba(127, 200, 255, 0.64);
+  border-radius: 1.6rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  padding: 1rem;
+}
+
+.phase-roster-active {
+  border-color: rgba(255, 215, 75, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 3px rgba(255, 215, 75, 0.24);
+}
+
+.phase-player-card {
+  align-items: center;
+  background: rgba(6, 34, 91, 0.56);
+  border: 2px solid rgba(120, 196, 255, 0.28);
+  border-radius: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.75rem 0.85rem;
+}
+
+.phase-timer-bubble {
+  background: linear-gradient(180deg, rgba(14, 74, 168, 0.94), rgba(7, 42, 110, 0.98));
+  border: 3px solid rgba(148, 220, 255, 0.74);
+  border-radius: 1.35rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 7px 0 rgba(0, 0, 0, 0.14);
+  min-width: 9rem;
+  padding: 0.8rem 1rem;
+  text-align: center;
+}
+
 @keyframes toy-float {
   from {
     opacity: 0;

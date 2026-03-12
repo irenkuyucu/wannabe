@@ -122,7 +122,7 @@ Goal: finalize correctness and deployment readiness.
 ## Required Automated Test Scenarios (Must Pass by End of M5)
 1. Lobby start gate: start blocked until `playerCount >= 2` and all players are ready.
 2. Name collision handling: duplicate names resolve as `Name`, `Name (2)`, `Name (3)`.
-3. Choice timeout behavior: missing choices auto-assigned uniformly, then empty-side correction force-assigns one player.
+3. Choice timeout behavior: missing choices resolve to the most balanced final split possible while keeping explicit picks fixed; if a side is still empty afterward, randomly force-move the minimum number of players needed to reach the most balanced non-empty split.
 4. Argument turn order: even rounds `A->B`, odd rounds `B->A`.
 5. Argument penalty carryover: dissenter penalty reduces next-round selected side budget to `100s`, then clears and never stacks.
 6. Verdict timeout behavior: missing verdicts become `ABSTAIN`.

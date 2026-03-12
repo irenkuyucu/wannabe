@@ -39,38 +39,117 @@ test("argument budgets apply a single-side penalty", () => {
   });
 });
 
-test("choice resolution assigns missing choices and keeps both sides populated", () => {
-  let calls = 0;
-  const random = () => {
-    calls += 1;
-    if (calls === 1) return 0.9; // p3 missing -> B
-    if (calls === 2) return 0.0; // forced assignment picks first source player
-    return 0.5;
-  };
-
+test("choice resolution keeps explicit uneven non-empty splits unchanged", () => {
   const result = resolveChoicePhase({
-    playerIds: ["p1", "p2", "p3"],
-    lockedChoices: { p1: "A", p2: "A" },
-    random,
-  });
-
-  const sides = Object.values(result.choicesByPlayer);
-  assert.ok(sides.includes("A"));
-  assert.ok(sides.includes("B"));
-  assert.equal(result.forcedAssignedPlayerId, null);
-  assert.equal(result.forcedAssignedSide, null);
-});
-
-test("choice resolution force-assigns when one side is empty", () => {
-  const result = resolveChoicePhase({
-    playerIds: ["p1", "p2", "p3"],
-    lockedChoices: { p1: "A", p2: "A", p3: "A" },
+    playerIds: ["p1", "p2", "p3", "p4"],
+    lockedChoices: { p1: "A", p2: "A", p3: "A", p4: "B" },
     random: () => 0,
   });
 
-  assert.equal(result.forcedAssignedPlayerId, "p1");
-  assert.equal(result.forcedAssignedSide, "B");
-  assert.equal(result.choicesByPlayer.p1, "B");
+  assert.deepEqual(result.choicesByPlayer, {
+    p1: "A",
+    p2: "A",
+    p3: "A",
+    p4: "B",
+  });
+  assert.deepEqual(result.forceAssignedPlayerIds, []);
+  assert.equal(result.bonusEligiblePlayerId, "p4");
+});
+
+test("choice resolution assigns missing choices toward the most balanced final split", () => {
+  const result = resolveChoicePhase({
+    playerIds: ["p1", "p2", "p3", "p4"],
+    lockedChoices: { p1: "A", p2: "A", p3: "B" },
+    random: () => 0,
+  });
+
+  assert.equal(result.choicesByPlayer.p4, "B");
+  assert.deepEqual(result.forceAssignedPlayerIds, []);
+  assert.equal(result.bonusEligiblePlayerId, null);
+});
+
+test("choice resolution can resolve equally balanced missing-choice outcomes randomly", () => {
+  const result = resolveChoicePhase({
+    playerIds: ["p1", "p2", "p3"],
+    lockedChoices: { p1: "A" },
+    random: () => 0.9,
+  });
+
+  assert.deepEqual(result.choicesByPlayer, {
+    p1: "A",
+    p2: "A",
+    p3: "B",
+  });
+  assert.deepEqual(result.forceAssignedPlayerIds, []);
+  assert.equal(result.bonusEligiblePlayerId, "p3");
+});
+
+test("choice resolution balances missing choices before empty-side correction", () => {
+  const result = resolveChoicePhase({
+    playerIds: ["p1", "p2", "p3", "p4"],
+    lockedChoices: { p1: "A", p2: "A" },
+    random: () => 0,
+  });
+
+  const sideACount = Object.values(result.choicesByPlayer).filter((side) => side === "A").length;
+  const sideBCount = Object.values(result.choicesByPlayer).filter((side) => side === "B").length;
+
+  assert.equal(sideACount, 2);
+  assert.equal(sideBCount, 2);
+  assert.deepEqual(result.forceAssignedPlayerIds, []);
+  assert.equal(result.bonusEligiblePlayerId, null);
+});
+
+test("choice resolution force-assigns the minimum number of players when a side is empty", () => {
+  const result = resolveChoicePhase({
+    playerIds: ["p1", "p2", "p3", "p4", "p5"],
+    lockedChoices: { p1: "A", p2: "A", p3: "A", p4: "A", p5: "A" },
+    random: () => 0,
+  });
+
+  const sideACount = Object.values(result.choicesByPlayer).filter((side) => side === "A").length;
+  const sideBCount = Object.values(result.choicesByPlayer).filter((side) => side === "B").length;
+
+  assert.equal(sideACount, 3);
+  assert.equal(sideBCount, 2);
+  assert.equal(result.forceAssignedPlayerIds.length, 2);
+  assert.equal(result.bonusEligiblePlayerId, null);
+});
+
+test("choice resolution force-assigns two players in a four-player empty-side split", () => {
+  const result = resolveChoicePhase({
+    playerIds: ["p1", "p2", "p3", "p4"],
+    lockedChoices: { p1: "A", p2: "A", p3: "A", p4: "A" },
+    random: () => 0,
+  });
+
+  const sideACount = Object.values(result.choicesByPlayer).filter((side) => side === "A").length;
+  const sideBCount = Object.values(result.choicesByPlayer).filter((side) => side === "B").length;
+
+  assert.equal(sideACount, 2);
+  assert.equal(sideBCount, 2);
+  assert.equal(result.forceAssignedPlayerIds.length, 2);
+  assert.equal(result.bonusEligiblePlayerId, null);
+});
+
+test("choice resolution marks the lone-side player as bonus-eligible", () => {
+  const result = resolveChoicePhase({
+    playerIds: ["p1", "p2", "p3", "p4"],
+    lockedChoices: { p1: "A", p2: "A", p3: "A", p4: "B" },
+    random: () => 0,
+  });
+
+  assert.equal(result.bonusEligiblePlayerId, "p4");
+});
+
+test("choice resolution does not award a lone-side bonus in two-player rounds", () => {
+  const result = resolveChoicePhase({
+    playerIds: ["p1", "p2"],
+    lockedChoices: { p1: "A", p2: "B" },
+    random: () => 0,
+  });
+
+  assert.equal(result.bonusEligiblePlayerId, null);
 });
 
 test("round outcome applies quorum before unanimity", () => {
@@ -126,18 +205,25 @@ test("dissenter detection follows strict all-but-one rule", () => {
 
 test("score deltas apply winner points and forced assignment bonus", () => {
   const withBonus = computeScoreDeltas({
-    outcome: "A_WON",
+    outcome: "B_WON",
     choicesByPlayer: { p1: "A", p2: "A", p3: "B" },
-    forcedAssignedPlayerId: "p1",
+    bonusEligiblePlayerId: "p3",
   });
-  assert.deepEqual(withBonus, { p1: 2, p2: 1, p3: 0 });
+  assert.deepEqual(withBonus, { p1: 0, p2: 0, p3: 2 });
 
   const drawScores = computeScoreDeltas({
     outcome: "DRAW",
     choicesByPlayer: { p1: "A", p2: "B" },
-    forcedAssignedPlayerId: "p1",
+    bonusEligiblePlayerId: "p1",
   });
   assert.deepEqual(drawScores, { p1: 0, p2: 0 });
+
+  const noTwoPlayerBonus = computeScoreDeltas({
+    outcome: "A_WON",
+    choicesByPlayer: { p1: "A", p2: "B" },
+    bonusEligiblePlayerId: null,
+  });
+  assert.deepEqual(noTwoPlayerBonus, { p1: 1, p2: 0 });
 });
 
 test("pending penalty carryover applies to chosen side then clears", () => {
