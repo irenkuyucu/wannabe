@@ -38,7 +38,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 | `roomCodes/{roomCode}` | room code -> roomId lookup | `roomId`, `status`, `expiresAt` |
 | `rooms/{roomId}` | canonical room/game state | `status`, `roomCode`, `hostPlayerId`, `roundsTotal`, `roundIndex`, `phase`, `phaseDeadlineAtMs`, `currentPromptId`, `createdAt`, `expiresAt` |
 | `rooms/{roomId}/players/{playerId}` | player/session state | `uid`, `displayName`, `avatarId`, `ready`, `score`, `joinedAt` |
-| `rooms/{roomId}/rounds/{roundIndex}` | immutable round outcomes/history | `promptId`, `choices`, `forcedAssignedPlayerId`, `verdicts`, `outcome`, `dissenterPlayerId`, `startedAt`, `resolvedAt` |
+| `rooms/{roomId}/rounds/{roundIndex}` | immutable round outcomes/history | `promptId`, `choices`, `forceAssignedPlayerIds`, `bonusEligiblePlayerId`, `verdicts`, `outcome`, `dissenterPlayerId`, `startedAt`, `resolvedAt` |
 
 ### Player Session Model
 `Player` is a room-session model stored at `rooms/{roomId}/players/{playerId}`.
@@ -61,7 +61,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 - `avatarId`: optional request field on room create/join; selects a placeholder avatar asset for the player session.
 - `deadlineAtMs`: API response field representing the current phase absolute deadline as Unix epoch milliseconds (server time).
 - `phaseDeadlineAtMs`: canonical room-state deadline field in Firestore using the same epoch-ms format; must be `null`/unset for untimed `resolution`.
-- `forcedAssignedPlayerId`: round record field storing the player force-moved during choice timeout empty-side correction; used to compute forced-assignment bonus eligibility.
+- `bonusEligiblePlayerId`: round record field storing the lone-side player who earns a +1 bonus if their side wins that round after all choice-resolution assignment/correction is complete.
 
 ### Input Validation Rules (Normative)
 - `displayName` must satisfy all of: trimmed, 1-16 characters, no leading/trailing spaces, allowed characters are ASCII letters (`A-Z`, `a-z`), spaces, hyphens, and apostrophes.
@@ -92,7 +92,7 @@ Goal: deterministic server-driven game behavior exactly matching `SPEC.md`.
 
 | Task ID | Task | Deliverables | Agent-owned validation | User-owned validation | Gate |
 |---|---|---|---|---|---|
-| M3-T1 | Domain engine | pure TS transition/scoring logic (argument turn order/timers, quorum/unanimity, forced assignment, scoring bonuses, dissenter penalty and carryover) | comprehensive unit suite for edge cases | None | PASS on green tests |
+| M3-T1 | Domain engine | pure TS transition/scoring logic (argument turn order/timers, quorum/unanimity, choice-resolution assignment/correction, lone-side bonus scoring, dissenter penalty and carryover) | comprehensive unit suite for edge cases | None | PASS on green tests |
 | M3-T2 | Room lifecycle APIs | create/join/leave/ready/start with strict input validations (display name + room code) and name collision handling | emulator integration tests | None | PASS on green tests |
 | M3-T3 | Round action APIs | choice/argument/rebuttal/verdict/resolution/tick callables + role checks | integration tests across phase paths/timeouts | None | PASS on green tests |
 | M3-T4 | Host guardrail behavior | during resolution: missing host -> promote from remaining players; none -> room ended | dedicated integration tests | None | PASS on green tests |
@@ -133,7 +133,7 @@ Goal: finalize correctness and deployment readiness.
 11. End-of-life behavior: final round transitions room to `status=ended`; ended rooms cannot be resumed/rejoined.
 12. Security rules matrix: non-members cannot read room internals; clients cannot directly write authoritative game state.
 13. Scoring rules: `A_WON` gives +1 to side A choosers; `B_WON` gives +1 to side B choosers; `DRAW` gives +0 to all players.
-14. Forced-assignment bonus scoring: if `forcedAssignedPlayerId` side wins, that player gets +2 total for the round (+1 base +1 bonus); otherwise no bonus.
+14. Lone-side bonus scoring: if `bonusEligiblePlayerId` exists and that player's side wins, that player gets +2 total for the round (+1 base +1 bonus); otherwise no bonus.
 15. Input validation rules: invalid `displayName` values (including non-ASCII letters) and invalid `roomCode` values are rejected by backend validation.
 16. Share-link behavior: room share link uses query format and can be copied from lobby, then opens a join path that resolves to the target room by code.
 17. Ended-room lifecycle: room end sets `status=ended` + `expiresAt=now+2h`; ended status blocks resume/rejoin; ended-room data remains readable until expiry for late clients.

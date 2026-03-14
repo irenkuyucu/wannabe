@@ -62,10 +62,10 @@ A **Room** is a single game container with:
 
 ### 4.2 Main Screen
 - Avatar (assets will be placeholders for MVP)
-- Name input (used for display names; 1–16 characters; only letters, spaces, hyphens, and apostrophes allowed; trimmed; no leading/trailing spaces)
+- Name input (used for display names; 1–12 characters; only letters A-Z, spaces, and hyphens allowed; trimmed; no leading/trailing spaces)
 - Buttons:
-  - **Create Room**
-  - **Join Room** (prompts for room code)
+  - **Create Room** (requires filled name to be active)
+  - **Join Room** (requires filled name and room code to be active)
 
 ### 4.3 Create Room → Lobby (Host)
 - Creating a room makes the creator the **Host**.
