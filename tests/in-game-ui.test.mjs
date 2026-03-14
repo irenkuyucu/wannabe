@@ -17,9 +17,9 @@ test("argument turn order alternates by round index", () => {
 });
 
 test("argument budget applies the next-round penalty to one side only", () => {
-  assert.equal(getArgumentBudgetSeconds("A", "A"), 100);
-  assert.equal(getArgumentBudgetSeconds("A", "B"), 120);
-  assert.equal(getArgumentBudgetSeconds(null, "B"), 120);
+  assert.equal(getArgumentBudgetSeconds("p2", { p2: "A" }, "A"), 100);
+  assert.equal(getArgumentBudgetSeconds("p2", { p2: "A" }, "B"), 120);
+  assert.equal(getArgumentBudgetSeconds(null, { p2: "B" }, "B"), 120);
 });
 
 test("countdown helpers clamp timed phase values", () => {
@@ -83,7 +83,7 @@ test("phase view model exposes active argument side permissions and penalties", 
     round: {
       choicesByPlayer: { host: "A", p2: "B", p3: "B" },
       verdictsByPlayer: {},
-      penalizedSide: "B",
+      penalizedPlayerId: "p2",
     },
     currentPlayerId: "p2",
     players: [{ playerId: "host" }, { playerId: "p2" }, { playerId: "p3" }],
@@ -106,7 +106,7 @@ test("phase view model exposes active argument side permissions and penalties", 
     round: {
       choicesByPlayer: { host: "A", p2: "B", p3: "B" },
       verdictsByPlayer: {},
-      penalizedSide: "B",
+      penalizedPlayerId: "p2",
     },
     currentPlayerId: "host",
     players: [{ playerId: "host" }, { playerId: "p2" }, { playerId: "p3" }],
@@ -129,7 +129,7 @@ test("phase view model exposes rebuttal host control and verdict lock state", ()
     round: {
       choicesByPlayer: { host: "A", p2: "B" },
       verdictsByPlayer: {},
-      penalizedSide: null,
+      penalizedPlayerId: null,
     },
     currentPlayerId: "host",
     players: [{ playerId: "host" }, { playerId: "p2" }],
@@ -151,7 +151,7 @@ test("phase view model exposes rebuttal host control and verdict lock state", ()
     round: {
       choicesByPlayer: { host: "A", p2: "B", p3: "B" },
       verdictsByPlayer: { host: "A_WON", p2: "DRAW" },
-      penalizedSide: null,
+      penalizedPlayerId: null,
     },
     currentPlayerId: "host",
     players: [{ playerId: "host" }, { playerId: "p2" }, { playerId: "p3" }],
@@ -176,7 +176,7 @@ test("phase view model marks resolution as fully progressed", () => {
     round: {
       choicesByPlayer: { host: "A", p2: "B" },
       verdictsByPlayer: { host: "DRAW", p2: "DRAW" },
-      penalizedSide: null,
+      penalizedPlayerId: null,
     },
     currentPlayerId: "host",
     players: [{ playerId: "host" }, { playerId: "p2" }],

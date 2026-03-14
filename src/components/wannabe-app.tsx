@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type ReactNode,
   startTransition,
   useEffect,
   useEffectEvent,
@@ -9,14 +10,27 @@ import {
   useState,
 } from "react";
 
+import { ArgumentScreen } from "@/components/argument-screen";
+import { EndGameScreen } from "@/components/end-game-screen";
 import { GameOverPanel } from "@/components/game-over-panel";
+import { ChoiceScreen } from "@/components/choice-screen";
+import { EntryScreen } from "@/components/entry-screen";
+import { HostPromotionToast } from "@/components/host-promotion-toast";
 import { InGamePanel } from "@/components/in-game-panel";
-import { Button } from "@/components/ui/button";
+import { LobbyScreen } from "@/components/lobby-screen";
+import { RebuttalScreen } from "@/components/rebuttal-screen";
+import { ResolutionScreen } from "@/components/resolution-screen";
+import { TitleScreen } from "@/components/title-screen";
+import { VerdictScreen } from "@/components/verdict-screen";
+import { buildResolutionSummary } from "@/lib/session-summary";
 import {
-  AVATAR_OPTIONS,
   getAvatarOption,
   getAvatarStyle,
 } from "@/lib/avatar-options";
+import {
+  getDisplayNameIssue,
+  getDisplayNameIssueMessage,
+} from "@/lib/entry-validation";
 import {
   advanceResolution,
   advanceRebuttal,
@@ -24,7 +38,6 @@ import {
   endArgumentTurn,
   getErrorMessage,
   joinRoom,
-  leaveRoom,
   setReady,
   startGame,
   submitChoice,
@@ -46,12 +59,14 @@ import {
   getLobbyStartState,
   normalizeRoomCodeInput,
 } from "@/lib/lobby-utils";
+import { getHostPromotionNotice } from "@/lib/host-promotion";
 
 type EntryMode = "create" | "join";
+const SPLASH_MIN_DURATION_MS = 2000;
 
 function getValidationError(displayName: string, roomCode: string, mode: EntryMode) {
-  if (displayName.length === 0) {
-    return "Enter a display name to continue.";
+  if (getDisplayNameIssue(displayName)) {
+    return null;
   }
 
   if (mode === "join" && roomCode.length !== 6) {
@@ -62,9 +77,9 @@ function getValidationError(displayName: string, roomCode: string, mode: EntryMo
 }
 
 export function WannabeApp() {
-  const [entryMode, setEntryMode] = useState<EntryMode>("create");
   const [displayName, setDisplayName] = useState("");
-  const [selectedAvatarId, setSelectedAvatarId] = useState(AVATAR_OPTIONS[0].id);
+  const [selectedAvatarId] = useState("spark");
+  const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [roomId, setRoomId] = useState<string | null>(null);
   const [authUid, setAuthUid] = useState<string | null>(null);
@@ -78,15 +93,42 @@ export function WannabeApp() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [copiedShareLink, setCopiedShareLink] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashProgress, setSplashProgress] = useState(0);
+  const [validationNotice, setValidationNotice] = useState<string | null>(null);
+  const [dismissedHostPromotionKeys, setDismissedHostPromotionKeys] = useState<string[]>([]);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const tickingPhaseKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let frameId = 0;
+    const startAt = performance.now();
+
+    const step = () => {
+      const elapsed = performance.now() - startAt;
+      const normalized = Math.min(elapsed / SPLASH_MIN_DURATION_MS, 1);
+      const easedProgress = 1 - (1 - normalized) ** 3;
+
+      setSplashProgress(easedProgress);
+
+      if (normalized < 1) {
+        frameId = window.requestAnimationFrame(step);
+        return;
+      }
+
+      setShowSplash(false);
+    };
+
+    frameId = window.requestAnimationFrame(step);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
+  useEffect(() => {
     const initialRoomCode = extractRoomCodeFromSearch(window.location.search);
     if (initialRoomCode) {
+      setInviteRoomCode(initialRoomCode);
       setJoinCode(initialRoomCode);
-      setEntryMode("join");
-      setNoticeMessage("Share link detected. Enter your name to join the room.");
     }
 
     try {
@@ -116,6 +158,7 @@ export function WannabeApp() {
       setRound(null);
       setLatestRound(null);
       setShowDetails(false);
+      setDismissedHostPromotionKeys([]);
       return undefined;
     }
 
@@ -188,6 +231,45 @@ export function WannabeApp() {
   }, [room?.roomCode, room?.status]);
 
   useEffect(() => {
+    if (!validationNotice) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => setValidationNotice(null), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [validationNotice]);
+
+  const currentPlayer = useMemo(
+    () => players.find((player) => player.playerId === authUid) ?? null,
+    [authUid, players],
+  );
+
+  const hostPromotionNotice = getHostPromotionNotice({
+    currentPlayerId: currentPlayer?.playerId ?? null,
+    room,
+  });
+  const visibleHostPromotionNotice =
+    hostPromotionNotice && !dismissedHostPromotionKeys.includes(hostPromotionNotice.key)
+      ? hostPromotionNotice
+      : null;
+
+  useEffect(() => {
+    if (!visibleHostPromotionNotice) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setDismissedHostPromotionKeys((current) =>
+        current.includes(visibleHostPromotionNotice.key)
+          ? current
+          : [...current, visibleHostPromotionNotice.key],
+      );
+    }, 2000);
+
+    return () => window.clearTimeout(timeout);
+  }, [visibleHostPromotionNotice]);
+
+  useEffect(() => {
     if (!copiedShareLink) {
       return undefined;
     }
@@ -210,10 +292,14 @@ export function WannabeApp() {
     return () => window.clearInterval(interval);
   }, [room?.phaseDeadlineAtMs, room?.status]);
 
-  const currentPlayer = useMemo(
-    () => players.find((player) => player.playerId === authUid) ?? null,
-    [authUid, players],
-  );
+  useEffect(() => {
+    if (pendingAction !== "advance-resolution" || room?.status !== "ended") {
+      return;
+    }
+
+    handleReturnToMain();
+    setPendingAction(null);
+  }, [pendingAction, room?.status]);
 
   const startState = useMemo(
     () =>
@@ -225,11 +311,36 @@ export function WannabeApp() {
     [currentPlayer?.playerId, room?.hostPlayerId, players],
   );
 
-  const validationError = getValidationError(displayName, joinCode, entryMode);
   const shareLink =
     typeof window === "undefined" || !room?.roomCode
       ? ""
       : buildRoomShareLink(window.location.origin, room.roomCode);
+
+  const dismissHostPromotionNotice = () => {
+    if (!hostPromotionNotice) {
+      return;
+    }
+
+    setDismissedHostPromotionKeys((current) =>
+      current.includes(hostPromotionNotice.key)
+        ? current
+        : [...current, hostPromotionNotice.key],
+    );
+  };
+
+  function renderWithGlobalToast(content: ReactNode) {
+    return (
+      <>
+        {visibleHostPromotionNotice ? (
+          <HostPromotionToast
+            message={visibleHostPromotionNotice.message}
+            onDismiss={dismissHostPromotionNotice}
+          />
+        ) : null}
+        {content}
+      </>
+    );
+  }
 
   const runTimedPhaseTick = useEffectEvent(async (phaseKey: string) => {
     if (
@@ -285,26 +396,35 @@ export function WannabeApp() {
     roomId,
   ]);
 
-  async function runEntryAction() {
-    if (!authUid || authError || validationError) {
-      if (validationError) {
-        setErrorMessage(validationError);
+  async function runEntryAction(mode: EntryMode) {
+    const displayNameIssue = getDisplayNameIssue(displayName);
+    if (displayNameIssue) {
+      setValidationNotice(getDisplayNameIssueMessage(displayNameIssue));
+      setErrorMessage(null);
+      return;
+    }
+
+    const entryValidationError = getValidationError(displayName, joinCode, mode);
+
+    if (!authUid || authError || entryValidationError) {
+      if (entryValidationError) {
+        setErrorMessage(entryValidationError);
       }
       return;
     }
 
-    setPendingAction(entryMode);
+    setPendingAction(mode);
     setErrorMessage(null);
 
     try {
       const requestedName = displayName;
       const result =
-        entryMode === "create"
+        mode === "create"
           ? await createRoom({
               displayName: requestedName,
               avatarId: selectedAvatarId,
             })
-          : await joinRoom({
+        : await joinRoom({
               roomCode: joinCode,
               displayName: requestedName,
               avatarId: selectedAvatarId,
@@ -445,23 +565,28 @@ export function WannabeApp() {
     }
   }
 
-  async function handleLeaveRoom() {
+  async function handleEndGameReturnToMain() {
     if (!roomId) {
+      handleReturnToMain();
       return;
     }
 
-    setPendingAction("leave");
+    const isFinalRoundResolutionHost =
+      room?.status === "inGame" &&
+      room.phase === "resolution" &&
+      currentPlayer?.playerId === room.hostPlayerId;
+
+    if (!isFinalRoundResolutionHost) {
+      handleReturnToMain();
+      return;
+    }
+
+    setPendingAction("advance-resolution");
     setErrorMessage(null);
 
     try {
-      await leaveRoom({ roomId });
-      setRoomId(null);
-      setRoom(null);
-      setRound(null);
-      setLatestRound(null);
-      setPlayers([]);
-      window.history.replaceState({}, "", "/");
-      setNoticeMessage("Left the room.");
+      await advanceResolution({ roomId });
+      handleReturnToMain();
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -475,6 +600,8 @@ export function WannabeApp() {
     setRound(null);
     setLatestRound(null);
     setPlayers([]);
+    setInviteRoomCode(null);
+    setJoinCode("");
     setErrorMessage(null);
     window.history.replaceState({}, "", "/");
     setNoticeMessage("Back on main.");
@@ -520,14 +647,173 @@ export function WannabeApp() {
         ? "The left rail keeps room context visible while the main panel stays dedicated to the active phase."
         : room?.status === "ended"
           ? "Final messaging and the scoreboard stay centered in the main panel while the room summary remains nearby."
-          : "Entry, lobby, round phases, resolution, and game over now share the same toy-like surface. The live UI reads directly from Firebase room state from first join through final scoreboard.";
+        : "Entry, lobby, round phases, resolution, and game over now share the same toy-like surface. The live UI reads directly from Firebase room state from first join through final scoreboard.";
+
+  if (showSplash) {
+    return <TitleScreen progress={splashProgress} />;
+  }
+
+  if (!showCompactRoomSidebar) {
+    return (
+      <EntryScreen
+        authError={authError}
+        authReady={Boolean(authUid)}
+        createDisabled={Boolean(pendingAction || authError)}
+        createPending={pendingAction === "create"}
+        displayName={displayName}
+        errorMessage={errorMessage}
+        inviteRoomCode={inviteRoomCode}
+        joinCode={joinCode}
+        joinDisabled={Boolean(pendingAction || authError)}
+        joinPending={pendingAction === "join"}
+        noticeMessage={noticeMessage}
+        onDismissValidationNotice={() => setValidationNotice(null)}
+        onCreateRoom={() => void runEntryAction("create")}
+        onDisplayNameChange={setDisplayName}
+        onJoinCodeChange={(value) => setJoinCode(normalizeRoomCodeInput(value))}
+        onJoinRoom={() => void runEntryAction("join")}
+        validationNotice={validationNotice}
+      />
+    );
+  }
+
+  if (showLobby && room && currentPlayer) {
+    return renderWithGlobalToast(
+      <LobbyScreen
+        copiedShareLink={copiedShareLink}
+        currentPlayer={currentPlayer}
+        hostPlayerId={room.hostPlayerId}
+        noticeMessage={noticeMessage}
+        onCopyShareLink={() => void handleCopyShareLink()}
+        onReadyToggle={() => void handleReadyToggle(!currentPlayer.ready)}
+        onStartGame={() => void handleStartGame()}
+        pendingAction={pendingAction}
+        players={players}
+        roomCode={room.roomCode}
+        showStartButton={currentPlayer.playerId === room.hostPlayerId}
+        startDisabled={!startState.canStart || pendingAction === "start"}
+        statusMessage={errorMessage ?? authError}
+      />
+    );
+  }
+
+  if (showInGame && room && currentPlayer && room.phase === "choice") {
+    return renderWithGlobalToast(
+      <ChoiceScreen
+        currentPlayer={currentPlayer}
+        noticeMessage={noticeMessage}
+        nowMs={nowMs}
+        onSubmitChoice={(side) => void handleSubmitChoice(side)}
+        pendingAction={pendingAction}
+        players={players}
+        room={room}
+        round={round}
+        showDetails={showDetails}
+        statusMessage={errorMessage ?? authError}
+      />
+    );
+  }
+
+  if (showInGame && room && currentPlayer && room.phase === "argument") {
+    return renderWithGlobalToast(
+      <ArgumentScreen
+        currentPlayer={currentPlayer}
+        noticeMessage={noticeMessage}
+        nowMs={nowMs}
+        onEndArgumentTurn={() => void handleEndArgumentTurn()}
+        pendingAction={pendingAction}
+        players={players}
+        room={room}
+        round={round}
+        showDetails={showDetails}
+        statusMessage={errorMessage ?? authError}
+      />
+    );
+  }
+
+  if (showInGame && room && currentPlayer && room.phase === "rebuttal") {
+    return renderWithGlobalToast(
+      <RebuttalScreen
+        currentPlayer={currentPlayer}
+        noticeMessage={noticeMessage}
+        nowMs={nowMs}
+        onAdvanceRebuttal={() => void handleAdvanceRebuttal()}
+        pendingAction={pendingAction}
+        players={players}
+        room={room}
+        round={round}
+        showDetails={showDetails}
+        statusMessage={errorMessage ?? authError}
+      />
+    );
+  }
+
+  if (showInGame && room && currentPlayer && room.phase === "verdict") {
+    return renderWithGlobalToast(
+      <VerdictScreen
+        currentPlayer={currentPlayer}
+        noticeMessage={noticeMessage}
+        nowMs={nowMs}
+        onSubmitVerdict={(verdict) => void handleSubmitVerdict(verdict)}
+        pendingAction={pendingAction}
+        players={players}
+        room={room}
+        round={round}
+        showDetails={showDetails}
+        statusMessage={errorMessage ?? authError}
+      />
+    );
+  }
+
+  if (showInGame && room && currentPlayer && room.phase === "resolution") {
+    const resolutionSummary = buildResolutionSummary({ room, round, players });
+
+    if (resolutionSummary.isFinalRound) {
+      return renderWithGlobalToast(
+        <EndGameScreen
+          latestRound={round}
+          onReturnToMain={() => void handleEndGameReturnToMain()}
+          pendingAction={pendingAction}
+          players={players}
+          room={room}
+          statusMessage={errorMessage ?? authError}
+        />
+      );
+    }
+
+    return renderWithGlobalToast(
+      <ResolutionScreen
+        currentPlayer={currentPlayer}
+        noticeMessage={noticeMessage}
+        onAdvanceResolution={() => void handleAdvanceResolution()}
+        pendingAction={pendingAction}
+        players={players}
+        room={room}
+        round={round}
+        statusMessage={errorMessage ?? authError}
+      />
+    );
+  }
+
+  if (roomId && room?.status === "ended") {
+    return renderWithGlobalToast(
+      <EndGameScreen
+        latestRound={latestRound}
+        onReturnToMain={() => void handleEndGameReturnToMain()}
+        pendingAction={pendingAction}
+        players={players}
+        room={room}
+        statusMessage={errorMessage ?? authError}
+      />
+    );
+  }
 
   return (
     <main className="toy-page min-h-screen px-4 py-5 sm:px-6 sm:py-8">
       <div className="mx-auto flex w-full max-w-[108rem] flex-col gap-4 lg:gap-5">
         <section className="toy-shell overflow-hidden rounded-[2rem] px-4 py-4 sm:px-6 sm:py-6 lg:px-7 lg:py-7">
           <div
-            className={`grid items-start gap-4 lg:gap-5 ${showCompactRoomSidebar ? "lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.28fr)]" : "lg:grid-cols-[minmax(19rem,0.76fr)_minmax(0,1.24fr)]"}`}
+            className="grid items-start gap-4 lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.28fr)] lg:gap-5"
           >
             <section className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -655,103 +941,7 @@ export function WannabeApp() {
                     ) : null}
                   </div>
                 </div>
-              ) : (
-                <div className="toy-chip-panel rounded-[1.55rem] p-4">
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      className={`section-banner ${entryMode === "create" ? "bg-linear-to-r from-[#8cff56] to-[#36d51d] text-[#114f1c]" : "bg-[#104391] text-white"}`}
-                      onClick={() => setEntryMode("create")}
-                      type="button"
-                    >
-                      Create room
-                    </button>
-                    <button
-                      className={`section-banner ${entryMode === "join" ? "bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]" : "bg-[#104391] text-white"}`}
-                      onClick={() => setEntryMode("join")}
-                      type="button"
-                    >
-                      Join room
-                    </button>
-                  </div>
-
-                  <div className="mt-5 grid gap-4">
-                    <label className="grid gap-2">
-                      <span className="text-sm font-black uppercase tracking-[0.16em] text-[#d8ecff]">
-                        Display name
-                      </span>
-                      <input
-                        className="toy-input"
-                        maxLength={16}
-                        onChange={(event) => setDisplayName(event.target.value)}
-                        placeholder="Captain Maybe"
-                        value={displayName}
-                      />
-                    </label>
-
-                    {entryMode === "join" ? (
-                      <label className="grid gap-2">
-                        <span className="text-sm font-black uppercase tracking-[0.16em] text-[#d8ecff]">
-                          Room code
-                        </span>
-                        <input
-                          className="toy-input"
-                          inputMode="numeric"
-                          onChange={(event) =>
-                            setJoinCode(normalizeRoomCodeInput(event.target.value))
-                          }
-                          placeholder="482901"
-                          value={joinCode}
-                        />
-                      </label>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-5">
-                    <p className="text-sm font-black uppercase tracking-[0.16em] text-[#d8ecff]">
-                      Pick an avatar
-                    </p>
-                    <div className="mt-3 grid grid-cols-3 gap-2.5 sm:grid-cols-6">
-                      {AVATAR_OPTIONS.map((avatar) => (
-                        <button
-                          className={`avatar-choice ${selectedAvatarId === avatar.id ? "avatar-choice-active" : ""}`}
-                          key={avatar.id}
-                          onClick={() => setSelectedAvatarId(avatar.id)}
-                          style={getAvatarStyle(avatar)}
-                          type="button"
-                        >
-                          <span className="text-[1.6rem]">{avatar.emoji}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <Button
-                      disabled={Boolean(validationError || pendingAction || authError)}
-                      onClick={() => void runEntryAction()}
-                      size="lg"
-                    >
-                      {pendingAction === entryMode
-                        ? entryMode === "create"
-                          ? "Creating..."
-                          : "Joining..."
-                        : entryMode === "create"
-                          ? "Create room"
-                          : "Join room"}
-                    </Button>
-                    <div className="score-pill">
-                      <span className="text-[#9ad9ff]">Auth</span>
-                      <span className="ml-2 text-white">
-                        {authUid ? "Ready" : authError ? "Error" : "Connecting"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {validationError ? (
-                    <p className="mt-4 text-sm text-[#ffd86e]">{validationError}</p>
-                  ) : null}
-                </div>
-              )}
+              ) : null}
 
               {noticeMessage ? <div className="status-callout">{noticeMessage}</div> : null}
               {errorMessage || authError ? (
@@ -762,116 +952,7 @@ export function WannabeApp() {
             </section>
 
             <section className="toy-shell rounded-[1.7rem] bg-[#0b3d95]/70 px-4 py-4 sm:px-5 lg:px-6">
-              {showLobby && room ? (
-                <>
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-black uppercase tracking-[0.16em] text-[#d8ecff]">
-                        Lobby
-                      </p>
-                      <p className="mt-2 text-[clamp(1.8rem,2.8vw,2.7rem)] font-black uppercase tracking-[-0.04em] text-white">
-                        Room {room.roomCode}
-                      </p>
-                    </div>
-                    <button
-                      className="ghost-control"
-                      onClick={() => void handleLeaveRoom()}
-                      type="button"
-                    >
-                      {pendingAction === "leave" ? "Leaving..." : "Leave"}
-                    </button>
-                  </div>
-
-                  <div className="mt-5 rounded-[1.25rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9ad9ff]">
-                          Share link
-                        </p>
-                        <p className="mt-2 break-all text-sm text-white">{shareLink}</p>
-                      </div>
-                      <Button
-                        onClick={() => void handleCopyShareLink()}
-                        variant="secondary"
-                      >
-                        {copiedShareLink ? "Copied" : "Copy link"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    {players.map((player) => {
-                      const avatar = getAvatarOption(player.avatarId);
-                      const isCurrent = player.playerId === currentPlayer?.playerId;
-                      const isHost = player.playerId === room.hostPlayerId;
-
-                      return (
-                        <div
-                          className="toy-list-row flex items-center justify-between gap-3 rounded-[1.2rem] px-3.5 py-3"
-                          key={player.playerId}
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div
-                              className="avatar-orb flex size-10 items-center justify-center rounded-full text-xl"
-                              style={getAvatarStyle(avatar)}
-                            >
-                              {avatar.emoji}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="truncate text-base font-black uppercase text-white">
-                                {player.displayName}
-                              </p>
-                              <p className="text-sm text-[#d9eeff]">
-                                {isCurrent
-                                  ? "This is you."
-                                  : isHost
-                                    ? "Current host."
-                                    : "Waiting in the lobby."}
-                              </p>
-                            </div>
-                          </div>
-                          <span
-                            className={`hud-pill ${player.ready ? "bg-[#8cff56] text-[#114f1c]" : "bg-[#ff82ea] text-[#6d1676]"}`}
-                          >
-                            {isHost ? "HOST" : player.ready ? "READY" : "NOT READY"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-5 rounded-[1.25rem] bg-[#082f76] px-4 py-4 ring-1 ring-white/10">
-                    <p className="text-sm font-black uppercase tracking-[0.16em] text-white">
-                      Lobby actions
-                    </p>
-                    <p className="mt-2 text-sm text-[#d8ecff]">
-                      Everyone must ready up before the host can start the game.
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <Button
-                        onClick={() => void handleReadyToggle(!currentPlayer?.ready)}
-                        variant={currentPlayer?.ready ? "secondary" : "default"}
-                      >
-                        {pendingAction === "ready"
-                          ? "Updating..."
-                          : currentPlayer?.ready
-                            ? "Mark not ready"
-                            : "Mark ready"}
-                      </Button>
-                      {currentPlayer?.playerId === room.hostPlayerId ? (
-                        <Button
-                          disabled={!startState.canStart || pendingAction === "start"}
-                          onClick={() => void handleStartGame()}
-                          size="lg"
-                        >
-                          {pendingAction === "start" ? "Starting..." : "Start game"}
-                        </Button>
-                      ) : null}
-                    </div>
-                    <p className="mt-3 text-sm text-[#d8ecff]">{startState.reason}</p>
-                  </div>
-                </>
-              ) : showInGame && room && currentPlayer ? (
+              {showInGame && room && currentPlayer ? (
                 <InGamePanel
                   currentPlayer={currentPlayer}
                   nowMs={nowMs}

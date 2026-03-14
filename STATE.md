@@ -8,7 +8,7 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 ## 1. Current status
 - Milestone: M4 — Frontend UX with High-Cadence User Validation
 - Task: M4-T5 — Production-adjacent UI simplification + responsive polish
-- Gate status: PENDING — Agent-owned checks passed on the production-adjacent UI simplification pass; awaiting user-owned validation of the new default player-facing surfaces and the optional details/debug reveal.
+- Gate status: PASS — User directed closure after the full UI foundation pass, with agent-owned checks passing across web, functions, emulator-backed backend flows, and Playwright multiplayer coverage.
 - Active branch: codex/m4-ui-foundation
 
 ## 2. Last commit(s) (max 5)
@@ -29,18 +29,16 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Updated `PLAN.md` so M4-T5 now explicitly covers production-adjacent UI simplification, with the player-facing default UI change recorded in `decision_log.md` rather than expanded in `SPEC.md`.
-- Reworked the root route into a more player-facing default UI: simpler entry messaging, a leaner lobby action surface, compact joined-room summary rail, and no default milestone/task chrome.
-- Simplified the in-game default surfaces so choice/argument/rebuttal/verdict/resolution emphasize the current player action first, while the previous state-heavy inspection UI now sits behind the optional details toggle.
-- Kept and reused the details layer for room-state diagnostics, live lock-in boards, side rosters, vote boards, and similar debugging aids instead of deleting that utility entirely.
-- Added `tests/e2e/responsive.spec.ts` to cover entry and lobby usability plus horizontal-overflow regressions at mobile and desktop widths.
-- Validated the revised pass with passing runs of `pnpm exec playwright test tests/e2e/responsive.spec.ts` and a clean `pnpm verify`.
+- Replaced the old single-shell player flow with dedicated mobile-first screens for splash, entry, invite-join, lobby, choice, argument, rebuttal, verdict, resolution, and end-game, while preserving the toy-like gradient/checkered visual direction and desktop responsiveness.
+- Wired the bundled `Bangers` font, local arrow icon asset, floating avatar motion fields, validation/assignment/promotion toasts, and end-game winner presentation into the new UI system.
+- Strengthened backend round and room behavior by fixing concurrent round-write races, moving host promotion beyond resolution-only guardrails, and recording host-promotion metadata for the frontend toast flow.
+- Expanded non-E2E coverage with frontend integration tests plus backend unit and emulator tests, and added seeded/full-flow Playwright multiplayer coverage for the redesigned live game loop.
+- Left the local `SPEC.md` edit untouched.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
 - Firebase CLI project linking for deploy workflows is intentionally deferred to later milestones. — Owner: user
-- Host auto-promotion outside the Resolution phase remains unimplemented and out of scope under the current `SPEC.md`; only the Resolution host guardrail exists today. — Owner: team
-- M4-T5 still needs user-owned confirmation that the new default player-facing UI is the right direction on real target devices and browsers before the gate can close. — Owner: user
+- True disconnect/presence handling is still unimplemented: closing a tab/browser does not currently remove a player from the room automatically, so host/player removal still depends on explicit backend leave/removal paths. — Owner: team
 - Broader Playwright best-practice work is intentionally deferred: richer multiplayer architecture, codegen-assisted workflow where helpful, and auditable test artifact design should be expanded later when end-to-end coverage scope grows. — Owner: team
 
 ## 6. Blockers (max 5)
@@ -48,4 +46,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- Await M4-T5 user-owned responsive/visual validation; if PASS, proceed to M5-T1 — Full emulator scenarios.
+- Await user direction on whether to tackle real disconnect/presence handling next or proceed into M5-T1 — Full emulator scenarios.

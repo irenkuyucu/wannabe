@@ -10,6 +10,7 @@ type RandomFn = () => number;
 
 export type ChoiceResolutionResult = {
   choicesByPlayer: Record<string, Side>;
+  autoAssignedPlayerIds: string[];
   forceAssignedPlayerIds: string[];
   bonusEligiblePlayerId: string | null;
 };
@@ -21,7 +22,21 @@ export function getArgumentTurnOrder(roundIndex: number): [Side, Side] {
   return roundIndex % 2 === 0 ? ["A", "B"] : ["B", "A"];
 }
 
-export function getArgumentBudgets(penalizedSide: Side | null): Record<Side, number> {
+export function getPenalizedSide(params: {
+  penalizedPlayerId: string | null;
+  choicesByPlayer: Partial<Record<string, Side>>;
+}): Side | null {
+  const { penalizedPlayerId, choicesByPlayer } = params;
+
+  return penalizedPlayerId ? choicesByPlayer[penalizedPlayerId] ?? null : null;
+}
+
+export function getArgumentBudgets(params: {
+  penalizedPlayerId: string | null;
+  choicesByPlayer: Partial<Record<string, Side>>;
+}): Record<Side, number> {
+  const penalizedSide = getPenalizedSide(params);
+
   return {
     A: penalizedSide === "A" ? ARGUMENT_PENALIZED_SECONDS : ARGUMENT_BASE_SECONDS,
     B: penalizedSide === "B" ? ARGUMENT_PENALIZED_SECONDS : ARGUMENT_BASE_SECONDS,
@@ -100,6 +115,7 @@ export function resolveChoicePhase(params: {
 
   return {
     choicesByPlayer,
+    autoAssignedPlayerIds: missingPlayerIds.slice().sort(),
     forceAssignedPlayerIds,
     bonusEligiblePlayerId,
   };
@@ -196,14 +212,15 @@ export function createPendingPenaltyPlayerId(dissenterPlayerId: string | null): 
 export function applyPendingPenalty(params: {
   pendingPenaltyPlayerId: string | null;
   choicesByPlayer: Partial<Record<string, Side>>;
-}): { penalizedSide: Side | null; nextPendingPenaltyPlayerId: null } {
+}): { penalizedPlayerId: string | null; nextPendingPenaltyPlayerId: null } {
   const { pendingPenaltyPlayerId, choicesByPlayer } = params;
-  const penalizedSide = pendingPenaltyPlayerId
-    ? choicesByPlayer[pendingPenaltyPlayerId] ?? null
-    : null;
+  const penalizedPlayerId =
+    pendingPenaltyPlayerId && choicesByPlayer[pendingPenaltyPlayerId]
+      ? pendingPenaltyPlayerId
+      : null;
 
   return {
-    penalizedSide,
+    penalizedPlayerId,
     nextPendingPenaltyPlayerId: null,
   };
 }

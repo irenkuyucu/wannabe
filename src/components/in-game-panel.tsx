@@ -225,8 +225,21 @@ export function InGamePanel({
   const prompt = getPromptById(round?.promptId ?? room.currentPromptId);
   const phase = room.phase ?? "resolution";
   const phaseCopy = PHASE_COPY[phase];
-  const sideAPenalty = getArgumentBudgetSeconds(round?.penalizedSide ?? null, "A");
-  const sideBPenalty = getArgumentBudgetSeconds(round?.penalizedSide ?? null, "B");
+  const countdownProgressPercent =
+    phase === "resolution" ? 100 : Math.max(0, Math.min(100, (1 - viewModel.progressRatio) * 100));
+  const sideAPenalty = getArgumentBudgetSeconds(
+    round?.penalizedPlayerId ?? null,
+    round?.choicesByPlayer,
+    "A",
+  );
+  const sideBPenalty = getArgumentBudgetSeconds(
+    round?.penalizedPlayerId ?? null,
+    round?.choicesByPlayer,
+    "B",
+  );
+  const penalizedPlayer = players.find(
+    (player) => player.playerId === round?.penalizedPlayerId,
+  );
   const resolutionSummary = buildResolutionSummary({ room, round, players });
 
   return (
@@ -270,7 +283,7 @@ export function InGamePanel({
             <div className="progress-track h-4 rounded-full">
               <div
                 className="progress-fill rounded-full"
-                style={{ width: `${viewModel.progressRatio * 100}%` }}
+                style={{ width: `${countdownProgressPercent}%` }}
               />
             </div>
           </div>
@@ -372,9 +385,9 @@ export function InGamePanel({
             <p className="mt-3 text-sm leading-7 text-[#d8ecff]">
               Keep the floor with the current side until the timer ends or an eligible player ends the turn early.
             </p>
-            {round?.penalizedSide ? (
+            {penalizedPlayer ? (
               <div className="status-callout mt-4">
-                Dissenter penalty is active on {formatSide(round.penalizedSide)} this round, so that side only gets 100 seconds.
+                {penalizedPlayer.displayName} carries the dissenter penalty this round, reducing the speaking budget for whichever side they joined.
               </div>
             ) : null}
             <div className="mt-4">

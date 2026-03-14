@@ -18,12 +18,13 @@ export function getArgumentTurnOrder(roundIndex) {
 }
 
 /**
- * @param {Side | null | undefined} penalizedSide
+ * @param {string | null | undefined} penalizedPlayerId
+ * @param {Partial<Record<string, Side>> | undefined} choicesByPlayer
  * @param {Side} side
  * @returns {number}
  */
-export function getArgumentBudgetSeconds(penalizedSide, side) {
-  return penalizedSide === side ? 100 : 120;
+export function getArgumentBudgetSeconds(penalizedPlayerId, choicesByPlayer, side) {
+  return penalizedPlayerId && choicesByPlayer?.[penalizedPlayerId] === side ? 100 : 120;
 }
 
 /**
@@ -89,7 +90,7 @@ export function getPhaseDriverDelayMs(players, currentPlayerId) {
  *   round: {
  *     choicesByPlayer?: Record<string, Side | undefined>;
  *     verdictsByPlayer?: Record<string, VerdictVote | undefined>;
- *     penalizedSide?: Side | null;
+ *     penalizedPlayerId?: string | null;
  *   } | null;
  *   currentPlayerId: string | null;
  *   players: Array<{ playerId: string }>;
@@ -108,7 +109,11 @@ export function buildPhaseViewModel({
   const [firstArgumentSide, secondArgumentSide] = getArgumentTurnOrder(room?.roundIndex ?? 0);
   const timedPhaseSeconds =
     room?.phase === "argument"
-      ? getArgumentBudgetSeconds(round?.penalizedSide ?? null, room.activeArgumentSide ?? firstArgumentSide)
+      ? getArgumentBudgetSeconds(
+          round?.penalizedPlayerId ?? null,
+          round?.choicesByPlayer,
+          room.activeArgumentSide ?? firstArgumentSide,
+        )
       : room?.phase
         ? (TIMED_PHASE_SECONDS[room.phase] ?? null)
         : null;
@@ -140,7 +145,11 @@ export function buildPhaseViewModel({
     argumentOrder: [firstArgumentSide, secondArgumentSide],
     activeSideBudgetSeconds:
       room?.phase === "argument" && room.activeArgumentSide
-        ? getArgumentBudgetSeconds(round?.penalizedSide ?? null, room.activeArgumentSide)
+        ? getArgumentBudgetSeconds(
+            round?.penalizedPlayerId ?? null,
+            round?.choicesByPlayer,
+            room.activeArgumentSide,
+          )
         : null,
     canSubmitChoice: room?.phase === "choice" && !selectedChoice,
     canEndArgumentTurn:

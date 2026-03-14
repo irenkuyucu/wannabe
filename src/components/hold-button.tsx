@@ -6,21 +6,25 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type HoldButtonProps = {
+  className?: string;
   durationMs?: number;
   disabled?: boolean;
   holdingLabel: string;
   idleLabel: string;
   onHoldComplete: () => void | Promise<void>;
+  progressClassName?: string;
   size?: "default" | "lg";
   variant?: "default" | "secondary";
 };
 
 export function HoldButton({
+  className,
   durationMs = 2000,
   disabled = false,
   holdingLabel,
   idleLabel,
   onHoldComplete,
+  progressClassName,
   size = "default",
   variant = "default",
 }: HoldButtonProps) {
@@ -89,6 +93,7 @@ export function HoldButton({
       className={cn(
         buttonVariants({ size, variant }),
         "relative overflow-hidden touch-none select-none",
+        className,
       )}
       disabled={disabled}
       onContextMenu={(event) => event.preventDefault()}
@@ -100,7 +105,10 @@ export function HoldButton({
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 rounded-[calc(1.2rem-3px)] bg-white/22"
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-0 rounded-[calc(1.2rem-3px)] bg-white/22",
+          progressClassName,
+        )}
         style={{ width: `${progress * 100}%` }}
       />
       <span className="relative z-10">{isHolding ? holdingLabel : idleLabel}</span>

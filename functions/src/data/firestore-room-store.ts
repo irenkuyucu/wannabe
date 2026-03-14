@@ -96,6 +96,32 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
     await this.roundRef(roomId, roundIndex).set(patch, { merge: true });
   }
 
+  async updateRoundChoice(
+    roomId: string,
+    roundIndex: number,
+    playerId: string,
+    side: RoundRecord["choicesByPlayer"][string],
+  ): Promise<void> {
+    await this.roundRef(roomId, roundIndex).update(
+      {
+        [`choicesByPlayer.${playerId}`]: side,
+      },
+    );
+  }
+
+  async updateRoundVerdict(
+    roomId: string,
+    roundIndex: number,
+    playerId: string,
+    verdict: RoundRecord["verdictsByPlayer"][string],
+  ): Promise<void> {
+    await this.roundRef(roomId, roundIndex).update(
+      {
+        [`verdictsByPlayer.${playerId}`]: verdict,
+      },
+    );
+  }
+
   async getPlayer(roomId: string, playerId: string): Promise<PlayerRecord | null> {
     const snapshot = await this.playerRef(roomId, playerId).get();
     if (!snapshot.exists) {

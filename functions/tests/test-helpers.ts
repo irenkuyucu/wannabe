@@ -86,6 +86,48 @@ export class InMemoryRoomStore implements RoomLifecycleStore {
     roomRounds.set(roundIndex, { ...round, ...patch });
   }
 
+  async updateRoundChoice(
+    roomId: string,
+    roundIndex: number,
+    playerId: string,
+    side: RoundRecord["choicesByPlayer"][string],
+  ): Promise<void> {
+    const roomRounds = this.rounds.get(roomId);
+    const round = roomRounds?.get(roundIndex);
+    if (!roomRounds || !round) {
+      return;
+    }
+
+    roomRounds.set(roundIndex, {
+      ...round,
+      choicesByPlayer: {
+        ...round.choicesByPlayer,
+        [playerId]: side,
+      },
+    });
+  }
+
+  async updateRoundVerdict(
+    roomId: string,
+    roundIndex: number,
+    playerId: string,
+    verdict: RoundRecord["verdictsByPlayer"][string],
+  ): Promise<void> {
+    const roomRounds = this.rounds.get(roomId);
+    const round = roomRounds?.get(roundIndex);
+    if (!roomRounds || !round) {
+      return;
+    }
+
+    roomRounds.set(roundIndex, {
+      ...round,
+      verdictsByPlayer: {
+        ...round.verdictsByPlayer,
+        [playerId]: verdict,
+      },
+    });
+  }
+
   async getPlayer(roomId: string, playerId: string): Promise<PlayerRecord | null> {
     const roomPlayers = this.players.get(roomId);
     const player = roomPlayers?.get(playerId);

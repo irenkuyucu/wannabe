@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated functions build output should not be linted by the app config.
     "functions/lib/**",
+    // Generated Playwright artifacts are not source files.
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

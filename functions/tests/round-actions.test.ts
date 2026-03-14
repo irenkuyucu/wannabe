@@ -201,6 +201,7 @@ test("tickRoom applies choice timeout, verdict timeout, and next-round dissenter
     deadlineAtMs: game.now + 120_000,
   });
   const roundZeroChoices = Object.values(roundZero?.choicesByPlayer ?? {});
+  assert.deepEqual(roundZero?.autoAssignedPlayerIds.sort(), ["p2", "p3", "p4"]);
   assert.equal(roundZero?.forceAssignedPlayerIds.length, 0);
   assert.equal(roundZero?.bonusEligiblePlayerId, null);
   assert.equal(roundZeroChoices.filter((side) => side === "A").length, 2);
@@ -262,7 +263,7 @@ test("tickRoom applies choice timeout, verdict timeout, and next-round dissenter
   const roundOne = await game.store.getRound(game.created.roomId, 1);
   const roomRoundOne = await game.store.getRoom(game.created.roomId);
 
-  assert.equal(roundOne?.penalizedSide, "B");
+  assert.equal(roundOne?.penalizedPlayerId, "p3");
   assert.equal(roomRoundOne?.activeArgumentSide, "B");
   assert.equal(roomRoundOne?.phaseDeadlineAtMs, game.now + 100_000);
   assert.equal(roomRoundOne?.pendingPenaltyPlayerId, null);
@@ -330,6 +331,7 @@ test("advanceResolution ends the room after the final round", async () => {
 test("advanceResolution auto-promotes the next remaining player when the host is missing", async () => {
   const game = await createStartedGame({
     playerIds: ["host", "p2", "p3"],
+    actionRandom: () => 0,
   });
 
   await advanceToResolution(game);
@@ -342,6 +344,8 @@ test("advanceResolution auto-promotes the next remaining player when the host is
 
   const roomAfterPromotion = await game.store.getRoom(game.created.roomId);
   assert.equal(roomAfterPromotion?.hostPlayerId, "p2");
+  assert.equal(roomAfterPromotion?.hostPromotionNonce, 1);
+  assert.equal(roomAfterPromotion?.lastPromotedHostPlayerId, "p2");
 
   const result = await game.actions.advanceResolution({
     uid: "p2",
@@ -352,6 +356,29 @@ test("advanceResolution auto-promotes the next remaining player when the host is
   assert.deepEqual(result, { nextState: "inGame", roundIndex: 1 });
   assert.equal(roomAfterAdvance?.hostPlayerId, "p2");
   assert.equal(roomAfterAdvance?.phase, "choice");
+});
+
+test("in-game member actions promote a replacement host before resolution", async () => {
+  const game = await createStartedGame({
+    playerIds: ["host", "p2", "p3"],
+    actionRandom: () => 0,
+  });
+
+  await game.store.deletePlayer(game.created.roomId, "host");
+
+  await game.actions.submitChoice({
+    uid: "p2",
+    roomId: game.created.roomId,
+    side: "A",
+  });
+
+  const roomAfterPromotion = await game.store.getRoom(game.created.roomId);
+  const roundAfterChoice = await game.store.getRound(game.created.roomId, 0);
+
+  assert.equal(roomAfterPromotion?.hostPlayerId, "p2");
+  assert.equal(roomAfterPromotion?.hostPromotionNonce, 1);
+  assert.equal(roomAfterPromotion?.lastPromotedHostPlayerId, "p2");
+  assert.equal(roundAfterChoice?.choicesByPlayer.p2, "A");
 });
 
 test("advanceResolution ends the room immediately when the host is missing and no players remain", async () => {

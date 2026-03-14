@@ -25,18 +25,36 @@ test("argument turn order throws for invalid round index", () => {
 });
 
 test("argument budgets apply a single-side penalty", () => {
-  assert.deepEqual(getArgumentBudgets("A"), {
-    A: ARGUMENT_PENALIZED_SECONDS,
-    B: ARGUMENT_BASE_SECONDS,
-  });
-  assert.deepEqual(getArgumentBudgets("B"), {
-    A: ARGUMENT_BASE_SECONDS,
-    B: ARGUMENT_PENALIZED_SECONDS,
-  });
-  assert.deepEqual(getArgumentBudgets(null), {
-    A: ARGUMENT_BASE_SECONDS,
-    B: ARGUMENT_BASE_SECONDS,
-  });
+  assert.deepEqual(
+    getArgumentBudgets({
+      penalizedPlayerId: "p1",
+      choicesByPlayer: { p1: "A", p2: "B" },
+    }),
+    {
+      A: ARGUMENT_PENALIZED_SECONDS,
+      B: ARGUMENT_BASE_SECONDS,
+    },
+  );
+  assert.deepEqual(
+    getArgumentBudgets({
+      penalizedPlayerId: "p2",
+      choicesByPlayer: { p1: "A", p2: "B" },
+    }),
+    {
+      A: ARGUMENT_BASE_SECONDS,
+      B: ARGUMENT_PENALIZED_SECONDS,
+    },
+  );
+  assert.deepEqual(
+    getArgumentBudgets({
+      penalizedPlayerId: null,
+      choicesByPlayer: { p1: "A", p2: "B" },
+    }),
+    {
+      A: ARGUMENT_BASE_SECONDS,
+      B: ARGUMENT_BASE_SECONDS,
+    },
+  );
 });
 
 test("choice resolution keeps explicit uneven non-empty splits unchanged", () => {
@@ -52,6 +70,7 @@ test("choice resolution keeps explicit uneven non-empty splits unchanged", () =>
     p3: "A",
     p4: "B",
   });
+  assert.deepEqual(result.autoAssignedPlayerIds, []);
   assert.deepEqual(result.forceAssignedPlayerIds, []);
   assert.equal(result.bonusEligiblePlayerId, "p4");
 });
@@ -64,6 +83,7 @@ test("choice resolution assigns missing choices toward the most balanced final s
   });
 
   assert.equal(result.choicesByPlayer.p4, "B");
+  assert.deepEqual(result.autoAssignedPlayerIds, ["p4"]);
   assert.deepEqual(result.forceAssignedPlayerIds, []);
   assert.equal(result.bonusEligiblePlayerId, null);
 });
@@ -80,6 +100,7 @@ test("choice resolution can resolve equally balanced missing-choice outcomes ran
     p2: "A",
     p3: "B",
   });
+  assert.deepEqual(result.autoAssignedPlayerIds, ["p2", "p3"]);
   assert.deepEqual(result.forceAssignedPlayerIds, []);
   assert.equal(result.bonusEligiblePlayerId, "p3");
 });
@@ -96,6 +117,7 @@ test("choice resolution balances missing choices before empty-side correction", 
 
   assert.equal(sideACount, 2);
   assert.equal(sideBCount, 2);
+  assert.deepEqual(result.autoAssignedPlayerIds, ["p3", "p4"]);
   assert.deepEqual(result.forceAssignedPlayerIds, []);
   assert.equal(result.bonusEligiblePlayerId, null);
 });
@@ -112,6 +134,7 @@ test("choice resolution force-assigns the minimum number of players when a side 
 
   assert.equal(sideACount, 3);
   assert.equal(sideBCount, 2);
+  assert.deepEqual(result.autoAssignedPlayerIds, []);
   assert.equal(result.forceAssignedPlayerIds.length, 2);
   assert.equal(result.bonusEligiblePlayerId, null);
 });
@@ -128,6 +151,7 @@ test("choice resolution force-assigns two players in a four-player empty-side sp
 
   assert.equal(sideACount, 2);
   assert.equal(sideBCount, 2);
+  assert.deepEqual(result.autoAssignedPlayerIds, []);
   assert.equal(result.forceAssignedPlayerIds.length, 2);
   assert.equal(result.bonusEligiblePlayerId, null);
 });
@@ -235,13 +259,13 @@ test("pending penalty carryover applies to chosen side then clears", () => {
     choicesByPlayer: { p1: "A", p2: "B" },
   });
 
-  assert.equal(applied.penalizedSide, "B");
+  assert.equal(applied.penalizedPlayerId, "p2");
   assert.equal(applied.nextPendingPenaltyPlayerId, null);
 
   const unresolved = applyPendingPenalty({
     pendingPenaltyPlayerId: "p2",
     choicesByPlayer: { p1: "A" },
   });
-  assert.equal(unresolved.penalizedSide, null);
+  assert.equal(unresolved.penalizedPlayerId, null);
   assert.equal(unresolved.nextPendingPenaltyPlayerId, null);
 });

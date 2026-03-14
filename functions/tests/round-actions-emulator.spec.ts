@@ -20,11 +20,14 @@ async function clearFirestoreEmulator(): Promise<void> {
   }
 }
 
-async function createResolutionGame(params?: { playerIds?: string[] }) {
+async function createResolutionGame(params?: {
+  playerIds?: string[];
+  actionRandom?: () => number;
+}) {
   let now = 1_710_000_000_000;
   const store = new FirestoreRoomStore();
   const lifecycle = new RoomLifecycleService(store, () => now, () => 0.000321);
-  const actions = new RoundActionService(store, () => now, () => 0.5);
+  const actions = new RoundActionService(store, () => now, params?.actionRandom ?? (() => 0));
   const playerIds = params?.playerIds ?? ["host", "p2", "p3"];
   const displayNames = ["Host", "Blake", "Casey", "Devon"];
 
@@ -168,6 +171,7 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   assert.equal(roomSnapshot.get("phaseDeadlineAtMs"), now + 100_000);
   const roundZeroChoices = roundZeroSnapshot.get("choicesByPlayer");
   const roundZeroSides = Object.values(roundZeroChoices ?? {});
+  assert.deepEqual(roundZeroSnapshot.get("autoAssignedPlayerIds").sort(), ["p2", "p3", "p4"]);
   assert.equal(roundZeroSnapshot.get("forceAssignedPlayerIds").length, 0);
   assert.equal(roundZeroSnapshot.get("bonusEligiblePlayerId"), null);
   assert.equal(roundZeroSides.filter((side) => side === "A").length, 2);
@@ -175,7 +179,7 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   assert.equal(roundZeroSnapshot.get("verdictsByPlayer.p4"), "ABSTAIN");
   assert.equal(roundZeroSnapshot.get("outcome"), "DRAW");
   assert.equal(roundZeroSnapshot.get("dissenterPlayerId"), "p3");
-  assert.equal(roundOneSnapshot.get("penalizedSide"), "B");
+  assert.equal(roundOneSnapshot.get("penalizedPlayerId"), "p3");
   assert.equal(typeof roundOneSnapshot.get("promptId"), "string");
 });
 
@@ -194,6 +198,8 @@ runWithEmulator("resolution host guardrail promotes the next remaining player in
 
   const promotedSnapshot = await db.collection("rooms").doc(game.created.roomId).get();
   assert.equal(promotedSnapshot.get("hostPlayerId"), "p2");
+  assert.equal(promotedSnapshot.get("hostPromotionNonce"), 1);
+  assert.equal(promotedSnapshot.get("lastPromotedHostPlayerId"), "p2");
 
   const result = await game.actions.advanceResolution({
     uid: "p2",
@@ -268,4 +274,98 @@ runWithEmulator("final round ending persists ended status and expiry in Firestor
       }),
     /Room is not joinable/i,
   );
+});
+
+runWithEmulator("concurrent choice submissions still advance to argument in Firestore emulator", async () => {
+  await clearFirestoreEmulator();
+
+  const now = 1_710_000_000_000;
+  const store = new FirestoreRoomStore();
+  const lifecycle = new RoomLifecycleService(store, () => now, () => 0.000321);
+  const actions = new RoundActionService(store, () => now, () => 0.5);
+  const db = getFirestore();
+
+  const created = await lifecycle.createRoom({
+    uid: "host",
+    displayName: "Host",
+  });
+
+  await lifecycle.joinRoom({
+    uid: "p2",
+    roomCode: created.roomCode,
+    displayName: "Blake",
+  });
+  await lifecycle.setReady({ uid: "host", roomId: created.roomId, ready: true });
+  await lifecycle.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+  await lifecycle.startGame({ uid: "host", roomId: created.roomId });
+
+  await Promise.all([
+    actions.submitChoice({ uid: "host", roomId: created.roomId, side: "A" }),
+    actions.submitChoice({ uid: "p2", roomId: created.roomId, side: "B" }),
+  ]);
+
+  const roomSnapshot = await db.collection("rooms").doc(created.roomId).get();
+  const roundSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("rounds")
+    .doc("0")
+    .get();
+
+  assert.equal(roomSnapshot.get("phase"), "argument");
+  assert.equal(roundSnapshot.get("choicesByPlayer.host"), "A");
+  assert.equal(roundSnapshot.get("choicesByPlayer.p2"), "B");
+});
+
+runWithEmulator("concurrent verdict submissions resolve once in Firestore emulator", async () => {
+  await clearFirestoreEmulator();
+
+  const now = 1_710_000_000_000;
+  const store = new FirestoreRoomStore();
+  const lifecycle = new RoomLifecycleService(store, () => now, () => 0.000321);
+  const actions = new RoundActionService(store, () => now, () => 0.5);
+  const db = getFirestore();
+
+  const created = await lifecycle.createRoom({
+    uid: "host",
+    displayName: "Host",
+  });
+
+  await lifecycle.joinRoom({
+    uid: "p2",
+    roomCode: created.roomCode,
+    displayName: "Blake",
+  });
+  await lifecycle.setReady({ uid: "host", roomId: created.roomId, ready: true });
+  await lifecycle.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+  await lifecycle.startGame({ uid: "host", roomId: created.roomId });
+
+  await actions.submitChoice({ uid: "host", roomId: created.roomId, side: "A" });
+  await actions.submitChoice({ uid: "p2", roomId: created.roomId, side: "B" });
+  await actions.endArgumentTurn({ uid: "host", roomId: created.roomId });
+  await actions.endArgumentTurn({ uid: "p2", roomId: created.roomId });
+  await actions.advanceRebuttal({ uid: "host", roomId: created.roomId });
+
+  await Promise.all([
+    actions.submitVerdict({ uid: "host", roomId: created.roomId, verdict: "A_WON" }),
+    actions.submitVerdict({ uid: "p2", roomId: created.roomId, verdict: "A_WON" }),
+  ]);
+
+  const roomSnapshot = await db.collection("rooms").doc(created.roomId).get();
+  const hostSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("players")
+    .doc("host")
+    .get();
+  const guestSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("players")
+    .doc("p2")
+    .get();
+
+  assert.equal(roomSnapshot.get("phase"), "resolution");
+  assert.equal(hostSnapshot.get("score"), 1);
+  assert.equal(guestSnapshot.get("score"), 0);
 });

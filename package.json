@@ -13,7 +13,7 @@
     "lint:web": "eslint",
     "lint:functions": "pnpm --dir functions lint",
     "lint": "pnpm lint:web && pnpm lint:functions",
-    "test:web": "node --test tests/*.test.mjs",
+    "test:web": "node --import tsx --test tests/*.test.mjs tests/*.test.tsx",
     "test:functions": "pnpm --dir functions test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
@@ -35,14 +35,19 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.0",
     "@playwright/test": "^1.58.2",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@tailwindcss/postcss": "^4",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "firebase": "^12.10.0",
+    "jsdom": "^26.1.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

@@ -17,6 +17,7 @@ import {
   createEndedRoomState,
   createRoundRecord,
   type GamePhase,
+  pickPromotedHost,
   type PlayerRecord,
   REBUTTAL_PHASE_SECONDS,
   type RoomLifecycleStore,
@@ -115,11 +116,17 @@ export class RoundActionService {
     }
 
     const players = sortPlayers(await this.store.listPlayers(roomId));
+    const activeHost = await this.ensureActiveHost(room, players);
+
+    if ("endedResult" in activeHost) {
+      throw new HttpsError("failed-precondition", "Room is no longer active.");
+    }
+
     return {
-      room,
+      room: activeHost.room,
       player,
-      players,
-      roundIndex: requireActiveRound(room),
+      players: activeHost.players,
+      roundIndex: requireActiveRound(activeHost.room),
     };
   }
 
@@ -150,15 +157,17 @@ export class RoundActionService {
     };
   }
 
-  private async ensureResolutionHost(room: RoomRecord): Promise<
-    | { players: PlayerRecord[]; hostPlayerId: string }
+  private async ensureActiveHost(
+    room: RoomRecord,
+    playersInput?: PlayerRecord[],
+  ): Promise<
+    | { players: PlayerRecord[]; room: RoomRecord }
     | { endedResult: AdvanceResolutionResult }
   > {
-    const players = sortPlayers(await this.store.listPlayers(room.roomId));
-    let hostPlayerId = room.hostPlayerId;
+    const players = sortPlayers(playersInput ?? (await this.store.listPlayers(room.roomId)));
 
-    if (players.some((player) => player.playerId === hostPlayerId)) {
-      return { players, hostPlayerId };
+    if (players.some((player) => player.playerId === room.hostPlayerId)) {
+      return { players, room };
     }
 
     if (players.length === 0) {
@@ -167,17 +176,43 @@ export class RoundActionService {
       };
     }
 
-    hostPlayerId = players[0].playerId;
-    await this.store.updateRoom(room.roomId, { hostPlayerId });
+    const promotedHost = pickPromotedHost(players, this.random);
+    const hostPromotionNonce = (room.hostPromotionNonce ?? 0) + 1;
+    const nextRoom = {
+      ...room,
+      hostPlayerId: promotedHost.playerId,
+      hostPromotionNonce,
+      lastPromotedHostPlayerId: promotedHost.playerId,
+    };
+    await this.store.updateRoom(room.roomId, {
+      hostPlayerId: promotedHost.playerId,
+      hostPromotionNonce,
+      lastPromotedHostPlayerId: promotedHost.playerId,
+    });
 
-    return { players, hostPlayerId };
+    return { players, room: nextRoom };
   }
 
   private async transitionChoiceToArgument(params: {
     room: RoomRecord;
     players: PlayerRecord[];
   }): Promise<TickRoomResult> {
-    const { room, players } = params;
+    const { players } = params;
+    const latestRoom = await this.store.getRoom(params.room.roomId);
+
+    if (
+      !latestRoom ||
+      latestRoom.status !== "inGame" ||
+      latestRoom.phase !== "choice"
+    ) {
+      return {
+        phase: latestRoom?.phase ?? "choice",
+        roundIndex: latestRoom?.roundIndex ?? requireActiveRound(params.room),
+        deadlineAtMs: latestRoom?.phaseDeadlineAtMs ?? params.room.phaseDeadlineAtMs,
+      };
+    }
+
+    const room = latestRoom;
     const roundIndex = requireActiveRound(room);
     const round = await this.requireRound(room.roomId, roundIndex);
     const resolved = resolveChoicePhase({
@@ -185,19 +220,25 @@ export class RoundActionService {
       lockedChoices: round.choicesByPlayer,
       random: this.random,
     });
-    const { penalizedSide, nextPendingPenaltyPlayerId } = applyPendingPenalty({
+    const { penalizedPlayerId, nextPendingPenaltyPlayerId } = applyPendingPenalty({
       pendingPenaltyPlayerId: room.pendingPenaltyPlayerId,
       choicesByPlayer: resolved.choicesByPlayer,
     });
     const [activeArgumentSide] = getArgumentTurnOrder(roundIndex);
     const deadlineAtMs =
-      this.nowMs() + getArgumentBudgets(penalizedSide)[activeArgumentSide] * 1000;
+      this.nowMs() +
+      getArgumentBudgets({
+        penalizedPlayerId,
+        choicesByPlayer: resolved.choicesByPlayer,
+      })[activeArgumentSide] *
+        1000;
 
     await this.store.updateRound(room.roomId, roundIndex, {
       choicesByPlayer: resolved.choicesByPlayer,
+      autoAssignedPlayerIds: resolved.autoAssignedPlayerIds,
       forceAssignedPlayerIds: resolved.forceAssignedPlayerIds,
       bonusEligiblePlayerId: resolved.bonusEligiblePlayerId,
-      penalizedSide,
+      penalizedPlayerId,
     });
     await this.store.updateRoom(room.roomId, {
       phase: "argument",
@@ -215,9 +256,10 @@ export class RoundActionService {
 
   private async transitionArgument(params: {
     room: RoomRecord;
-    roundPenalizedSide: Side | null;
+    roundChoicesByPlayer: Partial<Record<string, Side>>;
+    roundPenalizedPlayerId: string | null;
   }): Promise<TickRoomResult> {
-    const { room, roundPenalizedSide } = params;
+    const { room, roundChoicesByPlayer, roundPenalizedPlayerId } = params;
     const roundIndex = requireActiveRound(room);
     const activeArgumentSide = room.activeArgumentSide;
 
@@ -229,7 +271,12 @@ export class RoundActionService {
 
     if (activeArgumentSide === firstSide) {
       const deadlineAtMs =
-        this.nowMs() + getArgumentBudgets(roundPenalizedSide)[secondSide] * 1000;
+        this.nowMs() +
+        getArgumentBudgets({
+          penalizedPlayerId: roundPenalizedPlayerId,
+          choicesByPlayer: roundChoicesByPlayer,
+        })[secondSide] *
+          1000;
       await this.store.updateRoom(room.roomId, {
         phase: "argument",
         phaseDeadlineAtMs: deadlineAtMs,
@@ -282,7 +329,22 @@ export class RoundActionService {
     room: RoomRecord;
     players: PlayerRecord[];
   }): Promise<TickRoomResult> {
-    const { room, players } = params;
+    const { players } = params;
+    const latestRoom = await this.store.getRoom(params.room.roomId);
+
+    if (
+      !latestRoom ||
+      latestRoom.status !== "inGame" ||
+      latestRoom.phase !== "verdict"
+    ) {
+      return {
+        phase: latestRoom?.phase ?? "verdict",
+        roundIndex: latestRoom?.roundIndex ?? requireActiveRound(params.room),
+        deadlineAtMs: latestRoom?.phaseDeadlineAtMs ?? params.room.phaseDeadlineAtMs,
+      };
+    }
+
+    const room = latestRoom;
     const roundIndex = requireActiveRound(room);
     const round = await this.requireRound(room.roomId, roundIndex);
     const verdictsByPlayer: Partial<Record<string, VerdictVote>> = {};
@@ -358,7 +420,8 @@ export class RoundActionService {
       const round = await this.requireRound(room.roomId, roundIndex);
       return this.transitionArgument({
         room,
-        roundPenalizedSide: round.penalizedSide,
+        roundChoicesByPlayer: round.choicesByPlayer,
+        roundPenalizedPlayerId: round.penalizedPlayerId,
       });
     }
 
@@ -389,17 +452,11 @@ export class RoundActionService {
       throw new HttpsError("failed-precondition", "Choice is already locked for this player.");
     }
 
-    const choicesByPlayer = {
-      ...round.choicesByPlayer,
-      [uid]: side,
-    };
-    await this.store.updateRound(room.roomId, roundIndex, { choicesByPlayer });
+    await this.store.updateRoundChoice(room.roomId, roundIndex, uid, side);
+    const refreshedRound = await this.requireRound(room.roomId, roundIndex);
 
-    if (players.every((player) => choicesByPlayer[player.playerId])) {
-      await this.transitionChoiceToArgument({
-        room: { ...room, phase: "choice" },
-        players,
-      });
+    if (players.every((player) => refreshedRound.choicesByPlayer[player.playerId])) {
+      await this.transitionChoiceToArgument({ room, players });
     }
 
     return { locked: true };
@@ -425,7 +482,8 @@ export class RoundActionService {
 
     const next = await this.transitionArgument({
       room,
-      roundPenalizedSide: round.penalizedSide,
+      roundChoicesByPlayer: round.choicesByPlayer,
+      roundPenalizedPlayerId: round.penalizedPlayerId,
     });
 
     return next.phase === "argument"
@@ -463,17 +521,11 @@ export class RoundActionService {
       throw new HttpsError("failed-precondition", "Verdict is already locked for this player.");
     }
 
-    const verdictsByPlayer = {
-      ...round.verdictsByPlayer,
-      [uid]: verdict,
-    };
-    await this.store.updateRound(room.roomId, roundIndex, { verdictsByPlayer });
+    await this.store.updateRoundVerdict(room.roomId, roundIndex, uid, verdict);
+    const refreshedRound = await this.requireRound(room.roomId, roundIndex);
 
-    if (players.every((player) => verdictsByPlayer[player.playerId])) {
-      await this.transitionVerdictToResolution({
-        room: { ...room, phase: "verdict" },
-        players,
-      });
+    if (players.every((player) => refreshedRound.verdictsByPlayer[player.playerId])) {
+      await this.transitionVerdictToResolution({ room, players });
     }
 
     return { locked: true };
@@ -493,24 +545,27 @@ export class RoundActionService {
 
     this.requireInGamePhase(room, "resolution");
 
-    const hostResolution = await this.ensureResolutionHost(room);
+    const hostResolution = await this.ensureActiveHost(room);
     if ("endedResult" in hostResolution) {
       return hostResolution.endedResult;
     }
-    const { players, hostPlayerId } = hostResolution;
+    const {
+      players,
+      room: activeRoom,
+    } = hostResolution;
 
     const caller = players.find((player) => player.playerId === uid);
     if (!caller) {
       throw new HttpsError("not-found", "Player is not in this room.");
     }
 
-    if (uid !== hostPlayerId) {
+    if (uid !== activeRoom.hostPlayerId) {
       throw new HttpsError("permission-denied", "Only host can advance from resolution.");
     }
 
-    const roundIndex = requireActiveRound(room);
-    if (roundIndex + 1 >= room.roundsTotal) {
-      return this.endRoomImmediately(room);
+    const roundIndex = requireActiveRound(activeRoom);
+    if (roundIndex + 1 >= activeRoom.roundsTotal) {
+      return this.endRoomImmediately(activeRoom);
     }
 
     const nextRoundIndex = roundIndex + 1;
@@ -518,7 +573,7 @@ export class RoundActionService {
     const nextRound = createRoundRecord({
       roomId,
       roundIndex: nextRoundIndex,
-      roundsTotal: room.roundsTotal,
+      roundsTotal: activeRoom.roundsTotal,
       startedAtMs,
     });
     const deadlineAtMs = startedAtMs + CHOICE_PHASE_SECONDS * 1000;

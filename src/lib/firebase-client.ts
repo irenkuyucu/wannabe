@@ -31,6 +31,8 @@ export type RoomDoc = {
   roomCode: string;
   status: "lobby" | "inGame" | "ended";
   hostPlayerId: string;
+  hostPromotionNonce: number;
+  lastPromotedHostPlayerId: string | null;
   roundsTotal: number;
   roundIndex: number | null;
   phase: "choice" | "argument" | "rebuttal" | "verdict" | "resolution" | null;
@@ -56,12 +58,13 @@ export type RoundDoc = {
   roundIndex: number;
   promptId: string;
   choicesByPlayer: Partial<Record<string, "A" | "B">>;
+  autoAssignedPlayerIds: string[];
   forceAssignedPlayerIds: string[];
   bonusEligiblePlayerId: string | null;
   verdictsByPlayer: Partial<Record<string, "A_WON" | "B_WON" | "DRAW" | "ABSTAIN">>;
   outcome: "A_WON" | "B_WON" | "DRAW" | null;
   dissenterPlayerId: string | null;
-  penalizedSide: "A" | "B" | null;
+  penalizedPlayerId: string | null;
   startedAtMs: number;
   resolvedAtMs: number | null;
 };
