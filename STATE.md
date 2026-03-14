@@ -13,11 +13,11 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- d2c7003 on codex/m4-ui-foundation — Update planning and spec documentation.
+- 6820beb on codex/m4-ui-foundation — Implement redesigned game screens and resilient host promotion.
+- dc0f16a on codex/m4-ui-foundation — Simplify player-facing room UI and add responsive checks.
 - e81241f on codex/m4-ui-foundation — Add Playwright resolution flow coverage.
 - 2e12f09 on codex/m4-ui-foundation — Add resolution and game-over frontend flow and Playwright setup.
-- 3e2a723 on codex/m4-ui-foundation — Add live phase screens with balanced choice resolution.
-- cba2e56 on codex/m4-ui-foundation — Add live entry and lobby room flow.
-- bb03e05 on codex/m4-ui-foundation — Add frontend UI direction board.
 
 ## 3. Project snapshot (max 5)
 (Brief facts about the working state of the project/codebase. No rationale.)
@@ -33,7 +33,7 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Wired the bundled `Bangers` font, local arrow icon asset, floating avatar motion fields, validation/assignment/promotion toasts, and end-game winner presentation into the new UI system.
 - Strengthened backend round and room behavior by fixing concurrent round-write races, moving host promotion beyond resolution-only guardrails, and recording host-promotion metadata for the frontend toast flow.
 - Expanded non-E2E coverage with frontend integration tests plus backend unit and emulator tests, and added seeded/full-flow Playwright multiplayer coverage for the redesigned live game loop.
-- Left the local `SPEC.md` edit untouched.
+- Updated `PLAN.md` and `SPEC.md` to reflect the current lone-side bonus-scoring rules and UI constraints.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
