@@ -52,10 +52,10 @@ For `M4-T3` review, use at least two browser windows/devices so you can:
 - validate choice, argument, rebuttal, and verdict timers,
 - validate the 2-second hold controls for end-turn and host rebuttal advance.
 
-Share links use query-format room links:
+Share links use dedicated join paths:
 
 ```text
-/?room=482901
+/join/482901
 ```
 
 ## Emulator Setup

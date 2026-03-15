@@ -11,10 +11,6 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
     }
 
-    match /roomCodes/{roomCode} {
-      allow read, write: if false;
-    }
-
     match /rooms/{roomId} {
       allow get: if isRoomMember(roomId);
       allow create, update, delete: if false;

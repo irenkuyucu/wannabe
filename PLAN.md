@@ -35,10 +35,9 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 ### Firestore Structure
 | Path | Purpose | Required key fields |
 |---|---|---|
-| `roomCodes/{roomCode}` | room code -> roomId lookup | `roomId`, `status`, `expiresAt` |
-| `rooms/{roomId}` | canonical room/game state | `status`, `roomCode`, `hostPlayerId`, `roundsTotal`, `roundIndex`, `phase`, `phaseDeadlineAtMs`, `currentPromptId`, `createdAt`, `expiresAt` |
-| `rooms/{roomId}/players/{playerId}` | player/session state | `uid`, `displayName`, `avatarId`, `ready`, `score`, `joinedAt` |
-| `rooms/{roomId}/rounds/{roundIndex}` | immutable round outcomes/history | `promptId`, `choices`, `forceAssignedPlayerIds`, `bonusEligiblePlayerId`, `verdicts`, `outcome`, `dissenterPlayerId`, `startedAt`, `resolvedAt` |
+| `rooms/{roomCode}` | canonical room/game state keyed by the 6-digit room code | `status`, `roomCode`, `hostPlayerId`, `roundsTotal`, `roundIndex`, `phase`, `phaseDeadlineAtMs`, `currentPromptId`, `createdAt`, `expiresAt` |
+| `rooms/{roomCode}/players/{playerId}` | player/session state | `uid`, `displayName`, `avatarId`, `ready`, `score`, `joinedAt` |
+| `rooms/{roomCode}/rounds/{roundIndex}` | immutable round outcomes/history | `promptId`, `choices`, `forceAssignedPlayerIds`, `bonusEligiblePlayerId`, `verdicts`, `outcome`, `dissenterPlayerId`, `startedAt`, `resolvedAt` |
 
 ### Player Session Model
 `Player` is a room-session model stored at `rooms/{roomId}/players/{playerId}`.
@@ -105,7 +104,7 @@ Goal: deliver full playable UX with repeated user-owned checks.
 | Task ID | Task | Deliverables | Agent-owned validation | User-owned validation | Gate |
 |---|---|---|---|---|---|
 | M4-T1 | UI direction draft | first-pass visual system: typography, color tokens, component style patterns, sample screens | visual regression-friendly snapshot/unit checks where applicable | Review/approve visual direction before feature screens | PENDING until approval; then PASS/FAIL |
-| M4-T2 | Entry + lobby UI | main screen, create/join, lobby list, ready toggles, start controls, share-link copy UX (query format), and join-via-share-link handling | component/integration tests | Validate clarity/usability on real device(s), including share-link flow | PENDING until approval; then PASS/FAIL |
+| M4-T2 | Entry + lobby UI | main screen, create/join, lobby list, ready toggles, start controls, share-link copy UX (dedicated join path), and join-via-share-link handling | component/integration tests | Validate clarity/usability on real device(s), including share-link flow | PENDING until approval; then PASS/FAIL |
 | M4-T3 | In-game phase screens | choice, argument, rebuttal, verdict screens with countdowns and controls | component/integration tests for phase-state UI correctness | Validate in-person flow timing and control ergonomics | PENDING until approval; then PASS/FAIL |
 | M4-T4 | Resolution + game over | scoreboard, winner/ties, return-main flow, ended-room messaging | component/integration tests | Validate end-of-round and end-of-game comprehension | PENDING until approval; then PASS/FAIL |
 | M4-T5 | Production-adjacent UI simplification + responsive polish | simplify default UI to player-facing phase screens, move non-essential state inspection behind an explicit details/debug toggle, and complete mobile/desktop polish | regression checks + `pnpm verify` | Validate visual quality, responsiveness, and default player-facing clarity across target devices | PENDING until approval; then PASS/FAIL |
@@ -135,7 +134,7 @@ Goal: finalize correctness and deployment readiness.
 13. Scoring rules: `A_WON` gives +1 to side A choosers; `B_WON` gives +1 to side B choosers; `DRAW` gives +0 to all players.
 14. Lone-side bonus scoring: if `bonusEligiblePlayerId` exists and that player's side wins, that player gets +2 total for the round (+1 base +1 bonus); otherwise no bonus.
 15. Input validation rules: invalid `displayName` values (including non-ASCII letters) and invalid `roomCode` values are rejected by backend validation.
-16. Share-link behavior: room share link uses query format and can be copied from lobby, then opens a join path that resolves to the target room by code.
+16. Share-link behavior: room share link uses a dedicated join path and can be copied from lobby, then opens a join path that resolves to the target room by code.
 17. Ended-room lifecycle: room end sets `status=ended` + `expiresAt=now+2h`; ended status blocks resume/rejoin; ended-room data remains readable until expiry for late clients.
 18. Post-expiry cleanup trigger is deferred in MVP; no automatic deletion trigger is implemented in this plan.
 

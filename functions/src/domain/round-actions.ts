@@ -149,7 +149,6 @@ export class RoundActionService {
   private async endRoomImmediately(room: RoomRecord): Promise<AdvanceResolutionResult> {
     const ended = createEndedRoomState(this.nowMs());
     await this.store.updateRoom(room.roomId, ended.roomPatch);
-    await this.store.updateRoomCode(room.roomCode, ended.roomCodePatch);
 
     return {
       nextState: "ended",

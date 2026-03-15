@@ -3,48 +3,22 @@ import { HttpsError } from "firebase-functions/v2/https";
 import type {
   PlayerRecord,
   RoundRecord,
-  RoomCodeRecord,
   RoomLifecycleStore,
   RoomRecord,
 } from "../src/domain/room-lifecycle";
 
 export class InMemoryRoomStore implements RoomLifecycleStore {
-  private roomIdCounter = 0;
-  private readonly roomCodes = new Map<string, RoomCodeRecord>();
   private readonly rooms = new Map<string, RoomRecord>();
   private readonly rounds = new Map<string, Map<number, RoundRecord>>();
   private readonly players = new Map<string, Map<string, PlayerRecord>>();
 
-  generateRoomId(): string {
-    this.roomIdCounter += 1;
-    return `room-${this.roomIdCounter}`;
-  }
-
-  async reserveRoomCode(record: RoomCodeRecord): Promise<boolean> {
-    if (this.roomCodes.has(record.roomCode)) {
+  async createRoom(record: RoomRecord): Promise<boolean> {
+    if (this.rooms.has(record.roomId)) {
       return false;
     }
 
-    this.roomCodes.set(record.roomCode, { ...record });
-    return true;
-  }
-
-  async getRoomCode(roomCode: string): Promise<RoomCodeRecord | null> {
-    const record = this.roomCodes.get(roomCode);
-    return record ? { ...record } : null;
-  }
-
-  async updateRoomCode(roomCode: string, patch: Partial<RoomCodeRecord>): Promise<void> {
-    const record = this.roomCodes.get(roomCode);
-    if (!record) {
-      return;
-    }
-
-    this.roomCodes.set(roomCode, { ...record, ...patch });
-  }
-
-  async createRoom(record: RoomRecord): Promise<void> {
     this.rooms.set(record.roomId, { ...record });
+    return true;
   }
 
   async getRoom(roomId: string): Promise<RoomRecord | null> {

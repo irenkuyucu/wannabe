@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   type ReactNode,
   startTransition,
   useEffect,
@@ -9,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import { ArgumentScreen } from "@/components/argument-screen";
 import { EndGameScreen } from "@/components/end-game-screen";
@@ -54,8 +56,8 @@ import {
 import { getPhaseDriverDelayMs } from "@/lib/in-game-ui";
 import {
   buildRoomShareLink,
-  buildRoomShareQuery,
-  extractRoomCodeFromSearch,
+  buildJoinRoomPath,
+  buildLiveRoomPath,
   getAssignedNameNotice,
   getLobbyStartState,
   normalizeRoomCodeInput,
@@ -64,6 +66,12 @@ import { getHostPromotionNotice } from "@/lib/host-promotion";
 
 type EntryMode = "create" | "join";
 const SPLASH_MIN_DURATION_MS = 2000;
+const SPLASH_COMPLETE_STORAGE_KEY = "wannabe:splash-complete";
+
+type WannabeAppProps = {
+  initialInviteRoomCode?: string | null;
+  initialLiveRoomCode?: string | null;
+};
 
 function getValidationError(displayName: string, roomCode: string, mode: EntryMode) {
   if (getDisplayNameIssue(displayName)) {
@@ -77,13 +85,17 @@ function getValidationError(displayName: string, roomCode: string, mode: EntryMo
   return null;
 }
 
-export function WannabeApp() {
+export function WannabeApp({
+  initialInviteRoomCode = null,
+  initialLiveRoomCode = null,
+}: WannabeAppProps) {
+  const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [selectedAvatarId, setSelectedAvatarId] = useState(DEFAULT_AVATAR_ID);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
-  const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(null);
-  const [joinCode, setJoinCode] = useState("");
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(initialInviteRoomCode);
+  const [joinCode, setJoinCode] = useState(initialInviteRoomCode ?? "");
+  const [roomId, setRoomId] = useState<string | null>(initialLiveRoomCode);
   const [authUid, setAuthUid] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [room, setRoom] = useState<RoomDoc | null>(null);
@@ -95,14 +107,36 @@ export function WannabeApp() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [copiedShareLink, setCopiedShareLink] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-  const [splashProgress, setSplashProgress] = useState(0);
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+
+    return window.sessionStorage.getItem(SPLASH_COMPLETE_STORAGE_KEY) !== "1";
+  });
+  const [splashProgress, setSplashProgress] = useState(() => (showSplash ? 0 : 1));
   const [validationNotice, setValidationNotice] = useState<string | null>(null);
   const [dismissedHostPromotionKeys, setDismissedHostPromotionKeys] = useState<string[]>([]);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const tickingPhaseKeyRef = useRef<string | null>(null);
+  const handleReturnToMain = useCallback(() => {
+    setRoomId(null);
+    setRoom(null);
+    setRound(null);
+    setLatestRound(null);
+    setPlayers([]);
+    setInviteRoomCode(null);
+    setJoinCode("");
+    setErrorMessage(null);
+    router.replace("/");
+    setNoticeMessage("Back on main.");
+  }, [router]);
 
   useEffect(() => {
+    if (!showSplash) {
+      return undefined;
+    }
+
     let frameId = 0;
     const startAt = performance.now();
 
@@ -118,21 +152,16 @@ export function WannabeApp() {
         return;
       }
 
+      window.sessionStorage.setItem(SPLASH_COMPLETE_STORAGE_KEY, "1");
       setShowSplash(false);
     };
 
     frameId = window.requestAnimationFrame(step);
 
     return () => window.cancelAnimationFrame(frameId);
-  }, []);
+  }, [showSplash]);
 
   useEffect(() => {
-    const initialRoomCode = extractRoomCodeFromSearch(window.location.search);
-    if (initialRoomCode) {
-      setInviteRoomCode(initialRoomCode);
-      setJoinCode(initialRoomCode);
-    }
-
     try {
       return subscribeToAnonymousUser(
         (user) => {
@@ -154,7 +183,7 @@ export function WannabeApp() {
   }, []);
 
   useEffect(() => {
-    if (!roomId) {
+    if (!roomId || !authUid) {
       setRoom(null);
       setPlayers([]);
       setRound(null);
@@ -189,11 +218,12 @@ export function WannabeApp() {
       setErrorMessage(getErrorMessage(error));
       return undefined;
     }
-  }, [roomId]);
+  }, [authUid, roomId]);
 
   useEffect(() => {
     if (
       !roomId ||
+      !authUid ||
       room?.status !== "inGame" ||
       room?.roundIndex === null ||
       room?.roundIndex === undefined
@@ -222,15 +252,7 @@ export function WannabeApp() {
       setErrorMessage(getErrorMessage(error));
       return undefined;
     }
-  }, [room?.roundIndex, room?.status, roomId]);
-
-  useEffect(() => {
-    if (!room?.roomCode || room.status !== "lobby") {
-      return;
-    }
-
-    window.history.replaceState({}, "", buildRoomShareQuery(room.roomCode));
-  }, [room?.roomCode, room?.status]);
+  }, [authUid, room?.roundIndex, room?.status, roomId]);
 
   useEffect(() => {
     if (!validationNotice) {
@@ -281,6 +303,14 @@ export function WannabeApp() {
   }, [copiedShareLink]);
 
   useEffect(() => {
+    if (!initialLiveRoomCode || !authUid || room || currentPlayer || !errorMessage) {
+      return;
+    }
+
+    router.replace(buildJoinRoomPath(initialLiveRoomCode));
+  }, [authUid, currentPlayer, errorMessage, initialLiveRoomCode, room, router]);
+
+  useEffect(() => {
     setNowMs(Date.now());
 
     if (room?.status !== "inGame" || room.phaseDeadlineAtMs === null) {
@@ -301,7 +331,7 @@ export function WannabeApp() {
 
     handleReturnToMain();
     setPendingAction(null);
-  }, [pendingAction, room?.status]);
+  }, [handleReturnToMain, pendingAction, room?.status]);
 
   const startState = useMemo(
     () =>
@@ -420,21 +450,34 @@ export function WannabeApp() {
 
     try {
       const requestedName = displayName;
-      const result =
-        mode === "create"
-          ? await createRoom({
-              displayName: requestedName,
-              avatarId: selectedAvatarId,
-            })
-        : await joinRoom({
-              roomCode: joinCode,
-              displayName: requestedName,
-              avatarId: selectedAvatarId,
-            });
+      let nextRoomId = "";
+      let nextRoomCode = "";
+      let assignedDisplayName = "";
 
-      setRoomId(result.roomId);
-      setNoticeMessage(getAssignedNameNotice(requestedName, result.assignedDisplayName));
+      if (mode === "create") {
+        const result = await createRoom({
+          displayName: requestedName,
+          avatarId: selectedAvatarId,
+        });
+        nextRoomId = result.roomId;
+        nextRoomCode = result.roomCode;
+        assignedDisplayName = result.assignedDisplayName;
+      } else {
+        const result = await joinRoom({
+          roomCode: joinCode,
+          displayName: requestedName,
+          avatarId: selectedAvatarId,
+        });
+        nextRoomId = result.roomId;
+        nextRoomCode = result.roomId;
+        assignedDisplayName = result.assignedDisplayName;
+      }
+
+      setRoomId(nextRoomId);
+      setInviteRoomCode(null);
+      setNoticeMessage(getAssignedNameNotice(requestedName, assignedDisplayName));
       setErrorMessage(null);
+      router.replace(buildLiveRoomPath(nextRoomCode));
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -596,19 +639,6 @@ export function WannabeApp() {
     }
   }
 
-  function handleReturnToMain() {
-    setRoomId(null);
-    setRoom(null);
-    setRound(null);
-    setLatestRound(null);
-    setPlayers([]);
-    setInviteRoomCode(null);
-    setJoinCode("");
-    setErrorMessage(null);
-    window.history.replaceState({}, "", "/");
-    setNoticeMessage("Back on main.");
-  }
-
   async function handleCopyShareLink() {
     if (!shareLink) {
       return;
@@ -653,6 +683,26 @@ export function WannabeApp() {
 
   if (showSplash) {
     return <TitleScreen progress={splashProgress} />;
+  }
+
+  if (roomId && (!room || !currentPlayer) && !showInGame && room?.status !== "ended") {
+    return (
+      <main className="toy-page min-h-screen px-[16px] py-[20px] sm:px-[24px] sm:py-[32px]">
+        <div className="mx-auto flex w-full max-w-[640px] flex-col gap-[16px]">
+          <section className="toy-shell overflow-hidden rounded-[32px] px-[20px] py-[24px] text-center">
+            <p className="section-banner mx-auto max-w-fit bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]">
+              Restoring room
+            </p>
+            <h1 className="mt-[20px] text-balance text-[32px] font-black uppercase leading-[0.94] tracking-[-0.04em] text-white">
+              Loading room {roomId}.
+            </h1>
+            <p className="mt-[16px] text-[16px] leading-[28px] text-[#d8ecff]">
+              Reconnecting your live room state now.
+            </p>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   if (!showCompactRoomSidebar) {
@@ -1004,8 +1054,8 @@ export function WannabeApp() {
                       Pick a name, choose an avatar, and create or join with a code.
                     </h2>
                     <p className="mt-[16px] max-w-2xl text-[16px] leading-[28px] text-[#d8ecff] sm:text-[18px] sm:leading-[32px]">
-                      Share-link joins use the query format `?room=482901`. Once
-                      you are in a lobby, this panel turns into the live room
+                      Share links now open dedicated join routes like `/join/482901`.
+                      Once you are in a lobby, the address switches to the live room
                       surface and continues into the timed round screens after start.
                     </p>
                   </div>

@@ -297,7 +297,6 @@ test("advanceResolution ends the room after the final round", async () => {
     roomId: game.created.roomId,
   });
   const room = await game.store.getRoom(game.created.roomId);
-  const roomCode = await game.store.getRoomCode(game.created.roomCode);
   const round = await game.store.getRound(game.created.roomId, 0);
 
   assert.deepEqual(result, { nextState: "ended", roundIndex: 0 });
@@ -305,8 +304,6 @@ test("advanceResolution ends the room after the final round", async () => {
   assert.equal(room?.phase, null);
   assert.equal(room?.currentPromptId, null);
   assert.equal(room?.expiresAtMs, game.now + ROOM_TTL_MS);
-  assert.equal(roomCode?.status, "ended");
-  assert.equal(roomCode?.expiresAtMs, game.now + ROOM_TTL_MS);
   assert.equal(round?.outcome, "DRAW");
 
   await assert.rejects(
@@ -395,13 +392,10 @@ test("advanceResolution ends the room immediately when the host is missing and n
     roomId: game.created.roomId,
   });
   const room = await game.store.getRoom(game.created.roomId);
-  const roomCode = await game.store.getRoomCode(game.created.roomCode);
 
   assert.deepEqual(result, { nextState: "ended", roundIndex: 0 });
   assert.equal(room?.status, "ended");
   assert.equal(room?.phase, null);
   assert.equal(room?.pendingPenaltyPlayerId, null);
   assert.equal(room?.expiresAtMs, game.now + ROOM_TTL_MS);
-  assert.equal(roomCode?.status, "ended");
-  assert.equal(roomCode?.expiresAtMs, game.now + ROOM_TTL_MS);
 });

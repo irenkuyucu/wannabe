@@ -27,15 +27,8 @@ async function seedRoomData() {
   await testEnv.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore();
 
-    await db.doc("roomCodes/123456").set({
-      roomCode: "123456",
-      roomId: "room-1",
-      status: "inGame",
-      expiresAtMs: null,
-    });
-
-    await db.doc("rooms/room-1").set({
-      roomId: "room-1",
+    await db.doc("rooms/123456").set({
+      roomId: "123456",
       roomCode: "123456",
       status: "inGame",
       hostPlayerId: "host",
@@ -50,7 +43,7 @@ async function seedRoomData() {
       expiresAtMs: null,
     });
 
-    await db.doc("rooms/room-1/players/host").set({
+    await db.doc("rooms/123456/players/host").set({
       playerId: "host",
       uid: "host",
       displayName: "Host",
@@ -60,7 +53,7 @@ async function seedRoomData() {
       joinedAtMs: 1_710_000_000_000,
     });
 
-    await db.doc("rooms/room-1/players/p2").set({
+    await db.doc("rooms/123456/players/p2").set({
       playerId: "p2",
       uid: "p2",
       displayName: "Blake",
@@ -70,7 +63,7 @@ async function seedRoomData() {
       joinedAtMs: 1_710_000_000_100,
     });
 
-    await db.doc("rooms/room-1/rounds/0").set({
+    await db.doc("rooms/123456/rounds/0").set({
       roundIndex: 0,
       promptId: "WB001",
       choicesByPlayer: {
@@ -106,9 +99,9 @@ test("member can read room internals", async () => {
 
   const memberDb = testEnv.authenticatedContext("host").firestore();
 
-  await assertSucceeds(memberDb.doc("rooms/room-1").get());
-  await assertSucceeds(memberDb.doc("rooms/room-1/players/p2").get());
-  await assertSucceeds(memberDb.doc("rooms/room-1/rounds/0").get());
+  await assertSucceeds(memberDb.doc("rooms/123456").get());
+  await assertSucceeds(memberDb.doc("rooms/123456/players/p2").get());
+  await assertSucceeds(memberDb.doc("rooms/123456/rounds/0").get());
 });
 
 test("non-members and unauthenticated clients cannot read room internals", async () => {
@@ -117,19 +110,11 @@ test("non-members and unauthenticated clients cannot read room internals", async
   const nonMemberDb = testEnv.authenticatedContext("outsider").firestore();
   const guestDb = testEnv.unauthenticatedContext().firestore();
 
-  await assertFails(nonMemberDb.doc("rooms/room-1").get());
-  await assertFails(nonMemberDb.doc("rooms/room-1/players/host").get());
-  await assertFails(nonMemberDb.doc("rooms/room-1/rounds/0").get());
-  await assertFails(guestDb.doc("rooms/room-1").get());
-  await assertFails(guestDb.doc("rooms/room-1/players/host").get());
-});
-
-test("room code documents are never directly readable by clients", async () => {
-  await clearEmulatorData();
-
-  const memberDb = testEnv.authenticatedContext("host").firestore();
-
-  await assertFails(memberDb.doc("roomCodes/123456").get());
+  await assertFails(nonMemberDb.doc("rooms/123456").get());
+  await assertFails(nonMemberDb.doc("rooms/123456/players/host").get());
+  await assertFails(nonMemberDb.doc("rooms/123456/rounds/0").get());
+  await assertFails(guestDb.doc("rooms/123456").get());
+  await assertFails(guestDb.doc("rooms/123456/players/host").get());
 });
 
 test("clients cannot directly write authoritative room state", async () => {
@@ -138,7 +123,7 @@ test("clients cannot directly write authoritative room state", async () => {
   const memberDb = testEnv.authenticatedContext("host").firestore();
 
   await assertFails(
-    memberDb.doc("rooms/room-1").set(
+    memberDb.doc("rooms/123456").set(
       {
         status: "ended",
       },
@@ -146,7 +131,7 @@ test("clients cannot directly write authoritative room state", async () => {
     ),
   );
   await assertFails(
-    memberDb.doc("rooms/room-1/players/host").set(
+    memberDb.doc("rooms/123456/players/host").set(
       {
         score: 99,
       },
@@ -154,7 +139,7 @@ test("clients cannot directly write authoritative room state", async () => {
     ),
   );
   await assertFails(
-    memberDb.doc("rooms/room-1/rounds/0").set(
+    memberDb.doc("rooms/123456/rounds/0").set(
       {
         outcome: "A_WON",
       },

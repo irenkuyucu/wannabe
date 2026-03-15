@@ -5,7 +5,6 @@ import type {
   PlayerRecord,
   RoundRecord,
   RoomLifecycleStore,
-  RoomCodeRecord,
   RoomRecord,
 } from "../domain/room-lifecycle";
 
@@ -20,10 +19,6 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
     return this.db.collection("rooms").doc(roomId);
   }
 
-  private roomCodeRef(roomCode: string) {
-    return this.db.collection("roomCodes").doc(roomCode);
-  }
-
   private playerRef(roomId: string, playerId: string) {
     return this.roomRef(roomId).collection("players").doc(playerId);
   }
@@ -32,13 +27,9 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
     return this.roomRef(roomId).collection("rounds").doc(String(roundIndex));
   }
 
-  generateRoomId(): string {
-    return this.db.collection("rooms").doc().id;
-  }
-
-  async reserveRoomCode(record: RoomCodeRecord): Promise<boolean> {
+  async createRoom(record: RoomRecord): Promise<boolean> {
     try {
-      await this.roomCodeRef(record.roomCode).create(record);
+      await this.roomRef(record.roomId).create(record);
       return true;
     } catch (error) {
       if (this.isAlreadyExistsError(error)) {
@@ -46,22 +37,6 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
       }
       throw error;
     }
-  }
-
-  async getRoomCode(roomCode: string): Promise<RoomCodeRecord | null> {
-    const snapshot = await this.roomCodeRef(roomCode).get();
-    if (!snapshot.exists) {
-      return null;
-    }
-    return snapshot.data() as RoomCodeRecord;
-  }
-
-  async updateRoomCode(roomCode: string, patch: Partial<RoomCodeRecord>): Promise<void> {
-    await this.roomCodeRef(roomCode).set(patch, { merge: true });
-  }
-
-  async createRoom(record: RoomRecord): Promise<void> {
-    await this.roomRef(record.roomId).set(record);
   }
 
   async getRoom(roomId: string): Promise<RoomRecord | null> {

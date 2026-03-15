@@ -24,7 +24,6 @@ export function EntryAvatar({ avatar, onChoose }: EntryAvatarProps) {
           />
         </span>
       </button>
-      <p className="entry-avatar-caption">Tap to choose your avatar</p>
     </div>
   );
 }

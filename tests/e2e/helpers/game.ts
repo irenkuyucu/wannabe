@@ -39,7 +39,7 @@ export async function createRoomFromEntry(page: Page, displayName: string) {
 }
 
 export async function joinRoomFromInvite(page: Page, roomCode: string, displayName: string) {
-  await page.goto(`/?room=${roomCode}`);
+  await page.goto(`/join/${roomCode}`);
   await waitForEntrySurface(page);
   await page.getByRole("textbox", { name: /display name/i }).fill(displayName);
   await page.getByRole("button", { name: /^join your friends$/i }).click();
@@ -74,14 +74,12 @@ export async function createLobbyActors(browser: Browser, names: string[]) {
 
 export async function lookupRoom(roomCode: string): Promise<RoomLookup> {
   return withAdminFirestore(async (db) => {
-    const roomCodeSnap = await db.doc(`roomCodes/${roomCode}`).get();
-    const roomCodeData = roomCodeSnap.data();
-
-    if (!roomCodeData?.roomId) {
-      throw new Error(`Room code ${roomCode} was not found in the emulator.`);
+    const roomSnapshot = await db.doc(`rooms/${roomCode}`).get();
+    if (!roomSnapshot.data()) {
+      throw new Error(`Room ${roomCode} was not found in the emulator.`);
     }
 
-    const roomId = roomCodeData.roomId as string;
+    const roomId = roomCode;
     const playersSnapshot = await db.collection<RoomPlayer>(`rooms/${roomId}/players`).get();
     const players = playersSnapshot.docs.map((playerDoc) => playerDoc.data());
 
@@ -120,14 +118,6 @@ export async function seedRoomPhase(input: SeedRoomPhaseInput) {
   const startedAtMs = 1_710_000_001_000 + input.roundIndex;
 
   await withAdminFirestore(async (db: FirestoreLike) => {
-    await db.doc(`roomCodes/${input.roomCode}`).set(
-      {
-        expiresAtMs: null,
-        status: "inGame",
-      },
-      { merge: true },
-    );
-
     await db.doc(`rooms/${roomId}`).set(
       {
         activeArgumentSide: null,

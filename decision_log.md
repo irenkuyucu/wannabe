@@ -128,3 +128,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: A controlled reproduction on the bugfix branch showed that a global CSS edit in `src/app/globals.css` can trigger Fast Refresh under Turbopack without invalidating the compiled CSS chunk, while webpack dev mode reflected the same edit correctly on the same app and browser session.
 - Alternatives considered: Keeping Turbopack as the default and relying on cache-clearing restarts, or pausing UI polish until the upstream Next/Turbopack issue is investigated externally.
 - Impacted files/modules: `package.json`, `src/app/globals.css`
+
+- Date: 2026-03-15
+- Decision ID: DEC-015
+- Spec/Plan reference: `PLAN.md` M4-T2 and M5 automated scenarios 16-17
+- Decision: Separate invite and live room navigation into dedicated routes, using `/join/[roomCode]` for pre-join entry and `/rooms/[roomCode]` for an active joined room, while keying canonical room documents directly by the 6-digit room code.
+- Rationale: Query-param routing conflated invite intent with active membership, which caused lobby refreshes to fall back into the join flow. Dedicated routes make invite and live-room state explicit, restore the lobby correctly on refresh, and remove the no-longer-needed room-code indirection.
+- Alternatives considered: Keeping query-param routing, adding query-param variants for join/live state, or preserving a separate room-id to room-code mapping layer.
+- Impacted files/modules: `src/app/page.tsx`, `src/app/join/[roomCode]/page.tsx`, `src/app/rooms/[roomCode]/page.tsx`, `src/components/wannabe-app.tsx`, `src/lib/lobby-utils.js`, `functions/src/domain/room-lifecycle.ts`, `functions/src/data/firestore-room-store.ts`, `tests/e2e/home.spec.ts`

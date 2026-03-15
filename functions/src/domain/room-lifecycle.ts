@@ -24,13 +24,6 @@ export type RoomRecord = {
   expiresAtMs: number | null;
 };
 
-export type RoomCodeRecord = {
-  roomCode: string;
-  roomId: string;
-  status: RoomStatus;
-  expiresAtMs: number | null;
-};
-
 export type PlayerRecord = {
   playerId: string;
   uid: string;
@@ -76,11 +69,7 @@ export type StartGameResult = {
 };
 
 export type RoomLifecycleStore = {
-  generateRoomId(): string;
-  reserveRoomCode(record: RoomCodeRecord): Promise<boolean>;
-  getRoomCode(roomCode: string): Promise<RoomCodeRecord | null>;
-  updateRoomCode(roomCode: string, patch: Partial<RoomCodeRecord>): Promise<void>;
-  createRoom(record: RoomRecord): Promise<void>;
+  createRoom(record: RoomRecord): Promise<boolean>;
   getRoom(roomId: string): Promise<RoomRecord | null>;
   updateRoom(roomId: string, patch: Partial<RoomRecord>): Promise<void>;
   getRound(roomId: string, roundIndex: number): Promise<RoundRecord | null>;
@@ -210,7 +199,6 @@ export function createEndedRoomState(nowMs: number): {
     | "pendingPenaltyPlayerId"
     | "expiresAtMs"
   >;
-  roomCodePatch: Pick<RoomCodeRecord, "status" | "expiresAtMs">;
 } {
   const expiresAtMs = nowMs + ROOM_TTL_MS;
 
@@ -222,10 +210,6 @@ export function createEndedRoomState(nowMs: number): {
       currentPromptId: null,
       activeArgumentSide: null,
       pendingPenaltyPlayerId: null,
-      expiresAtMs,
-    },
-    roomCodePatch: {
-      status: "ended",
       expiresAtMs,
     },
   };
@@ -296,20 +280,8 @@ export class RoomLifecycleService {
 
     for (let attempt = 0; attempt < 50; attempt += 1) {
       const roomCode = generateRoomCode(this.random);
-      const roomId = this.store.generateRoomId();
-
-      const reserved = await this.store.reserveRoomCode({
-        roomCode,
-        roomId,
-        status: "lobby",
-        expiresAtMs: null,
-      });
-
-      if (!reserved) {
-        continue;
-      }
-
-      await this.store.createRoom({
+      const roomId = roomCode;
+      const created = await this.store.createRoom({
         roomId,
         roomCode,
         status: "lobby",
@@ -326,6 +298,10 @@ export class RoomLifecycleService {
         createdAtMs: now,
         expiresAtMs: null,
       });
+
+      if (!created) {
+        continue;
+      }
 
       await this.store.setPlayer(roomId, {
         playerId: uid,
@@ -357,13 +333,7 @@ export class RoomLifecycleService {
     const uid = this.requireUid(params.uid);
     const { avatarId } = params;
     const roomCode = validateRoomCode(params.roomCode);
-    const roomCodeRecord = await this.store.getRoomCode(roomCode);
-
-    if (!roomCodeRecord) {
-      throw new HttpsError("not-found", "Room not found.");
-    }
-
-    const room = await this.store.getRoom(roomCodeRecord.roomId);
+    const room = await this.store.getRoom(roomCode);
     if (!room) {
       throw new HttpsError("not-found", "Room not found.");
     }
@@ -433,7 +403,6 @@ export class RoomLifecycleService {
     if (remainingPlayers.length === 0) {
       const ended = createEndedRoomState(this.nowMs());
       await this.store.updateRoom(roomId, ended.roomPatch);
-      await this.store.updateRoomCode(room.roomCode, ended.roomCodePatch);
       return { roomStatus: "ended" };
     }
 
@@ -545,7 +514,6 @@ export class RoomLifecycleService {
       pendingPenaltyPlayerId: null,
       expiresAtMs: null,
     });
-    await this.store.updateRoomCode(room.roomCode, { status: "inGame", expiresAtMs: null });
     await this.store.setRound(roomId, round);
 
     return {

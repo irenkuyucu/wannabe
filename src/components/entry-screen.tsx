@@ -58,7 +58,7 @@ export function EntryScreen({
   const isInviteMode = Boolean(inviteRoomCode);
 
   return (
-    <section className="entry-screen">
+    <section className={`entry-screen ${isInviteMode ? "entry-screen-invite-mode" : ""}`}>
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={onAvatarPickerClose}

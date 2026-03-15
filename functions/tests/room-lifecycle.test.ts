@@ -60,6 +60,7 @@ test("room lifecycle supports create/join collisions/ready/start", async () => {
     avatarId: "avatar-1",
   });
   assert.equal(created.roomCode, "000123");
+  assert.equal(created.roomId, "000123");
 
   const join2 = await service.joinRoom({
     uid: "p2",
@@ -146,11 +147,8 @@ test("leave room handles host reassignment and ended state", async () => {
   assert.equal(finalLeave.roomStatus, "ended");
 
   const roomAfterFinalLeave = await store.getRoom(created.roomId);
-  const roomCodeAfterFinalLeave = await store.getRoomCode(created.roomCode);
   assert.equal(roomAfterFinalLeave?.status, "ended");
-  assert.equal(roomCodeAfterFinalLeave?.status, "ended");
   assert.equal(roomAfterFinalLeave?.expiresAtMs, now + ROOM_TTL_MS);
-  assert.equal(roomCodeAfterFinalLeave?.expiresAtMs, now + ROOM_TTL_MS);
 });
 
 test("lobby actions promote a replacement host when the current host is already gone", async () => {

@@ -1,5 +1,3 @@
-const ROOM_CODE_QUERY_KEY = "room";
-
 /**
  * @typedef {{
  *   playerId: string;
@@ -19,9 +17,18 @@ export function normalizeRoomCodeInput(value) {
  * @param {string} roomCode
  * @returns {string}
  */
-export function buildRoomShareQuery(roomCode) {
+export function buildJoinRoomPath(roomCode) {
   const normalized = normalizeRoomCodeInput(roomCode);
-  return normalized ? `/?${ROOM_CODE_QUERY_KEY}=${normalized}` : "/";
+  return normalized ? `/join/${normalized}` : "/";
+}
+
+/**
+ * @param {string} roomCode
+ * @returns {string}
+ */
+export function buildLiveRoomPath(roomCode) {
+  const normalized = normalizeRoomCodeInput(roomCode);
+  return normalized ? `/rooms/${normalized}` : "/";
 }
 
 /**
@@ -30,16 +37,7 @@ export function buildRoomShareQuery(roomCode) {
  * @returns {string}
  */
 export function buildRoomShareLink(origin, roomCode) {
-  return new URL(buildRoomShareQuery(roomCode), origin).toString();
-}
-
-/**
- * @param {string} search
- * @returns {string}
- */
-export function extractRoomCodeFromSearch(search) {
-  const params = new URLSearchParams(search);
-  return normalizeRoomCodeInput(params.get(ROOM_CODE_QUERY_KEY) ?? "");
+  return new URL(buildJoinRoomPath(roomCode), origin).toString();
 }
 
 /**

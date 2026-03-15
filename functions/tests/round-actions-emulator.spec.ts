@@ -249,7 +249,6 @@ runWithEmulator("final round ending persists ended status and expiry in Firestor
     roomId: created.roomId,
   });
   const roomSnapshot = await db.collection("rooms").doc(created.roomId).get();
-  const roomCodeSnapshot = await db.collection("roomCodes").doc(created.roomCode).get();
   const roundSnapshot = await db
     .collection("rooms")
     .doc(created.roomId)
@@ -261,8 +260,6 @@ runWithEmulator("final round ending persists ended status and expiry in Firestor
   assert.equal(roomSnapshot.get("status"), "ended");
   assert.equal(roomSnapshot.get("phase"), null);
   assert.equal(roomSnapshot.get("expiresAtMs"), now + ROOM_TTL_MS);
-  assert.equal(roomCodeSnapshot.get("status"), "ended");
-  assert.equal(roomCodeSnapshot.get("expiresAtMs"), now + ROOM_TTL_MS);
   assert.equal(roundSnapshot.get("outcome"), "DRAW");
 
   await assert.rejects(
