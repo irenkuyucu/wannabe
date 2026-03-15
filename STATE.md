@@ -7,12 +7,13 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M4 — Frontend UX with High-Cadence User Validation
-- Task: UI polish checkpoint committed; next step is stale dev-CSS invalidation investigation
-- Gate status: PENDING — Current UI polish changes are checkpointed on the branch at user request, but reliable user-owned validation is blocked because the local Next dev server is intermittently serving stale compiled CSS that does not match source edits.
-- Active branch: codex/m4-ui-foundation
+- Task: Investigate and fix stale dev-CSS invalidation in the local Next workflow
+- Gate status: PASS — Root cause was reproduced as a Turbopack global-CSS invalidation failure, the default local dev script now uses webpack, and the user confirmed the local workflow is stable again.
+- Active branch: codex/fix-dev-css-invalidation
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- 1f3fc7a on codex/m4-ui-foundation — Refine UI polish and align entry validation.
 - d33be81 on codex/m4-ui-foundation — Replace placeholder avatars with SVG picker assets.
 - e69b207 on codex/m4-ui-foundation — Refresh project state snapshot.
 - d2c7003 on codex/m4-ui-foundation — Update planning and spec documentation.
@@ -29,6 +30,9 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
+- Reproduced the stale local CSS issue in a controlled browser session: changing `.entry-screen-tagline` in `src/app/globals.css` from `600` to `500` under Turbopack triggered Fast Refresh but left the compiled CSS chunk and computed style unchanged.
+- Verified the same global CSS edit under webpack dev mode does invalidate correctly in the live browser session, then switched the default local `pnpm dev` script to `next dev --webpack` while keeping Turbopack available as `pnpm dev:turbo`.
+- Logged the successful user-owned validation that the webpack-default local dev workflow now behaves reliably on the user’s machine again.
 - Replaced the temporary emoji/CSS avatar direction with the new local SVG avatar set in `public/avatars`, including a tap/click avatar picker overlay during entry/join and shared avatar rendering across the app.
 - Converted the frontend sizing system away from rem/Tailwind scale shortcuts and onto explicit px values across `src/app/globals.css`, live room panels, shared buttons, scoreboards, and floating avatar motion variables to make visual polish iteration literal and consistent.
 - Tightened the entry-screen controls and validation rules during the polish pass: shared local close icon usage, entry control geometry updates, display-name limit alignment to the spec’s 12-character rule, and matching backend/frontend validation coverage.
@@ -41,15 +45,14 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
-- The current localhost UI polish branch checkpoint still needs reliable user-owned visual validation once the stale dev-CSS issue is resolved. — Owner: user + team
-- The local Next dev workflow is intermittently serving stale compiled CSS from `.next/dev/static/chunks` even when source `src/app/globals.css` has changed, which is blocking trustworthy polish iteration. — Owner: team
+- Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
 - Further small entry/lobby/in-game polish may still be requested later, but the current localhost-driven avatar and entry-control pass is accepted. — Owner: user + team
 - Firebase CLI project linking for deploy workflows is intentionally deferred to later milestones. — Owner: user
 - True disconnect/presence handling is still unimplemented: closing a tab/browser does not currently remove a player from the room automatically, so host/player removal still depends on explicit backend leave/removal paths. — Owner: team
 
 ## 6. Blockers (max 5)
 (Define any blockers here. Use "None" if empty.)
-- Reliable UI validation is currently blocked by local stale-CSS invalidation in the Next dev workflow. — Owner: team
+- None.
 
 ## 7. Next task (max 1)
-- Create a fresh branch from this checkpoint and investigate the root cause of the stale compiled CSS / unreliable Next dev reload behavior before resuming further UI polish.
+- Return to the queued UI polish review items once this tooling-fix branch is committed/pushed and merged or cherry-picked back onto the preserved UI branch.

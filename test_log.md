@@ -78,3 +78,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Observed behavior matches expected behavior after iterative polish, with the user accepting the current result for commit/push.
 - Result: `PASS`
 - User feedback: "nice job. can you commit and push this?"
+
+- Date: 2026-03-15
+- Test ID: TEST-008
+- Milestone/task reference: UI polish workflow follow-up on M4-T5
+- Scenario: User-owned validation of the local dev workflow after switching the default `pnpm dev` path from Turbopack to webpack.
+- Expected behavior: Local CSS edits should invalidate and reflect reliably during `pnpm dev`, without the stale compiled global-CSS behavior seen during the polish pass.
+- Observed behavior: Observed behavior matches expected behavior.
+- Result: `PASS`
+- User feedback: The user reported that the local workflow is now fixed and the stale CSS issue no longer reproduces in their environment.

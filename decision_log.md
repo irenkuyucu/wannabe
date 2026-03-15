@@ -120,3 +120,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The ongoing localhost/Figma polish pass needs literal, low-friction sizing values so UI corrections can be made directly from screenshots without rem-to-px conversion or mixed Tailwind scale mental math.
 - Alternatives considered: Keeping rem for typography only, continuing with the mixed rem/Tailwind-scale system, or limiting the conversion to the entry screen instead of the full app surface.
 - Impacted files/modules: `src/app/globals.css`, `src/components/wannabe-app.tsx`, `src/components/in-game-panel.tsx`, `src/components/game-over-panel.tsx`, `src/components/session-scoreboard.tsx`, `src/components/ui/button.tsx`, `src/components/floating-avatar-field.tsx`
+
+- Date: 2026-03-15
+- Decision ID: DEC-014
+- Spec/Plan reference: UI polish workflow follow-up on `PLAN.md` M4-T5
+- Decision: Use webpack as the default local `pnpm dev` compiler path and keep Turbopack behind an explicit opt-in `pnpm dev:turbo` script.
+- Rationale: A controlled reproduction on the bugfix branch showed that a global CSS edit in `src/app/globals.css` can trigger Fast Refresh under Turbopack without invalidating the compiled CSS chunk, while webpack dev mode reflected the same edit correctly on the same app and browser session.
+- Alternatives considered: Keeping Turbopack as the default and relying on cache-clearing restarts, or pausing UI polish until the upstream Next/Turbopack issue is investigated externally.
+- Impacted files/modules: `package.json`, `src/app/globals.css`
