@@ -37,11 +37,11 @@ export function SessionScoreboard({
   showRoundMeta = false,
 }: SessionScoreboardProps) {
   if (entries.length === 0) {
-    return <p className="text-sm text-[#d8ecff]">No players are available for this scoreboard.</p>;
+    return <p className="text-[14px] text-[#d8ecff]">No players are available for this scoreboard.</p>;
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-[12px]">
       {entries.map((entry) => {
         const avatar = getEntryAvatar(players, entry.playerId);
         const roundMeta = [
@@ -57,18 +57,18 @@ export function SessionScoreboard({
 
         return (
           <div
-            className="toy-list-row flex flex-col gap-3 rounded-[1.2rem] px-3.5 py-3 sm:flex-row sm:items-center"
+            className="toy-list-row flex flex-col gap-[12px] rounded-[19.2px] px-[14px] py-[12px] sm:flex-row sm:items-center"
             key={entry.playerId}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-[12px]">
               <div
-                className="avatar-orb flex size-10 shrink-0 items-center justify-center rounded-full text-xl"
+                className="avatar-orb flex size-[40px] shrink-0 items-center justify-center rounded-full text-[20px]"
               >
                 <AvatarArt avatar={avatar} className="avatar-image" decorative />
               </div>
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-base font-black uppercase text-white">
+                <div className="flex flex-wrap items-center gap-[8px]">
+                  <p className="truncate text-[16px] font-black uppercase text-white">
                     {entry.displayName}
                   </p>
                   <span className="score-pill text-white">#{entry.rank}</span>
@@ -76,10 +76,10 @@ export function SessionScoreboard({
                     <span className="hud-pill bg-[#59efff] text-[#14356b]">You</span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-sm text-[#d9eeff]">
+                <p className="mt-[4px] text-[14px] text-[#d9eeff]">
                   {roundMeta || "Final session score"}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-[8px] flex flex-wrap gap-[8px]">
                   {entry.isBonusEligible ? (
                     <span className="hud-pill bg-[#ffd74b] text-[#6c4400]">Lone-side bonus</span>
                   ) : null}
@@ -93,17 +93,17 @@ export function SessionScoreboard({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <div className="flex flex-wrap items-center gap-[8px] sm:justify-end">
               {showRoundMeta ? (
                 <span className={`hud-pill ${highlightTone}`}>
                   {entry.scoreDelta > 0 ? `+${entry.scoreDelta} this round` : "No round points"}
                 </span>
               ) : null}
-              <span className="phase-timer-bubble min-w-[5.75rem] px-3 py-2.5">
-                <span className="block text-xs uppercase tracking-[0.16em] text-[#d9eeff]">
+              <span className="phase-timer-bubble min-w-[92px] px-[12px] py-[10px]">
+                <span className="block text-[12px] uppercase tracking-[0.16em] text-[#d9eeff]">
                   Score
                 </span>
-                <span className="mt-1 block text-xl font-black uppercase text-white">
+                <span className="mt-[4px] block text-[20px] font-black uppercase text-white">
                   {entry.score}
                 </span>
               </span>

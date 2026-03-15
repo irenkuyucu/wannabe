@@ -1,4 +1,4 @@
-const DISPLAY_NAME_ALLOWED_REGEX = /^[A-Za-z -]{1,16}$/;
+const DISPLAY_NAME_ALLOWED_REGEX = /^[A-Za-z -]{1,12}$/;
 
 /**
  * @param {string} displayName
@@ -15,7 +15,7 @@ export function getDisplayNameIssue(displayName) {
     return "empty";
   }
 
-  if (trimmed.length > 16) {
+  if (trimmed.length > 12) {
     return "invalid";
   }
 

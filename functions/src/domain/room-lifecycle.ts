@@ -109,7 +109,7 @@ export type RoomLifecycleStore = {
 };
 
 const ROOM_CODE_REGEX = /^\d{6}$/;
-const DISPLAY_NAME_ALLOWED_REGEX = /^[A-Za-z -]{1,16}$/;
+const DISPLAY_NAME_ALLOWED_REGEX = /^[A-Za-z -]{1,12}$/;
 const ROUND_COUNT_DEFAULT = 10;
 export const CHOICE_PHASE_SECONDS = 60;
 export const REBUTTAL_PHASE_SECONDS = 60;
@@ -123,10 +123,10 @@ export function validateDisplayName(displayName: string): string {
 
   const trimmed = displayName.trim();
 
-  if (trimmed.length === 0 || trimmed.length > 16) {
+  if (trimmed.length === 0 || trimmed.length > 12) {
     throw new HttpsError(
       "invalid-argument",
-      "displayName must be between 1 and 16 characters.",
+      "displayName must be between 1 and 12 characters.",
     );
   }
 

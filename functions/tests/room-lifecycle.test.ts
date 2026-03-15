@@ -13,6 +13,7 @@ const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 test("display name validation enforces MVP rules", () => {
   assert.equal(validateDisplayName("Alex"), "Alex");
   assert.equal(validateDisplayName("Jean-Luc"), "Jean-Luc");
+  assert.equal(validateDisplayName("abcdefghijkl"), "abcdefghijkl");
 
   assert.throws(
     () => validateDisplayName(" Alex"),
@@ -28,6 +29,10 @@ test("display name validation enforces MVP rules", () => {
   );
   assert.throws(
     () => validateDisplayName("Çağla"),
+    (error: unknown) => assertHttpsErrorCode(error, "invalid-argument"),
+  );
+  assert.throws(
+    () => validateDisplayName("abcdefghijklm"),
     (error: unknown) => assertHttpsErrorCode(error, "invalid-argument"),
   );
 });

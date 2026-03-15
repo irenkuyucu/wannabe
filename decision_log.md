@@ -112,3 +112,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The placeholder avatar treatment is below the quality bar for the current UI polish pass, while the new local SVG set is already available in-repo and can be applied consistently without introducing external dependencies or changing backend data shape.
 - Alternatives considered: Keeping the CSS-drawn entry avatar longer, limiting the new assets to the entry screen only, or deferring avatar selection until a later milestone.
 - Impacted files/modules: `public/avatars/`, `src/lib/avatar-options.ts`, `src/components/entry-avatar.tsx`, `src/components/entry-screen.tsx`, `src/components/wannabe-app.tsx`
+
+- Date: 2026-03-15
+- Decision ID: DEC-013
+- Spec/Plan reference: UI polish follow-up on `PLAN.md` M4-T5
+- Decision: Express frontend sizing with explicit px values across the app, including typography and animation distance values, while keeping responsive `clamp(...)` usage only where helpful and using px endpoints there too.
+- Rationale: The ongoing localhost/Figma polish pass needs literal, low-friction sizing values so UI corrections can be made directly from screenshots without rem-to-px conversion or mixed Tailwind scale mental math.
+- Alternatives considered: Keeping rem for typography only, continuing with the mixed rem/Tailwind-scale system, or limiting the conversion to the entry screen instead of the full app surface.
+- Impacted files/modules: `src/app/globals.css`, `src/components/wannabe-app.tsx`, `src/components/in-game-panel.tsx`, `src/components/game-over-panel.tsx`, `src/components/session-scoreboard.tsx`, `src/components/ui/button.tsx`, `src/components/floating-avatar-field.tsx`

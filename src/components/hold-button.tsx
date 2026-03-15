@@ -106,7 +106,7 @@ export function HoldButton({
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute inset-y-0 left-0 rounded-[calc(1.2rem-3px)] bg-white/22",
+          "pointer-events-none absolute inset-y-0 left-0 rounded-[calc(19.2px-3px)] bg-white/22",
           progressClassName,
         )}
         style={{ width: `${progress * 100}%` }}

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 type HostPromotionToastProps = {
   message: string;
   onDismiss: () => void;
@@ -16,7 +18,14 @@ export function HostPromotionToast({
         onClick={onDismiss}
         type="button"
       >
-        ×
+        <Image
+          alt=""
+          aria-hidden="true"
+          className="toast-close-icon"
+          height={24}
+          src="/icons/close.svg"
+          width={24}
+        />
       </button>
     </div>
   );

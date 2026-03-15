@@ -6,6 +6,7 @@ import { FloatingAvatarField } from "@/components/floating-avatar-field";
 import { HoldButton } from "@/components/hold-button";
 import { buildPhaseViewModel } from "@/lib/in-game-ui";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
+import Image from "next/image";
 
 type ArgumentScreenProps = {
   currentPlayer: PlayerDoc;
@@ -127,7 +128,14 @@ export function ArgumentScreen({
               }
               type="button"
             >
-              ×
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="toast-close-icon"
+                height={24}
+                src="/icons/close.svg"
+                width={24}
+              />
             </button>
           </div>
         ) : null}

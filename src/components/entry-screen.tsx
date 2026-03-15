@@ -78,7 +78,14 @@ export function EntryScreen({
               onClick={onDismissValidationNotice}
               type="button"
             >
-              ×
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="toast-close-icon"
+                height={24}
+                src="/icons/close.svg"
+                width={24}
+              />
             </button>
           </div>
         ) : null}
@@ -104,7 +111,7 @@ export function EntryScreen({
         <input
           className="entry-screen-input"
           id="display-name"
-          maxLength={16}
+          maxLength={12}
           onChange={(event) => onDisplayNameChange(event.target.value)}
           placeholder="Enter your name"
           value={displayName}

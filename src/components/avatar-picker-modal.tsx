@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { AvatarArt } from "@/components/avatar-art";
 import { AVATAR_OPTIONS } from "@/lib/avatar-options";
+import Image from "next/image";
 
 type AvatarPickerModalProps = {
   isOpen: boolean;
@@ -65,7 +66,15 @@ export function AvatarPickerModal({
             onClick={onClose}
             type="button"
           >
-            ×
+            <Image
+              alt=""
+              aria-hidden="true"
+              className="avatar-picker-close-icon"
+              height={24}
+              src="/icons/close.svg"
+              style={{ filter: "brightness(0) invert(1)" }}
+              width={24}
+            />
           </button>
         </div>
 

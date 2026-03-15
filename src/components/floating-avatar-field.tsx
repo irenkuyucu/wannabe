@@ -52,8 +52,8 @@ export function FloatingAvatarField({
         const seed = hashSeed(`${phaseKey}:${player.playerId}:${index}`);
         const left = getBoundedPosition(seed, "x", players.length);
         const top = getBoundedPosition(seed >> 4, "y", players.length);
-        const driftX = (seededUnit(seed >> 7) * 1.8 - 0.9).toFixed(3);
-        const driftY = (seededUnit(seed >> 11) * 1.6 - 0.8).toFixed(3);
+        const driftX = ((seededUnit(seed >> 7) * 1.8 - 0.9) * 16).toFixed(2);
+        const driftY = ((seededUnit(seed >> 11) * 1.6 - 0.8) * 16).toFixed(2);
         const duration = (12 + seededUnit(seed >> 13) * 7).toFixed(2);
         const delay = (seededUnit(seed >> 17) * -8).toFixed(2);
         const bobDuration = (5 + seededUnit(seed >> 19) * 3.2).toFixed(2);
@@ -66,8 +66,8 @@ export function FloatingAvatarField({
               {
                 "--floating-avatar-left": `${left}%`,
                 "--floating-avatar-top": `${top}%`,
-                "--floating-avatar-drift-x": `${driftX}rem`,
-                "--floating-avatar-drift-y": `${driftY}rem`,
+                "--floating-avatar-drift-x": `${driftX}px`,
+                "--floating-avatar-drift-y": `${driftY}px`,
                 "--floating-avatar-duration": `${duration}s`,
                 "--floating-avatar-delay": `${delay}s`,
                 "--floating-avatar-bob-duration": `${bobDuration}s`,
