@@ -44,7 +44,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 `Player` is a room-session model stored at `rooms/{roomId}/players/{playerId}`.
 - `uid`: authenticated Firebase Anonymous Auth user id for authorization.
 - `displayName`: final in-room name after normalization and uniqueness suffixing.
-- `avatarId`: selected avatar asset id for this session (placeholder assets in MVP).
+- `avatarId`: selected local avatar asset id for this session.
 - `ready`: lobby readiness flag controlled by the player.
 - `score`: cumulative session score across rounds.
 - `joinedAt`: server timestamp used for deterministic list ordering/tie handling.
@@ -58,7 +58,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 `RoomStatus`, `Phase`, `Side`, `Verdict`, `RoundOutcome`, plus pure transition/scoring/penalty helpers as single source of truth.
 
 ### Field Semantics (Normative)
-- `avatarId`: optional request field on room create/join; selects a placeholder avatar asset for the player session.
+- `avatarId`: optional request field on room create/join; selects one of the local avatar assets for the player session.
 - `deadlineAtMs`: API response field representing the current phase absolute deadline as Unix epoch milliseconds (server time).
 - `phaseDeadlineAtMs`: canonical room-state deadline field in Firestore using the same epoch-ms format; must be `null`/unset for untimed `resolution`.
 - `bonusEligiblePlayerId`: round record field storing the lone-side player who earns a +1 bonus if their side wins that round after all choice-resolution assignment/correction is complete.

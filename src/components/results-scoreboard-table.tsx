@@ -1,4 +1,5 @@
-import { getAvatarOption, getAvatarStyle } from "@/lib/avatar-options";
+import { AvatarArt } from "@/components/avatar-art";
+import { getAvatarOption } from "@/lib/avatar-options";
 import type { PlayerDoc } from "@/lib/firebase-client";
 
 type ScoreboardEntry = {
@@ -52,9 +53,8 @@ export function ResultsScoreboardTable({
               <div className="results-scoreboard-player">
                 <div
                   className="results-scoreboard-avatar"
-                  style={getAvatarStyle(avatar)}
                 >
-                  <span className="results-scoreboard-avatar-emoji">{avatar.emoji}</span>
+                  <AvatarArt avatar={avatar} className="avatar-image" decorative />
                 </div>
                 <div className="results-scoreboard-name-block">
                   <div className="results-scoreboard-name-row">

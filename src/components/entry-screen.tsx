@@ -1,5 +1,7 @@
 import { bangers } from "@/app/fonts";
+import { AvatarPickerModal } from "@/components/avatar-picker-modal";
 import { EntryAvatar } from "@/components/entry-avatar";
+import type { AvatarOption } from "@/lib/avatar-options";
 import Image from "next/image";
 
 type EntryScreenProps = {
@@ -10,15 +12,20 @@ type EntryScreenProps = {
   displayName: string;
   errorMessage: string | null;
   inviteRoomCode?: string | null;
+  isAvatarPickerOpen: boolean;
   joinCode: string;
   joinDisabled: boolean;
   joinPending: boolean;
   noticeMessage: string | null;
+  onAvatarPickerClose: () => void;
+  onAvatarPickerOpen: () => void;
+  onAvatarSelect: (avatarId: string) => void;
   onDismissValidationNotice: () => void;
   onCreateRoom: () => void;
   onDisplayNameChange: (value: string) => void;
   onJoinCodeChange: (value: string) => void;
   onJoinRoom: () => void;
+  selectedAvatar: AvatarOption;
   validationNotice: string | null;
 };
 
@@ -30,15 +37,20 @@ export function EntryScreen({
   displayName,
   errorMessage,
   inviteRoomCode = null,
+  isAvatarPickerOpen,
   joinCode,
   joinDisabled,
   joinPending,
   noticeMessage,
+  onAvatarPickerClose,
+  onAvatarPickerOpen,
+  onAvatarSelect,
   onDismissValidationNotice,
   onCreateRoom,
   onDisplayNameChange,
   onJoinCodeChange,
   onJoinRoom,
+  selectedAvatar,
   validationNotice,
 }: EntryScreenProps) {
   const statusMessage =
@@ -47,6 +59,15 @@ export function EntryScreen({
 
   return (
     <section className="entry-screen">
+      <AvatarPickerModal
+        isOpen={isAvatarPickerOpen}
+        onClose={onAvatarPickerClose}
+        onSelect={(avatarId) => {
+          onAvatarSelect(avatarId);
+          onAvatarPickerClose();
+        }}
+        selectedAvatarId={selectedAvatar.id}
+      />
       <div className="entry-screen-shell toy-float">
         {validationNotice ? (
           <div className="entry-screen-toast" role="alert">
@@ -75,7 +96,7 @@ export function EntryScreen({
           Be someone!
         </p>
 
-        <EntryAvatar />
+        <EntryAvatar avatar={selectedAvatar} onChoose={onAvatarPickerOpen} />
 
         <label className="sr-only" htmlFor="display-name">
           Display name

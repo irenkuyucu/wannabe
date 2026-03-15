@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
-import { getAvatarOption, getAvatarStyle } from "@/lib/avatar-options";
+import { AvatarArt } from "@/components/avatar-art";
+import { getAvatarOption } from "@/lib/avatar-options";
 import type { PlayerDoc } from "@/lib/firebase-client";
 
 type FloatingAvatarFieldProps = {
@@ -76,9 +77,8 @@ export function FloatingAvatarField({
             <div className="floating-avatar-bob">
               <div
                 className="avatar-orb floating-avatar-orb flex items-center justify-center rounded-full"
-                style={getAvatarStyle(avatar)}
               >
-                <span className="floating-avatar-emoji">{avatar.emoji}</span>
+                <AvatarArt avatar={avatar} className="avatar-image" decorative />
               </div>
             </div>
           </div>

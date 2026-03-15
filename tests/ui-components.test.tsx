@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { fireEvent, render, within } from "@testing-library/react";
 
+import { AvatarPickerModal } from "@/components/avatar-picker-modal";
 import { ChoiceScreen } from "@/components/choice-screen";
 import { ResolutionScreen } from "@/components/resolution-screen";
 import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
@@ -15,7 +16,7 @@ setupReactTestEnv();
 
 function createPlayer(overrides: Partial<PlayerDoc>): PlayerDoc {
   return {
-    avatarId: "spark",
+    avatarId: "avatar-1",
     displayName: "Player",
     joinedAtMs: 1,
     playerId: "player-1",
@@ -107,6 +108,27 @@ test("ChoiceScreen renders locked choice state and live lock details", () => {
   assert.match(view.getByText(/^Side A$/i).textContent ?? "", /^Side A$/i);
   fireEvent.click(sideB);
   assert.equal(submitted, null);
+});
+
+test("AvatarPickerModal lists the local avatar set and emits selections", () => {
+  let selectedAvatarId: string | null = null;
+
+  const view = render(
+    <AvatarPickerModal
+      isOpen
+      onClose={() => {}}
+      onSelect={(avatarId) => {
+        selectedAvatarId = avatarId;
+      }}
+      selectedAvatarId="avatar-1"
+    />,
+  );
+
+  const avatarButtons = view.getAllByRole("button", { name: /select avatar/i });
+  assert.equal(avatarButtons.length, 25);
+
+  fireEvent.click(view.getByRole("button", { name: /select avatar 12/i }));
+  assert.equal(selectedAvatarId, "avatar-12");
 });
 
 test("VerdictScreen renders vote counters and locked selection state", () => {

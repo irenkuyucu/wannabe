@@ -61,7 +61,8 @@ A **Room** is a single game container with:
 - Tone: social, playful, fun (visual direction TBD)
 
 ### 4.2 Main Screen
-- Avatar (assets will be placeholders for MVP)
+- Avatar preview with tap/click-to-open avatar picker
+- Avatar picker presents the available local avatar assets in a simple grid overlay and lets the player choose one before creating or joining
 - Name input (used for display names; 1–12 characters; only letters A-Z, spaces, and hyphens allowed; trimmed; no leading/trailing spaces)
 - Buttons:
   - **Create Room** (requires filled name to be active)
@@ -78,6 +79,7 @@ A **Room** is a single game container with:
 
 ### 4.4 Join Room → Lobby (Player)
 - Join by entering room code OR opening the share link.
+- The same avatar picker used on the main screen is available before joining, including when the room code is prefilled by a share link.
 - Lobby displays player list and readiness.
 
 ### 4.5 In-Game Round Screens

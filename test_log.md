@@ -69,3 +69,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Validation failed. Multiple real-browser screenshots still showed the UI as materially oversized, with overly large text, buttons, and cards across entry and live-game surfaces.
 - Result: `FAIL`
 - User feedback: "everything (every text, button, component) is big and oversized beyond reason" and needed to be fixed before anything else.
+
+- Date: 2026-03-15
+- Test ID: TEST-007
+- Milestone/task reference: UI polish pass follow-up on M4-T5
+- Scenario: User-owned validation of the post-foundation polish fixes, focused on the entry join-control cleanup, SVG avatar-system replacement, and the mobile avatar-picker overlay behavior.
+- Expected behavior: Entry controls should present cleanly on mobile, the placeholder CSS/emoji avatars should be fully replaced by the shipped SVG set, and the avatar picker should fit inside the viewport with internal scrolling and no background-page scroll while open.
+- Observed behavior: Observed behavior matches expected behavior after iterative polish, with the user accepting the current result for commit/push.
+- Result: `PASS`
+- User feedback: "nice job. can you commit and push this?"

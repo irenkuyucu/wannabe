@@ -1,12 +1,13 @@
 "use client";
 
+import { AvatarArt } from "@/components/avatar-art";
 import { HoldButton } from "@/components/hold-button";
 import { SessionScoreboard } from "@/components/session-scoreboard";
 import {
   buildPhaseViewModel,
   getArgumentBudgetSeconds,
 } from "@/lib/in-game-ui";
-import { getAvatarOption, getAvatarStyle } from "@/lib/avatar-options";
+import { getAvatarOption } from "@/lib/avatar-options";
 import { getPromptById } from "@/lib/prompt-catalog";
 import { buildResolutionSummary } from "@/lib/session-summary";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
@@ -135,9 +136,8 @@ function PlayerBadge({
     <div className="phase-player-card">
       <div
         className="avatar-orb flex size-9 items-center justify-center rounded-full text-[1.15rem]"
-        style={getAvatarStyle(avatar)}
       >
-        {avatar.emoji}
+        <AvatarArt avatar={avatar} className="avatar-image" decorative />
       </div>
       <div className="min-w-0">
         <p className="truncate text-[0.82rem] font-black uppercase text-white">

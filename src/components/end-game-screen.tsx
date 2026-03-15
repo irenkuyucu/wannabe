@@ -1,8 +1,9 @@
 "use client";
 
 import { bangers } from "@/app/fonts";
+import { AvatarArt } from "@/components/avatar-art";
 import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
-import { getAvatarOption, getAvatarStyle } from "@/lib/avatar-options";
+import { getAvatarOption } from "@/lib/avatar-options";
 import { buildGameOverSummary } from "@/lib/session-summary";
 import type { PlayerDoc, RoundDoc, RoomDoc } from "@/lib/firebase-client";
 
@@ -61,11 +62,8 @@ export function EndGameScreen({
                 <span className="end-game-screen-crown" aria-hidden="true">
                   👑
                 </span>
-                <div
-                  className="end-game-screen-winner-avatar"
-                  style={getAvatarStyle(avatar)}
-                >
-                  <span className="end-game-screen-winner-emoji">{avatar.emoji}</span>
+                <div className="end-game-screen-winner-avatar">
+                  <AvatarArt avatar={avatar} className="avatar-image" decorative />
                 </div>
               </div>
             );

@@ -104,3 +104,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The oversized layout problem came from presenting too much debugging/state information by default. Fixing that required a product-direction change, not just more size tuning.
 - Alternatives considered: Continuing with incremental spacing and typography tweaks while preserving the same always-visible dashboard-style layout.
 - Impacted files/modules: `PLAN.md`, `src/components/wannabe-app.tsx`, `src/components/in-game-panel.tsx`, `src/components/game-over-panel.tsx`, `src/components/session-scoreboard.tsx`, `src/app/globals.css`
+
+- Date: 2026-03-15
+- Decision ID: DEC-012
+- Spec/Plan reference: `SPEC.md` §§4.2-4.4 and `PLAN.md` avatar data notes
+- Decision: Replace the temporary CSS/emoji avatar stand-ins with the shipped local SVG avatar set, and let players pick their avatar from a simple popup grid during the entry/join flow before entering the lobby.
+- Rationale: The placeholder avatar treatment is below the quality bar for the current UI polish pass, while the new local SVG set is already available in-repo and can be applied consistently without introducing external dependencies or changing backend data shape.
+- Alternatives considered: Keeping the CSS-drawn entry avatar longer, limiting the new assets to the entry screen only, or deferring avatar selection until a later milestone.
+- Impacted files/modules: `public/avatars/`, `src/lib/avatar-options.ts`, `src/components/entry-avatar.tsx`, `src/components/entry-screen.tsx`, `src/components/wannabe-app.tsx`

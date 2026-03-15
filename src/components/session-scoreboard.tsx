@@ -1,6 +1,7 @@
 "use client";
 
-import { getAvatarOption, getAvatarStyle } from "@/lib/avatar-options";
+import { AvatarArt } from "@/components/avatar-art";
+import { getAvatarOption } from "@/lib/avatar-options";
 import type { PlayerDoc } from "@/lib/firebase-client";
 import { formatVerdictLabel } from "@/lib/session-summary";
 
@@ -62,9 +63,8 @@ export function SessionScoreboard({
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div
                 className="avatar-orb flex size-10 shrink-0 items-center justify-center rounded-full text-xl"
-                style={getAvatarStyle(avatar)}
               >
-                {avatar.emoji}
+                <AvatarArt avatar={avatar} className="avatar-image" decorative />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">

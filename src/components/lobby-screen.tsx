@@ -1,5 +1,6 @@
 import { bangers } from "@/app/fonts";
-import { getAvatarOption, getAvatarStyle, type AvatarOption } from "@/lib/avatar-options";
+import { AvatarArt } from "@/components/avatar-art";
+import { getAvatarOption, type AvatarOption } from "@/lib/avatar-options";
 import type { PlayerDoc } from "@/lib/firebase-client";
 
 type LobbyScreenProps = {
@@ -20,8 +21,8 @@ type LobbyScreenProps = {
 
 function LobbyAvatar({ avatar }: { avatar: AvatarOption }) {
   return (
-    <div className="lobby-avatar" style={getAvatarStyle(avatar)}>
-      <span className="lobby-avatar-emoji">{avatar.emoji}</span>
+    <div className="lobby-avatar">
+      <AvatarArt avatar={avatar} className="avatar-image" decorative />
     </div>
   );
 }

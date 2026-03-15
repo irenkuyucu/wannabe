@@ -24,9 +24,10 @@ import { TitleScreen } from "@/components/title-screen";
 import { VerdictScreen } from "@/components/verdict-screen";
 import { buildResolutionSummary } from "@/lib/session-summary";
 import {
+  DEFAULT_AVATAR_ID,
   getAvatarOption,
-  getAvatarStyle,
 } from "@/lib/avatar-options";
+import { AvatarArt } from "@/components/avatar-art";
 import {
   getDisplayNameIssue,
   getDisplayNameIssueMessage,
@@ -78,7 +79,8 @@ function getValidationError(displayName: string, roomCode: string, mode: EntryMo
 
 export function WannabeApp() {
   const [displayName, setDisplayName] = useState("");
-  const [selectedAvatarId] = useState("spark");
+  const [selectedAvatarId, setSelectedAvatarId] = useState(DEFAULT_AVATAR_ID);
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [inviteRoomCode, setInviteRoomCode] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -663,15 +665,20 @@ export function WannabeApp() {
         displayName={displayName}
         errorMessage={errorMessage}
         inviteRoomCode={inviteRoomCode}
+        isAvatarPickerOpen={isAvatarPickerOpen}
         joinCode={joinCode}
         joinDisabled={Boolean(pendingAction || authError)}
         joinPending={pendingAction === "join"}
         noticeMessage={noticeMessage}
+        onAvatarPickerClose={() => setIsAvatarPickerOpen(false)}
+        onAvatarPickerOpen={() => setIsAvatarPickerOpen(true)}
+        onAvatarSelect={setSelectedAvatarId}
         onDismissValidationNotice={() => setValidationNotice(null)}
         onCreateRoom={() => void runEntryAction("create")}
         onDisplayNameChange={setDisplayName}
         onJoinCodeChange={(value) => setJoinCode(normalizeRoomCodeInput(value))}
         onJoinRoom={() => void runEntryAction("join")}
+        selectedAvatar={getAvatarOption(selectedAvatarId)}
         validationNotice={validationNotice}
       />
     );
@@ -858,9 +865,12 @@ export function WannabeApp() {
                   <div className="flex items-center gap-3">
                     <div
                       className="avatar-orb flex size-12 items-center justify-center rounded-full text-2xl"
-                      style={getAvatarStyle(getAvatarOption(currentPlayer.avatarId))}
                     >
-                      {getAvatarOption(currentPlayer.avatarId).emoji}
+                      <AvatarArt
+                        avatar={getAvatarOption(currentPlayer.avatarId)}
+                        className="avatar-image"
+                        decorative
+                      />
                     </div>
                     <div>
                       <p className="text-base font-black uppercase text-white">

@@ -7,8 +7,8 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M4 — Frontend UX with High-Cadence User Validation
-- Task: M4-T5 — Production-adjacent UI simplification + responsive polish
-- Gate status: PASS — User directed closure after the full UI foundation pass, with agent-owned checks passing across web, functions, emulator-backed backend flows, and Playwright multiplayer coverage.
+- Task: UI polish pass — avatar-system replacement + localhost-driven fixes
+- Gate status: PASS — User accepted the localhost polish pass covering entry control cleanup, shared SVG avatars, and the mobile avatar-picker behavior, and requested commit/push.
 - Active branch: codex/m4-ui-foundation
 
 ## 2. Last commit(s) (max 5)
@@ -29,6 +29,8 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
+- Replaced the temporary emoji/CSS avatar direction with the new local SVG avatar set in `public/avatars`, including a tap/click avatar picker overlay during entry/join and shared avatar rendering across the app.
+- Adjusted the entry-screen room-code row so the join button sits in a real two-column layout instead of absolutely overlaying the input, preventing overflow on tighter mobile widths.
 - Replaced the old single-shell player flow with dedicated mobile-first screens for splash, entry, invite-join, lobby, choice, argument, rebuttal, verdict, resolution, and end-game, while preserving the toy-like gradient/checkered visual direction and desktop responsiveness.
 - Wired the bundled `Bangers` font, local arrow icon asset, floating avatar motion fields, validation/assignment/promotion toasts, and end-game winner presentation into the new UI system.
 - Strengthened backend round and room behavior by fixing concurrent round-write races, moving host promotion beyond resolution-only guardrails, and recording host-promotion metadata for the frontend toast flow.
@@ -37,6 +39,7 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
+- Further small entry/lobby/in-game polish may still be requested later, but the current localhost-driven avatar and entry-control pass is accepted. — Owner: user + team
 - Firebase CLI project linking for deploy workflows is intentionally deferred to later milestones. — Owner: user
 - True disconnect/presence handling is still unimplemented: closing a tab/browser does not currently remove a player from the room automatically, so host/player removal still depends on explicit backend leave/removal paths. — Owner: team
 - Broader Playwright best-practice work is intentionally deferred: richer multiplayer architecture, codegen-assisted workflow where helpful, and auditable test artifact design should be expanded later when end-to-end coverage scope grows. — Owner: team
@@ -46,4 +49,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- Await user direction on whether to tackle real disconnect/presence handling next or proceed into M5-T1 — Full emulator scenarios.
+- Await user direction on whether to continue opportunistic UI polish or return to the planned milestone sequence starting with M5-T1.
