@@ -17,5 +17,5 @@ export default async function JoinRoomPage({ params }: JoinRoomPageProps) {
     notFound();
   }
 
-  return <WannabeApp initialInviteRoomCode={normalizedRoomCode} />;
+  return <WannabeApp initialInviteRoomCode={normalizedRoomCode} initialShowSplash={false} />;
 }

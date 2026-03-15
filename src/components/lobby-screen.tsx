@@ -5,8 +5,9 @@ import type { PlayerDoc } from "@/lib/firebase-client";
 
 type LobbyScreenProps = {
   copiedShareLink: boolean;
-  currentPlayer: PlayerDoc;
-  hostPlayerId: string;
+  currentPlayer: PlayerDoc | null;
+  hostPlayerId: string | null;
+  isLoading?: boolean;
   noticeMessage: string | null;
   onCopyShareLink: () => void;
   onReadyToggle: () => void;
@@ -31,6 +32,7 @@ export function LobbyScreen({
   copiedShareLink,
   currentPlayer,
   hostPlayerId,
+  isLoading = false,
   noticeMessage,
   onCopyShareLink,
   onReadyToggle,
@@ -45,7 +47,7 @@ export function LobbyScreen({
   const readyButtonLabel =
     pendingAction === "ready"
       ? "Updating..."
-      : currentPlayer.ready
+      : currentPlayer?.ready
         ? "Mark unready"
         : "Mark ready";
 
@@ -62,10 +64,18 @@ export function LobbyScreen({
         <h1 className={`${bangers.className} lobby-screen-logo`} style={bangers.style}>
           Wannabe!
         </h1>
-        <p className="lobby-screen-room-code">Room {roomCode}</p>
+        <p className="lobby-screen-room-code">Room {roomCode} Lobby</p>
 
         <div className="lobby-screen-roster">
-          {players.map((player) => {
+          {isLoading ? (
+            <div className="lobby-player-row lobby-player-row-skeleton" aria-hidden="true">
+              <div className="lobby-player-main">
+                <div className="lobby-avatar lobby-skeleton-block lobby-avatar-skeleton" />
+                <div className="lobby-skeleton-block lobby-player-name-skeleton" />
+              </div>
+              <div className="lobby-ready-pill lobby-skeleton-block lobby-ready-pill-skeleton" />
+            </div>
+          ) : players.map((player) => {
             const avatar = getAvatarOption(player.avatarId);
             const isHost = player.playerId === hostPlayerId;
             return (
@@ -87,33 +97,50 @@ export function LobbyScreen({
           })}
         </div>
 
-        <div className="lobby-actions-row">
-          <button
-            className={`lobby-action-button ${currentPlayer.ready ? "lobby-action-button-unready" : "lobby-action-button-ready"}`}
-            onClick={onReadyToggle}
-            type="button"
-          >
-            {readyButtonLabel}
-          </button>
-          <button
-            className="lobby-action-button lobby-action-button-share"
-            onClick={onCopyShareLink}
-            type="button"
-          >
-            {shareButtonLabel}
-          </button>
-        </div>
+        {isLoading ? (
+          <>
+            <div className="lobby-actions-row" aria-hidden="true">
+              <div className="lobby-action-button lobby-action-button-skeleton lobby-skeleton-block" />
+              <div className="lobby-action-button lobby-action-button-skeleton lobby-skeleton-block" />
+            </div>
+            {showStartButton ? (
+              <div
+                aria-hidden="true"
+                className="lobby-start-button lobby-start-button-skeleton lobby-skeleton-block"
+              />
+            ) : null}
+          </>
+        ) : (
+          <>
+            <div className="lobby-actions-row">
+              <button
+                className={`lobby-action-button ${currentPlayer?.ready ? "lobby-action-button-unready" : "lobby-action-button-ready"}`}
+                onClick={onReadyToggle}
+                type="button"
+              >
+                {readyButtonLabel}
+              </button>
+              <button
+                className="lobby-action-button lobby-action-button-share"
+                onClick={onCopyShareLink}
+                type="button"
+              >
+                {shareButtonLabel}
+              </button>
+            </div>
 
-        {showStartButton ? (
-          <button
-            className="lobby-start-button"
-            disabled={startDisabled}
-            onClick={onStartGame}
-            type="button"
-          >
-            {pendingAction === "start" ? "Starting..." : "Start game"}
-          </button>
-        ) : null}
+            {showStartButton ? (
+              <button
+                className="lobby-start-button"
+                disabled={startDisabled}
+                onClick={onStartGame}
+                type="button"
+              >
+                {pendingAction === "start" ? "Starting..." : "Start game"}
+              </button>
+            ) : null}
+          </>
+        )}
 
         {statusMessage || noticeMessage ? (
           <div className="lobby-screen-status">

@@ -17,5 +17,5 @@ export default async function RoomPage({ params }: RoomPageProps) {
     notFound();
   }
 
-  return <WannabeApp initialLiveRoomCode={normalizedRoomCode} />;
+  return <WannabeApp initialLiveRoomCode={normalizedRoomCode} initialShowSplash={false} />;
 }

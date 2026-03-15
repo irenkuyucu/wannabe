@@ -100,10 +100,15 @@ body::after {
 
 a,
 button {
+  cursor: pointer;
   transition-duration: 180ms;
   transition-property: transform, box-shadow, background-color, color, border-color,
     opacity;
   transition-timing-function: ease;
+}
+
+button:disabled {
+  cursor: default;
 }
 
 ::selection {
@@ -239,6 +244,18 @@ button {
   width: 100%;
 }
 
+.entry-screen-toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  inset-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
+  inset-inline-start: 50%;
+  position: fixed;
+  transform: translateX(-50%);
+  width: min(calc(100vw - 32px), 472px);
+  z-index: 90;
+}
+
 .entry-screen-toast {
   align-items: center;
   background: #ff9898;
@@ -250,11 +267,12 @@ button {
   color: #262626;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 26px;
-  min-height: 70px;
+  height: 80px;
+  min-height: 80px;
   padding: 14px 20px 14px 22px;
+  position: relative;
   text-align: left;
-  width: min(100%, 472px);
+  width: 100%;
 }
 
 .host-promotion-toast {
@@ -271,7 +289,8 @@ button {
   inset-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
   inset-inline-start: 50%;
   justify-content: space-between;
-  min-height: 70px;
+  height: 80px;
+  min-height: 80px;
   padding: 14px 16px 14px 20px;
   position: fixed;
   transform: translateX(-50%);
@@ -280,7 +299,7 @@ button {
 }
 
 .host-promotion-toast-message {
-  font-size: var(--font-size-caption);
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.1;
   margin: 0;
@@ -294,14 +313,14 @@ button {
   color: #262626;
   cursor: pointer;
   display: inline-flex;
-  height: 32px;
+  height: 36px;
   justify-content: center;
   padding: 0;
-  width: 32px;
+  width: 36px;
 }
 
 .entry-screen-toast-message {
-  font-size: var(--font-size-caption);
+  font-size: 16px;
   font-weight: 800;
   line-height: 1.1;
   margin: 0;
@@ -313,12 +332,13 @@ button {
   background: transparent;
   border: 0;
   color: #262626;
+  cursor: pointer;
   display: inline-flex;
-  height: 32px;
+  height: 36px;
   justify-content: center;
   margin-left: 12px;
   padding: 0;
-  width: 32px;
+  width: 36px;
 }
 
 .entry-screen-logo {
@@ -573,7 +593,6 @@ button {
   font-weight: 800;
   line-height: 1.1;
   margin: 48px 0 0;
-  text-transform: uppercase;
 }
 
 .lobby-screen-roster {
@@ -599,6 +618,10 @@ button {
   width: 100%;
 }
 
+.lobby-player-row-skeleton {
+  opacity: 0.96;
+}
+
 .lobby-player-main {
   align-items: center;
   display: flex;
@@ -620,6 +643,29 @@ button {
   width: 52px;
 }
 
+.lobby-skeleton-block {
+  animation: lobby-skeleton-pulse 1.4s ease-in-out infinite alternate;
+  background: linear-gradient(180deg, rgba(28, 95, 197, 0.2), rgba(18, 74, 165, 0.12));
+  border: 2px solid rgba(141, 214, 255, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.lobby-avatar-skeleton {
+  border-radius: 999px;
+}
+
+.lobby-player-name-skeleton {
+  border-radius: 999px;
+  height: 24px;
+  width: 188px;
+}
+
+.lobby-ready-pill-skeleton {
+  border-radius: 999px;
+  height: 44px;
+  width: 144px;
+}
+
 .lobby-player-name {
   color: #173f93;
   font-size: 20px;
@@ -639,7 +685,6 @@ button {
   font-size: var(--font-size-caption);
   font-weight: 800;
   line-height: 1;
-  min-width: 104px;
   padding: 12px 16px;
   justify-content: center;
   text-transform: uppercase;
@@ -686,6 +731,16 @@ button {
   border-color: rgba(119, 255, 116, 0.98);
 }
 
+.lobby-action-button-skeleton,
+.lobby-start-button-skeleton {
+  background: linear-gradient(180deg, rgba(28, 95, 197, 0.2), rgba(18, 74, 165, 0.12));
+  border-color: rgba(141, 214, 255, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 0 rgba(37, 98, 183, 0.18);
+  min-height: 80px;
+}
+
 .lobby-action-button-unready {
   background: linear-gradient(180deg, #f489e9, #ec7bdf);
   border-color: rgba(244, 137, 233, 0.92);
@@ -724,6 +779,16 @@ button {
   padding: 12px 16px;
   text-align: center;
   width: 100%;
+}
+
+@keyframes lobby-skeleton-pulse {
+  0% {
+    opacity: 0.62;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 .choice-screen {
@@ -1074,7 +1139,11 @@ button {
   }
 
   .entry-screen-toast {
-    width: min(100%, 480px);
+    width: 100%;
+  }
+
+  .entry-screen-toast-stack {
+    width: min(calc(100vw - 48px), 480px);
   }
 
   .host-promotion-toast {
@@ -1391,8 +1460,8 @@ button {
 }
 
 .toast-close-icon {
-  height: 16px;
-  width: 16px;
+  height: 18px;
+  width: 18px;
 }
 
 .avatar-picker-grid {
@@ -1630,13 +1699,19 @@ button {
   color: #262626;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 16px;
-  min-height: 68px;
+  height: 80px;
+  inset-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
+  inset-inline-start: 50%;
+  min-height: 80px;
   padding: 12px 16px;
+  position: fixed;
+  transform: translateX(-50%);
+  width: min(calc(100vw - 32px), 496px);
+  z-index: 80;
 }
 
 .argument-screen-toast-message {
-  font-size: var(--font-size-caption);
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.2;
   margin: 0;
@@ -1647,12 +1722,13 @@ button {
   background: transparent;
   border: 0;
   color: #262626;
+  cursor: pointer;
   display: inline-flex;
-  height: 32px;
+  height: 36px;
   justify-content: center;
   margin-left: 12px;
   padding: 0;
-  width: 32px;
+  width: 36px;
 }
 
 .argument-screen-phase-header {

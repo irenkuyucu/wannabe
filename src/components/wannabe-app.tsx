@@ -66,11 +66,11 @@ import { getHostPromotionNotice } from "@/lib/host-promotion";
 
 type EntryMode = "create" | "join";
 const SPLASH_MIN_DURATION_MS = 2000;
-const SPLASH_COMPLETE_STORAGE_KEY = "wannabe:splash-complete";
 
 type WannabeAppProps = {
   initialInviteRoomCode?: string | null;
   initialLiveRoomCode?: string | null;
+  initialShowSplash?: boolean;
 };
 
 function getValidationError(displayName: string, roomCode: string, mode: EntryMode) {
@@ -88,6 +88,7 @@ function getValidationError(displayName: string, roomCode: string, mode: EntryMo
 export function WannabeApp({
   initialInviteRoomCode = null,
   initialLiveRoomCode = null,
+  initialShowSplash = true,
 }: WannabeAppProps) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
@@ -107,14 +108,8 @@ export function WannabeApp({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [copiedShareLink, setCopiedShareLink] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-
-    return window.sessionStorage.getItem(SPLASH_COMPLETE_STORAGE_KEY) !== "1";
-  });
-  const [splashProgress, setSplashProgress] = useState(() => (showSplash ? 0 : 1));
+  const [showSplash, setShowSplash] = useState(initialShowSplash);
+  const [splashProgress, setSplashProgress] = useState(initialShowSplash ? 0 : 1);
   const [validationNotice, setValidationNotice] = useState<string | null>(null);
   const [dismissedHostPromotionKeys, setDismissedHostPromotionKeys] = useState<string[]>([]);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -152,7 +147,6 @@ export function WannabeApp({
         return;
       }
 
-      window.sessionStorage.setItem(SPLASH_COMPLETE_STORAGE_KEY, "1");
       setShowSplash(false);
     };
 
@@ -267,6 +261,19 @@ export function WannabeApp({
     () => players.find((player) => player.playerId === authUid) ?? null,
     [authUid, players],
   );
+
+  useEffect(() => {
+    if ((errorMessage ?? authError) === null || room || currentPlayer) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setErrorMessage(null);
+      setAuthError(null);
+    }, 2000);
+
+    return () => window.clearTimeout(timeout);
+  }, [authError, currentPlayer, errorMessage, room]);
 
   const hostPromotionNotice = getHostPromotionNotice({
     currentPlayerId: currentPlayer?.playerId ?? null,
@@ -647,7 +654,6 @@ export function WannabeApp({
     try {
       await navigator.clipboard.writeText(shareLink);
       setCopiedShareLink(true);
-      setNoticeMessage("Share link copied.");
     } catch {
       setErrorMessage("Could not copy the share link.");
     }
@@ -686,22 +692,23 @@ export function WannabeApp({
   }
 
   if (roomId && (!room || !currentPlayer) && !showInGame && room?.status !== "ended") {
-    return (
-      <main className="toy-page min-h-screen px-[16px] py-[20px] sm:px-[24px] sm:py-[32px]">
-        <div className="mx-auto flex w-full max-w-[640px] flex-col gap-[16px]">
-          <section className="toy-shell overflow-hidden rounded-[32px] px-[20px] py-[24px] text-center">
-            <p className="section-banner mx-auto max-w-fit bg-linear-to-r from-[#59efff] to-[#4d8cff] text-[#14356b]">
-              Restoring room
-            </p>
-            <h1 className="mt-[20px] text-balance text-[32px] font-black uppercase leading-[0.94] tracking-[-0.04em] text-white">
-              Loading room {roomId}.
-            </h1>
-            <p className="mt-[16px] text-[16px] leading-[28px] text-[#d8ecff]">
-              Reconnecting your live room state now.
-            </p>
-          </section>
-        </div>
-      </main>
+    return renderWithGlobalToast(
+      <LobbyScreen
+        copiedShareLink={false}
+        currentPlayer={null}
+        hostPlayerId={null}
+        isLoading
+        noticeMessage={null}
+        onCopyShareLink={() => {}}
+        onReadyToggle={() => {}}
+        onStartGame={() => {}}
+        pendingAction={null}
+        players={[]}
+        roomCode={roomId}
+        showStartButton
+        startDisabled
+        statusMessage={null}
+      />
     );
   }
 
@@ -723,6 +730,10 @@ export function WannabeApp({
         onAvatarPickerClose={() => setIsAvatarPickerOpen(false)}
         onAvatarPickerOpen={() => setIsAvatarPickerOpen(true)}
         onAvatarSelect={setSelectedAvatarId}
+        onDismissStatusToast={() => {
+          setErrorMessage(null);
+          setAuthError(null);
+        }}
         onDismissValidationNotice={() => setValidationNotice(null)}
         onCreateRoom={() => void runEntryAction("create")}
         onDisplayNameChange={setDisplayName}
@@ -740,6 +751,7 @@ export function WannabeApp({
         copiedShareLink={copiedShareLink}
         currentPlayer={currentPlayer}
         hostPlayerId={room.hostPlayerId}
+        isLoading={false}
         noticeMessage={noticeMessage}
         onCopyShareLink={() => void handleCopyShareLink()}
         onReadyToggle={() => void handleReadyToggle(!currentPlayer.ready)}

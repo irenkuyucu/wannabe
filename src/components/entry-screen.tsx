@@ -20,6 +20,7 @@ type EntryScreenProps = {
   onAvatarPickerClose: () => void;
   onAvatarPickerOpen: () => void;
   onAvatarSelect: (avatarId: string) => void;
+  onDismissStatusToast: () => void;
   onDismissValidationNotice: () => void;
   onCreateRoom: () => void;
   onDisplayNameChange: (value: string) => void;
@@ -45,6 +46,7 @@ export function EntryScreen({
   onAvatarPickerClose,
   onAvatarPickerOpen,
   onAvatarSelect,
+  onDismissStatusToast,
   onDismissValidationNotice,
   onCreateRoom,
   onDisplayNameChange,
@@ -53,8 +55,8 @@ export function EntryScreen({
   selectedAvatar,
   validationNotice,
 }: EntryScreenProps) {
-  const statusMessage =
-    errorMessage ?? authError ?? noticeMessage ?? (authReady ? null : "Connecting...");
+  const errorToastMessage = (errorMessage ?? authError)?.replace(/\.$/, "") ?? null;
+  const statusMessage = noticeMessage ?? (authReady ? null : "Connecting...");
   const isInviteMode = Boolean(inviteRoomCode);
 
   return (
@@ -69,24 +71,49 @@ export function EntryScreen({
         selectedAvatarId={selectedAvatar.id}
       />
       <div className="entry-screen-shell toy-float">
-        {validationNotice ? (
-          <div className="entry-screen-toast" role="alert">
-            <p className="entry-screen-toast-message">{validationNotice}</p>
-            <button
-              aria-label="Dismiss notification"
-              className="entry-screen-toast-close"
-              onClick={onDismissValidationNotice}
-              type="button"
-            >
-              <Image
-                alt=""
-                aria-hidden="true"
-                className="toast-close-icon"
-                height={24}
-                src="/icons/close.svg"
-                width={24}
-              />
-            </button>
+        {validationNotice || errorToastMessage ? (
+          <div className="entry-screen-toast-stack" aria-live="polite">
+            {validationNotice ? (
+              <div className="entry-screen-toast" role="alert">
+                <p className="entry-screen-toast-message">{validationNotice}</p>
+                <button
+                  aria-label="Dismiss notification"
+                  className="entry-screen-toast-close"
+                  onClick={onDismissValidationNotice}
+                  type="button"
+                >
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="toast-close-icon"
+                    height={24}
+                    src="/icons/close.svg"
+                    width={24}
+                  />
+                </button>
+              </div>
+            ) : null}
+
+            {errorToastMessage ? (
+              <div className="entry-screen-toast" role="alert">
+                <p className="entry-screen-toast-message">{errorToastMessage}</p>
+                <button
+                  aria-label="Dismiss error"
+                  className="entry-screen-toast-close"
+                  onClick={onDismissStatusToast}
+                  type="button"
+                >
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="toast-close-icon"
+                    height={24}
+                    src="/icons/close.svg"
+                    width={24}
+                  />
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -185,7 +212,7 @@ export function EntryScreen({
 
         {statusMessage ? (
           <div
-            className={`entry-screen-status ${errorMessage || authError ? "entry-screen-status-error" : ""}`}
+            className="entry-screen-status"
           >
             {statusMessage}
           </div>
