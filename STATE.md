@@ -7,17 +7,17 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M4 — Frontend UX with High-Cadence User Validation
-- Task: Investigate and fix stale dev-CSS invalidation in the local Next workflow
-- Gate status: PASS — Root cause was reproduced as a Turbopack global-CSS invalidation failure, the default local dev script now uses webpack, and the user confirmed the local workflow is stable again.
-- Active branch: codex/fix-dev-css-invalidation
+- Task: Continue queued UI polish review items on the stable webpack-default local dev workflow
+- Gate status: PASS — The local dev-CSS invalidation issue is resolved on this branch via the webpack-default dev script, and UI polish can continue on a trustworthy local loop again.
+- Active branch: codex/m4-ui-foundation
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- 08b4b76 on codex/m4-ui-foundation — Switch local dev to webpack by default.
 - 1f3fc7a on codex/m4-ui-foundation — Refine UI polish and align entry validation.
 - d33be81 on codex/m4-ui-foundation — Replace placeholder avatars with SVG picker assets.
 - e69b207 on codex/m4-ui-foundation — Refresh project state snapshot.
 - d2c7003 on codex/m4-ui-foundation — Update planning and spec documentation.
-- 6820beb on codex/m4-ui-foundation — Implement redesigned game screens and resilient host promotion.
 - dc0f16a on codex/m4-ui-foundation — Simplify player-facing room UI and add responsive checks.
 
 ## 3. Project snapshot (max 5)
@@ -55,4 +55,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- Return to the queued UI polish review items once this tooling-fix branch is committed/pushed and merged or cherry-picked back onto the preserved UI branch.
+- Resume the screen-by-screen UI polish pass on this branch, starting from the next user-reported visual issue.
