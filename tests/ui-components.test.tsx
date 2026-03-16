@@ -66,7 +66,7 @@ function createRound(overrides: Partial<RoundDoc>): RoundDoc {
   };
 }
 
-test("ChoiceScreen renders locked choice state and live lock details", () => {
+test("ChoiceScreen renders locked choice state", () => {
   const alice = createPlayer({ displayName: "Alice", playerId: "alice", score: 3, uid: "alice" });
   const bob = createPlayer({ displayName: "Bob", playerId: "bob", score: 2, uid: "bob" });
   let submitted: "A" | "B" | null = null;
@@ -87,7 +87,6 @@ test("ChoiceScreen renders locked choice state and live lock details", () => {
           bob: "B",
         },
       })}
-      showDetails
     />,
   );
 
@@ -100,10 +99,7 @@ test("ChoiceScreen renders locked choice state and live lock details", () => {
   assert.equal(sideA.getAttribute("aria-pressed"), "true");
   assert.equal(sideA.hasAttribute("disabled"), true);
   assert.equal(sideB.hasAttribute("disabled"), true);
-  assert.match(view.getByText(/live locks/i).textContent ?? "", /live locks/i);
-  assert.match(view.getByText(/A 1 · B 1/i).textContent ?? "", /A 1 · B 1/i);
-  assert.match(view.getByText(/Alice \(You\)/i).textContent ?? "", /Alice \(You\)/i);
-  assert.match(view.getByText(/^Side A$/i).textContent ?? "", /^Side A$/i);
+  assert.match(view.getByText(/^Locked in$/i).textContent ?? "", /^Locked in$/i);
   fireEvent.click(sideB);
   assert.equal(submitted, null);
 });
@@ -149,7 +145,6 @@ test("VerdictScreen renders vote counters and locked selection state", () => {
           bob: "DRAW",
         },
       })}
-      showDetails
     />,
   );
 
@@ -159,7 +154,6 @@ test("VerdictScreen renders vote counters and locked selection state", () => {
   assert.equal(options[0].hasAttribute("disabled"), true);
   assert.match(within(options[0]).getByText(/^1 vote$/i).textContent ?? "", /^1 vote$/i);
   assert.match(within(options[2]).getByText(/^1 vote$/i).textContent ?? "", /^1 vote$/i);
-  assert.match(view.getByText(/locked on side a/i).textContent ?? "", /locked on side a/i);
 });
 
 test("ResultsScoreboardTable shows host and dissenter annotations", () => {

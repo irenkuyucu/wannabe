@@ -16,7 +16,6 @@ type ArgumentScreenProps = {
   players: PlayerDoc[];
   room: RoomDoc;
   round: RoundDoc | null;
-  showDetails: boolean;
 };
 
 function formatTimer(secondsRemaining: number | null) {
@@ -37,7 +36,6 @@ export function ArgumentScreen({
   players,
   room,
   round,
-  showDetails,
 }: ArgumentScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -172,23 +170,6 @@ export function ArgumentScreen({
             size="lg"
             variant="secondary"
           />
-        ) : null}
-
-        {showDetails ? (
-          <div className="argument-screen-details">
-            <div className="argument-screen-detail-card">
-              <p className="argument-screen-detail-label">You</p>
-              <p className="argument-screen-detail-value">
-                {selectedSide ? `Side ${selectedSide}` : "Waiting"}
-              </p>
-            </div>
-            <div className="argument-screen-detail-card">
-              <p className="argument-screen-detail-label">Speaking roster</p>
-              <p className="argument-screen-detail-value">
-                {speakingPlayers.map((player) => player.displayName).join(", ") || "Nobody"}
-              </p>
-            </div>
-          </div>
         ) : null}
       </div>
     </section>

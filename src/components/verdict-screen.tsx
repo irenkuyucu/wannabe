@@ -12,7 +12,6 @@ type VerdictScreenProps = {
   players: PlayerDoc[];
   room: RoomDoc;
   round: RoundDoc | null;
-  showDetails: boolean;
 };
 
 const VERDICT_OPTIONS = [
@@ -58,7 +57,6 @@ export function VerdictScreen({
   players,
   room,
   round,
-  showDetails,
 }: VerdictScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -131,25 +129,6 @@ export function VerdictScreen({
         </div>
 
         <p className="verdict-screen-note">Missing votes don&apos;t count toward the result</p>
-
-        {showDetails ? (
-          <div className="verdict-screen-details">
-            <div className="verdict-screen-detail-card">
-              <p className="verdict-screen-detail-label">You</p>
-              <p className="verdict-screen-detail-value">
-                {viewModel.selectedVerdict
-                  ? `Locked on ${viewModel.selectedVerdict === "A_WON" ? "Side A" : viewModel.selectedVerdict === "B_WON" ? "Side B" : "Draw"}`
-                  : "Waiting to vote"}
-              </p>
-            </div>
-            <div className="verdict-screen-detail-card">
-              <p className="verdict-screen-detail-label">Live votes</p>
-              <p className="verdict-screen-detail-value">
-                A {viewModel.verdictCounts.A_WON} · B {viewModel.verdictCounts.B_WON} · D {viewModel.verdictCounts.DRAW}
-              </p>
-            </div>
-          </div>
-        ) : null}
       </div>
     </section>
   );

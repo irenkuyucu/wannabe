@@ -13,7 +13,6 @@ type RebuttalScreenProps = {
   players: PlayerDoc[];
   room: RoomDoc;
   round: RoundDoc | null;
-  showDetails: boolean;
 };
 
 function formatTimer(secondsRemaining: number | null) {
@@ -34,7 +33,6 @@ export function RebuttalScreen({
   players,
   room,
   round,
-  showDetails,
 }: RebuttalScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -99,21 +97,6 @@ export function RebuttalScreen({
             to the next phase
           </p>
         )}
-
-        {showDetails ? (
-          <div className="rebuttal-screen-details">
-            <div className="rebuttal-screen-detail-card">
-              <p className="rebuttal-screen-detail-label">Players</p>
-              <p className="rebuttal-screen-detail-value">{players.length}</p>
-            </div>
-            <div className="rebuttal-screen-detail-card">
-              <p className="rebuttal-screen-detail-label">Host</p>
-              <p className="rebuttal-screen-detail-value">
-                {players.find((player) => player.playerId === room.hostPlayerId)?.displayName ?? "Unknown"}
-              </p>
-            </div>
-          </div>
-        ) : null}
       </div>
     </section>
   );

@@ -38,6 +38,6 @@ test("refreshing a live room route restores the lobby instead of dropping to joi
   await expect(page).toHaveURL(new RegExp(`/rooms/${roomCode}$`, "i"));
   await page.reload();
 
-  await expect(page.getByText(new RegExp(`^Room ${roomCode}$`, "i")).first()).toBeVisible();
+  await expect(page.getByText(new RegExp(`^Room ${roomCode} Lobby$`, "i")).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^join your friends$/i })).toHaveCount(0);
 });

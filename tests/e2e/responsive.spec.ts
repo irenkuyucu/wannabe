@@ -36,7 +36,7 @@ for (const viewport of VIEWPORTS) {
     const playerName = `Alex ${viewport.name}`;
     const { roomCode } = await createRoomFromEntry(page, playerName);
 
-    await expect(page.getByText(new RegExp(`^Room ${roomCode}$`, "i"))).toBeVisible();
+    await expect(page.getByText(new RegExp(`^Room ${roomCode} Lobby$`, "i"))).toBeVisible();
     await expect(page.getByRole("button", { name: /mark ready/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /share link|copied/i })).toBeVisible();
     await expectNoHorizontalOverflow(page);

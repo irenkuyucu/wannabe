@@ -27,7 +27,7 @@ export async function createRoomFromEntry(page: Page, displayName: string) {
   await page.getByRole("textbox", { name: /display name/i }).fill(displayName);
   await page.getByRole("button", { name: /^create room$/i }).click();
 
-  const roomLabel = page.getByText(/^Room \d{6}$/i).first();
+  const roomLabel = page.getByText(/^Room \d{6} Lobby$/i).first();
   await expect(roomLabel).toBeVisible();
 
   const roomCode = (await roomLabel.textContent())?.match(/\d{6}/)?.[0];
@@ -43,7 +43,7 @@ export async function joinRoomFromInvite(page: Page, roomCode: string, displayNa
   await waitForEntrySurface(page);
   await page.getByRole("textbox", { name: /display name/i }).fill(displayName);
   await page.getByRole("button", { name: /^join your friends$/i }).click();
-  await expect(page.getByText(new RegExp(`^Room ${roomCode}$`, "i")).first()).toBeVisible();
+  await expect(page.getByText(new RegExp(`^Room ${roomCode} Lobby$`, "i")).first()).toBeVisible();
 }
 
 export async function createLobbyActors(browser: Browser, names: string[]) {

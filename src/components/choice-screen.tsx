@@ -10,7 +10,6 @@ type ChoiceScreenProps = {
   players: PlayerDoc[];
   room: RoomDoc;
   round: RoundDoc | null;
-  showDetails: boolean;
 };
 
 function formatTimer(secondsRemaining: number | null) {
@@ -31,7 +30,6 @@ export function ChoiceScreen({
   players,
   room,
   round,
-  showDetails,
 }: ChoiceScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -104,43 +102,6 @@ export function ChoiceScreen({
         </div>
 
         <p className="choice-screen-note">Missing choices will be auto-assigned</p>
-
-        {showDetails ? (
-          <div className="choice-screen-details">
-            <div className="choice-screen-details-grid">
-              <div className="choice-screen-detail-card">
-                <p className="choice-screen-detail-label">You</p>
-                <p className="choice-screen-detail-value">
-                  {selectedChoice ? `Locked on Side ${selectedChoice}` : "Waiting to choose"}
-                </p>
-              </div>
-              <div className="choice-screen-detail-card">
-                <p className="choice-screen-detail-label">Live locks</p>
-                <p className="choice-screen-detail-value">
-                  A {viewModel.choiceCounts.A} · B {viewModel.choiceCounts.B}
-                </p>
-              </div>
-            </div>
-
-            <div className="choice-screen-locks">
-              {players.map((player) => {
-                const lockedSide = round?.choicesByPlayer[player.playerId] ?? null;
-                const isCurrentPlayer = player.playerId === currentPlayer.playerId;
-                return (
-                  <div className="choice-screen-lock-row" key={player.playerId}>
-                    <p className="choice-screen-lock-name">
-                      {player.displayName}
-                      {isCurrentPlayer ? " (You)" : ""}
-                    </p>
-                    <span className="choice-screen-lock-state">
-                      {lockedSide ? `Side ${lockedSide}` : "Waiting"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
       </div>
     </section>
   );
