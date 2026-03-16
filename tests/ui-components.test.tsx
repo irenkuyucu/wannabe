@@ -74,7 +74,6 @@ test("ChoiceScreen renders locked choice state and live lock details", () => {
   const view = render(
     <ChoiceScreen
       currentPlayer={alice}
-      noticeMessage={null}
       nowMs={60_000}
       onSubmitChoice={(side) => {
         submitted = side;
@@ -89,7 +88,6 @@ test("ChoiceScreen renders locked choice state and live lock details", () => {
         },
       })}
       showDetails
-      statusMessage={null}
     />,
   );
 
@@ -138,7 +136,6 @@ test("VerdictScreen renders vote counters and locked selection state", () => {
   const view = render(
     <VerdictScreen
       currentPlayer={alice}
-      noticeMessage={null}
       nowMs={60_000}
       onSubmitVerdict={() => {
         throw new Error("should not submit when locked");
@@ -153,7 +150,6 @@ test("VerdictScreen renders vote counters and locked selection state", () => {
         },
       })}
       showDetails
-      statusMessage={null}
     />,
   );
 
@@ -229,13 +225,11 @@ test("ResolutionScreen renders dissenter copy for host and waiting copy for non-
   const view = render(
     <ResolutionScreen
       currentPlayer={alice}
-      noticeMessage={null}
       onAdvanceResolution={() => {}}
       pendingAction={null}
       players={players}
       room={createRoom({ hostPlayerId: "alice", phase: "resolution", phaseDeadlineAtMs: null })}
       round={round}
-      statusMessage={null}
     />,
   );
 
@@ -252,7 +246,6 @@ test("ResolutionScreen renders dissenter copy for host and waiting copy for non-
   view.rerender(
     <ResolutionScreen
       currentPlayer={bob}
-      noticeMessage={null}
       onAdvanceResolution={() => {}}
       pendingAction={null}
       players={players}
@@ -271,7 +264,6 @@ test("ResolutionScreen renders dissenter copy for host and waiting copy for non-
           charlie: "B_WON",
         },
       })}
-      statusMessage={null}
     />,
   );
 

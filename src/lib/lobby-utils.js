@@ -81,21 +81,3 @@ export function getLobbyStartState({
     reason: "Ready to start.",
   };
 }
-
-/**
- * @param {string} requestedName
- * @param {string} assignedName
- * @returns {string | null}
- */
-export function getAssignedNameNotice(requestedName, assignedName) {
-  if (
-    typeof requestedName !== "string" ||
-    typeof assignedName !== "string" ||
-    requestedName.trim().length === 0 ||
-    requestedName === assignedName
-  ) {
-    return null;
-  }
-
-  return `Joined as ${assignedName}.`;
-}

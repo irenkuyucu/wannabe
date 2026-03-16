@@ -13,11 +13,11 @@ import {
 import { useRouter } from "next/navigation";
 
 import { ArgumentScreen } from "@/components/argument-screen";
+import { AppToast } from "@/components/app-toast";
 import { EndGameScreen } from "@/components/end-game-screen";
 import { GameOverPanel } from "@/components/game-over-panel";
 import { ChoiceScreen } from "@/components/choice-screen";
 import { EntryScreen } from "@/components/entry-screen";
-import { HostPromotionToast } from "@/components/host-promotion-toast";
 import { InGamePanel } from "@/components/in-game-panel";
 import { LobbyScreen } from "@/components/lobby-screen";
 import { RebuttalScreen } from "@/components/rebuttal-screen";
@@ -58,7 +58,6 @@ import {
   buildRoomShareLink,
   buildJoinRoomPath,
   buildLiveRoomPath,
-  getAssignedNameNotice,
   getLobbyStartState,
   normalizeRoomCodeInput,
 } from "@/lib/lobby-utils";
@@ -104,7 +103,6 @@ export function WannabeApp({
   const [latestRound, setLatestRound] = useState<RoundDoc | null>(null);
   const [players, setPlayers] = useState<PlayerDoc[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [copiedShareLink, setCopiedShareLink] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -124,7 +122,6 @@ export function WannabeApp({
     setJoinCode("");
     setErrorMessage(null);
     router.replace("/");
-    setNoticeMessage("Back on main.");
   }, [router]);
 
   useEffect(() => {
@@ -371,9 +368,12 @@ export function WannabeApp({
     return (
       <>
         {visibleHostPromotionNotice ? (
-          <HostPromotionToast
+          <AppToast
+            className="app-toast-fixed"
+            closeLabel="Dismiss notification"
             message={visibleHostPromotionNotice.message}
             onDismiss={dismissHostPromotionNotice}
+            variant="success"
           />
         ) : null}
         {content}
@@ -459,8 +459,6 @@ export function WannabeApp({
       const requestedName = displayName;
       let nextRoomId = "";
       let nextRoomCode = "";
-      let assignedDisplayName = "";
-
       if (mode === "create") {
         const result = await createRoom({
           displayName: requestedName,
@@ -468,7 +466,6 @@ export function WannabeApp({
         });
         nextRoomId = result.roomId;
         nextRoomCode = result.roomCode;
-        assignedDisplayName = result.assignedDisplayName;
       } else {
         const result = await joinRoom({
           roomCode: joinCode,
@@ -477,12 +474,10 @@ export function WannabeApp({
         });
         nextRoomId = result.roomId;
         nextRoomCode = result.roomId;
-        assignedDisplayName = result.assignedDisplayName;
       }
 
       setRoomId(nextRoomId);
       setInviteRoomCode(null);
-      setNoticeMessage(getAssignedNameNotice(requestedName, assignedDisplayName));
       setErrorMessage(null);
       router.replace(buildLiveRoomPath(nextRoomCode));
     } catch (error) {
@@ -519,7 +514,6 @@ export function WannabeApp({
 
     try {
       await startGame({ roomId });
-      setNoticeMessage("Game started. The live round flow is active.");
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -604,12 +598,7 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      const result = await advanceResolution({ roomId });
-      setNoticeMessage(
-        result.nextState === "ended"
-          ? "Game over. Final scoreboard is live."
-          : "Next round started.",
-      );
+      await advanceResolution({ roomId });
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -698,7 +687,6 @@ export function WannabeApp({
         currentPlayer={null}
         hostPlayerId={null}
         isLoading
-        noticeMessage={null}
         onCopyShareLink={() => {}}
         onReadyToggle={() => {}}
         onStartGame={() => {}}
@@ -707,7 +695,6 @@ export function WannabeApp({
         roomCode={roomId}
         showStartButton
         startDisabled
-        statusMessage={null}
       />
     );
   }
@@ -716,7 +703,6 @@ export function WannabeApp({
     return (
       <EntryScreen
         authError={authError}
-        authReady={Boolean(authUid)}
         createDisabled={Boolean(pendingAction || authError)}
         createPending={pendingAction === "create"}
         displayName={displayName}
@@ -726,7 +712,6 @@ export function WannabeApp({
         joinCode={joinCode}
         joinDisabled={Boolean(pendingAction || authError)}
         joinPending={pendingAction === "join"}
-        noticeMessage={noticeMessage}
         onAvatarPickerClose={() => setIsAvatarPickerOpen(false)}
         onAvatarPickerOpen={() => setIsAvatarPickerOpen(true)}
         onAvatarSelect={setSelectedAvatarId}
@@ -752,7 +737,6 @@ export function WannabeApp({
         currentPlayer={currentPlayer}
         hostPlayerId={room.hostPlayerId}
         isLoading={false}
-        noticeMessage={noticeMessage}
         onCopyShareLink={() => void handleCopyShareLink()}
         onReadyToggle={() => void handleReadyToggle(!currentPlayer.ready)}
         onStartGame={() => void handleStartGame()}
@@ -761,7 +745,6 @@ export function WannabeApp({
         roomCode={room.roomCode}
         showStartButton={currentPlayer.playerId === room.hostPlayerId}
         startDisabled={!startState.canStart || pendingAction === "start"}
-        statusMessage={errorMessage ?? authError}
       />
     );
   }
@@ -770,7 +753,6 @@ export function WannabeApp({
     return renderWithGlobalToast(
       <ChoiceScreen
         currentPlayer={currentPlayer}
-        noticeMessage={noticeMessage}
         nowMs={nowMs}
         onSubmitChoice={(side) => void handleSubmitChoice(side)}
         pendingAction={pendingAction}
@@ -778,7 +760,6 @@ export function WannabeApp({
         room={room}
         round={round}
         showDetails={showDetails}
-        statusMessage={errorMessage ?? authError}
       />
     );
   }
@@ -787,7 +768,6 @@ export function WannabeApp({
     return renderWithGlobalToast(
       <ArgumentScreen
         currentPlayer={currentPlayer}
-        noticeMessage={noticeMessage}
         nowMs={nowMs}
         onEndArgumentTurn={() => void handleEndArgumentTurn()}
         pendingAction={pendingAction}
@@ -795,7 +775,6 @@ export function WannabeApp({
         room={room}
         round={round}
         showDetails={showDetails}
-        statusMessage={errorMessage ?? authError}
       />
     );
   }
@@ -804,7 +783,6 @@ export function WannabeApp({
     return renderWithGlobalToast(
       <RebuttalScreen
         currentPlayer={currentPlayer}
-        noticeMessage={noticeMessage}
         nowMs={nowMs}
         onAdvanceRebuttal={() => void handleAdvanceRebuttal()}
         pendingAction={pendingAction}
@@ -812,7 +790,6 @@ export function WannabeApp({
         room={room}
         round={round}
         showDetails={showDetails}
-        statusMessage={errorMessage ?? authError}
       />
     );
   }
@@ -821,7 +798,6 @@ export function WannabeApp({
     return renderWithGlobalToast(
       <VerdictScreen
         currentPlayer={currentPlayer}
-        noticeMessage={noticeMessage}
         nowMs={nowMs}
         onSubmitVerdict={(verdict) => void handleSubmitVerdict(verdict)}
         pendingAction={pendingAction}
@@ -829,7 +805,6 @@ export function WannabeApp({
         room={room}
         round={round}
         showDetails={showDetails}
-        statusMessage={errorMessage ?? authError}
       />
     );
   }
@@ -845,7 +820,6 @@ export function WannabeApp({
           pendingAction={pendingAction}
           players={players}
           room={room}
-          statusMessage={errorMessage ?? authError}
         />
       );
     }
@@ -853,13 +827,11 @@ export function WannabeApp({
     return renderWithGlobalToast(
       <ResolutionScreen
         currentPlayer={currentPlayer}
-        noticeMessage={noticeMessage}
         onAdvanceResolution={() => void handleAdvanceResolution()}
         pendingAction={pendingAction}
         players={players}
         room={room}
         round={round}
-        statusMessage={errorMessage ?? authError}
       />
     );
   }
@@ -872,7 +844,6 @@ export function WannabeApp({
         pendingAction={pendingAction}
         players={players}
         room={room}
-        statusMessage={errorMessage ?? authError}
       />
     );
   }
@@ -1015,12 +986,6 @@ export function WannabeApp({
                 </div>
               ) : null}
 
-              {noticeMessage ? <div className="status-callout">{noticeMessage}</div> : null}
-              {errorMessage || authError ? (
-                <div className="status-callout status-callout-error">
-                  {errorMessage ?? authError}
-                </div>
-              ) : null}
             </section>
 
             <section className="toy-shell rounded-[27.2px] bg-[#0b3d95]/70 px-[16px] py-[16px] sm:px-[20px] lg:px-[24px]">

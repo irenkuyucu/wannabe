@@ -8,7 +8,6 @@ type LobbyScreenProps = {
   currentPlayer: PlayerDoc | null;
   hostPlayerId: string | null;
   isLoading?: boolean;
-  noticeMessage: string | null;
   onCopyShareLink: () => void;
   onReadyToggle: () => void;
   onStartGame: () => void;
@@ -17,7 +16,6 @@ type LobbyScreenProps = {
   roomCode: string;
   showStartButton: boolean;
   startDisabled: boolean;
-  statusMessage: string | null;
 };
 
 function LobbyAvatar({ avatar }: { avatar: AvatarOption }) {
@@ -33,7 +31,6 @@ export function LobbyScreen({
   currentPlayer,
   hostPlayerId,
   isLoading = false,
-  noticeMessage,
   onCopyShareLink,
   onReadyToggle,
   onStartGame,
@@ -42,7 +39,6 @@ export function LobbyScreen({
   roomCode,
   showStartButton,
   startDisabled,
-  statusMessage,
 }: LobbyScreenProps) {
   const readyButtonLabel =
     pendingAction === "ready"
@@ -141,12 +137,6 @@ export function LobbyScreen({
             ) : null}
           </>
         )}
-
-        {statusMessage || noticeMessage ? (
-          <div className="lobby-screen-status">
-            {statusMessage ?? noticeMessage}
-          </div>
-        ) : null}
       </div>
     </section>
   );

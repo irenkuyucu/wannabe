@@ -4,7 +4,6 @@ import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
 type ChoiceScreenProps = {
   currentPlayer: PlayerDoc;
-  noticeMessage: string | null;
   nowMs: number;
   onSubmitChoice: (side: "A" | "B") => void;
   pendingAction: string | null;
@@ -12,7 +11,6 @@ type ChoiceScreenProps = {
   room: RoomDoc;
   round: RoundDoc | null;
   showDetails: boolean;
-  statusMessage: string | null;
 };
 
 function formatTimer(secondsRemaining: number | null) {
@@ -27,7 +25,6 @@ function formatTimer(secondsRemaining: number | null) {
 
 export function ChoiceScreen({
   currentPlayer,
-  noticeMessage,
   nowMs,
   onSubmitChoice,
   pendingAction,
@@ -35,7 +32,6 @@ export function ChoiceScreen({
   room,
   round,
   showDetails,
-  statusMessage,
 }: ChoiceScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -50,8 +46,6 @@ export function ChoiceScreen({
     0,
     Math.min(100, (1 - viewModel.progressRatio) * 100),
   );
-  const message = statusMessage ?? noticeMessage;
-
   return (
     <section className="choice-screen">
       <div className="choice-screen-shell toy-float">
@@ -73,15 +67,6 @@ export function ChoiceScreen({
             <p className="choice-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-
-        {message ? (
-          <div
-            className={`choice-screen-status ${statusMessage ? "choice-screen-status-error" : ""}`}
-          >
-            {message}
-          </div>
-        ) : null}
-
         <p className="choice-screen-prompt-heading">Would you wanna be</p>
 
         <div className="choice-screen-options">

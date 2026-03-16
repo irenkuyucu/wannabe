@@ -385,11 +385,6 @@ export function InGamePanel({
             <p className="mt-[12px] text-[14px] leading-[28px] text-[#d8ecff]">
               Keep the floor with the current side until the timer ends or an eligible player ends the turn early.
             </p>
-            {penalizedPlayer ? (
-              <div className="status-callout mt-[16px]">
-                {penalizedPlayer.displayName} carries the dissenter penalty this round, reducing the speaking budget for whichever side they joined.
-              </div>
-            ) : null}
             <div className="mt-[16px]">
               {viewModel.canEndArgumentTurn ? (
                 <HoldButton
@@ -399,11 +394,7 @@ export function InGamePanel({
                   onHoldComplete={onEndArgumentTurn}
                   size="lg"
                 />
-              ) : (
-                <div className="status-callout">
-                  Only players on the speaking side see the early end-turn control.
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -483,11 +474,7 @@ export function InGamePanel({
                   size="lg"
                   variant="secondary"
                 />
-              ) : (
-                <div className="status-callout">
-                  Only the host sees the early-advance control during rebuttal.
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </section>
@@ -513,16 +500,6 @@ export function InGamePanel({
               </button>
             ))}
           </div>
-
-          {viewModel.selectedVerdict && viewModel.selectedVerdict !== "ABSTAIN" ? (
-            <div className="status-callout">
-              Your verdict is locked as {formatVerdictLabel(viewModel.selectedVerdict)}.
-            </div>
-          ) : (
-            <div className="status-callout">
-              Submit before timeout. Missing votes turn into abstains automatically.
-            </div>
-          )}
 
           {showDetails ? (
             <div className="phase-roster">
@@ -607,18 +584,6 @@ export function InGamePanel({
                       </div>
                     </div>
                   </div>
-                  {resolutionSummary.bonusPlayer ? (
-                    <div className="status-callout mt-[16px]">
-                      Lone-side bonus stayed with {resolutionSummary.bonusPlayer.displayName}. If
-                      that player won the round, the scoreboard reflects the extra point.
-                    </div>
-                  ) : null}
-                  {resolutionSummary.dissenterPlayer ? (
-                    <div className="status-callout mt-[16px]">
-                      {resolutionSummary.dissenterPlayer.displayName} is the dissenter this round and
-                      carries the next-round argument penalty.
-                    </div>
-                  ) : null}
                 </>
               ) : null}
             </div>
@@ -645,11 +610,7 @@ export function InGamePanel({
                     onHoldComplete={onAdvanceResolution}
                     size="lg"
                   />
-                ) : (
-                  <div className="status-callout">
-                    Waiting for the host to {resolutionSummary.isFinalRound ? "open game over." : "advance to the next round."}
-                  </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

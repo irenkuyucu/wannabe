@@ -6,7 +6,6 @@ import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
 type VerdictScreenProps = {
   currentPlayer: PlayerDoc;
-  noticeMessage: string | null;
   nowMs: number;
   onSubmitVerdict: (verdict: "A_WON" | "B_WON" | "DRAW") => void;
   pendingAction: string | null;
@@ -14,7 +13,6 @@ type VerdictScreenProps = {
   room: RoomDoc;
   round: RoundDoc | null;
   showDetails: boolean;
-  statusMessage: string | null;
 };
 
 const VERDICT_OPTIONS = [
@@ -54,7 +52,6 @@ function formatVoteCount(count: number) {
 
 export function VerdictScreen({
   currentPlayer,
-  noticeMessage,
   nowMs,
   onSubmitVerdict,
   pendingAction,
@@ -62,7 +59,6 @@ export function VerdictScreen({
   room,
   round,
   showDetails,
-  statusMessage,
 }: VerdictScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -76,8 +72,6 @@ export function VerdictScreen({
     0,
     Math.min(100, (1 - viewModel.progressRatio) * 100),
   );
-  const message = statusMessage ?? noticeMessage;
-
   return (
     <section className="verdict-screen">
       <div className="verdict-screen-shell toy-float">
@@ -99,15 +93,6 @@ export function VerdictScreen({
             <p className="verdict-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-
-        {message ? (
-          <div
-            className={`verdict-screen-status ${statusMessage ? "verdict-screen-status-error" : ""}`}
-          >
-            {message}
-          </div>
-        ) : null}
-
         <p className="verdict-screen-title">Who won the round?</p>
         <p className="verdict-screen-subtitle">
           If the group can&apos;t agree,

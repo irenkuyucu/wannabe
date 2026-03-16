@@ -7,13 +7,11 @@ import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
 type ResolutionScreenProps = {
   currentPlayer: PlayerDoc;
-  noticeMessage: string | null;
   onAdvanceResolution: () => void;
   pendingAction: string | null;
   players: PlayerDoc[];
   room: RoomDoc;
   round: RoundDoc | null;
-  statusMessage: string | null;
 };
 
 function getResolutionTitle(summary: ReturnType<typeof buildResolutionSummary>) {
@@ -49,17 +47,14 @@ function getResolutionSubtitle(summary: ReturnType<typeof buildResolutionSummary
 
 export function ResolutionScreen({
   currentPlayer,
-  noticeMessage,
   onAdvanceResolution,
   pendingAction,
   players,
   room,
   round,
-  statusMessage,
 }: ResolutionScreenProps) {
   const summary = buildResolutionSummary({ room, round, players });
   const isHost = currentPlayer.playerId === room.hostPlayerId;
-  const message = statusMessage ?? noticeMessage;
   const subtitle = getResolutionSubtitle(summary);
 
   return (
@@ -71,15 +66,6 @@ export function ResolutionScreen({
           </p>
           <p className="resolution-screen-phase-label">Resolution</p>
         </div>
-
-        {message ? (
-          <div
-            className={`resolution-screen-status ${statusMessage ? "resolution-screen-status-error" : ""}`}
-          >
-            {message}
-          </div>
-        ) : null}
-
         <p className="resolution-screen-title">{getResolutionTitle(summary)}</p>
         {subtitle ? <p className="resolution-screen-subtitle">{subtitle}</p> : null}
 

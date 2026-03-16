@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { fireEvent, render } from "@testing-library/react";
 
-import { HostPromotionToast } from "@/components/host-promotion-toast";
+import { AppToast } from "@/components/app-toast";
 import { getHostPromotionNotice } from "@/lib/host-promotion";
 
 import { setupReactTestEnv } from "./react-test-env";
@@ -49,14 +49,16 @@ test("getHostPromotionNotice only returns a toast for the promoted host", () => 
   );
 });
 
-test("HostPromotionToast renders the promotion copy and supports dismissal", () => {
+test("AppToast renders the promotion copy and supports dismissal", () => {
   let dismissed = 0;
   const view = render(
-    <HostPromotionToast
+    <AppToast
+      closeLabel="Dismiss notification"
       message="You're now promoted to host"
       onDismiss={() => {
         dismissed += 1;
       }}
+      variant="success"
     />,
   );
 

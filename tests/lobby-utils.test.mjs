@@ -5,7 +5,6 @@ import {
   buildJoinRoomPath,
   buildLiveRoomPath,
   buildRoomShareLink,
-  getAssignedNameNotice,
   getLobbyStartState,
   normalizeRoomCodeInput,
 } from "../src/lib/lobby-utils.js";
@@ -77,9 +76,4 @@ test("getLobbyStartState enforces host, player count, and readiness", () => {
       reason: "Ready to start.",
     },
   );
-});
-
-test("getAssignedNameNotice surfaces backend-assigned duplicates", () => {
-  assert.equal(getAssignedNameNotice("Alex", "Alex (2)"), "Joined as Alex (2).");
-  assert.equal(getAssignedNameNotice("Alex", "Alex"), null);
 });

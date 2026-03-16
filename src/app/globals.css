@@ -32,6 +32,26 @@
   --font-size-body: 16px;
   --font-size-phase-heading: 24px;
   --font-size-strong-lg: 24px;
+  --in-game-font-size-phase-meta: 20px;
+  --in-game-font-size-choice-heading: 20px;
+  --in-game-font-size-choice-option: var(--font-size-body);
+  --in-game-font-size-argument-title: 20px;
+  --in-game-font-size-argument-penalty: var(--font-size-caption);
+  --in-game-font-size-rebuttal-title: 20px;
+  --in-game-font-size-rebuttal-host-note: 20px;
+  --in-game-font-size-verdict-title: 20px;
+  --in-game-font-size-verdict-option: var(--font-size-body);
+  --in-game-font-size-resolution-title: 20px;
+  --in-game-font-size-resolution-host-note: 20px;
+  --in-game-font-size-endgame-logo: 36px;
+  --in-game-font-size-endgame-headline: 20px;
+  --in-game-font-size-helper: var(--font-size-caption);
+  --in-game-font-size-chip: var(--font-size-label);
+  --in-game-font-size-button: var(--font-size-body);
+  --in-game-font-size-scoreboard-heading: var(--font-size-caption);
+  --in-game-font-size-scoreboard-value: var(--font-size-body);
+  --in-game-avatar-floating-size: 100px;
+  --in-game-avatar-scoreboard-size: 40px;
 }
 
 @theme inline {
@@ -207,7 +227,6 @@ button:disabled {
   color: #ffffff;
   font-family: var(--font-sans-stack);
   font-size: var(--font-size-caption);
-  font-weight: 400;
   left: 50%;
   margin: 0;
   position: absolute;
@@ -244,7 +263,7 @@ button:disabled {
   width: 100%;
 }
 
-.entry-screen-toast-stack {
+.app-toast-stack {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -252,32 +271,21 @@ button:disabled {
   inset-inline-start: 50%;
   position: fixed;
   transform: translateX(-50%);
-  width: min(calc(100vw - 32px), 472px);
+  width: min(calc(100vw - 32px), 448px);
   z-index: 90;
 }
 
-.entry-screen-toast {
-  align-items: center;
-  background: #ff9898;
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  border-radius: var(--radius-panel);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 10px 24px -18px rgba(0, 0, 0, 0.4);
-  color: #262626;
-  display: flex;
-  justify-content: space-between;
-  height: 80px;
-  min-height: 80px;
-  padding: 14px 20px 14px 22px;
-  position: relative;
-  text-align: left;
-  width: 100%;
+.app-toast-fixed {
+  inset-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
+  inset-inline-start: 50%;
+  position: fixed;
+  transform: translateX(-50%);
+  width: min(calc(100vw - 32px), 448px);
+  z-index: 80;
 }
 
-.host-promotion-toast {
+.app-toast {
   align-items: center;
-  background: linear-gradient(180deg, #abff76, #93f75f);
   border: 2px solid rgba(255, 255, 255, 0.52);
   border-radius: var(--radius-card-lg);
   box-shadow:
@@ -286,27 +294,37 @@ button:disabled {
   color: #262626;
   display: flex;
   gap: 12px;
-  inset-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
-  inset-inline-start: 50%;
   justify-content: space-between;
-  height: 80px;
-  min-height: 80px;
+  height: 70px;
+  min-height: 70px;
   padding: 14px 16px 14px 20px;
-  position: fixed;
-  transform: translateX(-50%);
-  width: min(calc(100vw - 32px), 448px);
-  z-index: 80;
+  position: relative;
+  text-align: left;
+  width: 100%;
 }
 
-.host-promotion-toast-message {
-  font-size: 16px;
-  font-weight: 800;
+.app-toast-error {
+  background: #ff9898;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.app-toast-warning {
+  background: linear-gradient(180deg, #ffe884, #ffdc62);
+  border-color: rgba(255, 255, 255, 0.58);
+}
+
+.app-toast-success {
+  background: linear-gradient(180deg, #abff76, #93f75f);
+}
+
+.app-toast-message {
+  font-size: var(--font-size-caption);
   line-height: 1.1;
   margin: 0;
   max-width: calc(100% - 40px);
 }
 
-.host-promotion-toast-close {
+.app-toast-close {
   align-items: center;
   background: transparent;
   border: 0;
@@ -315,28 +333,6 @@ button:disabled {
   display: inline-flex;
   height: 36px;
   justify-content: center;
-  padding: 0;
-  width: 36px;
-}
-
-.entry-screen-toast-message {
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.1;
-  margin: 0;
-  max-width: calc(100% - 40px);
-}
-
-.entry-screen-toast-close {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: #262626;
-  cursor: pointer;
-  display: inline-flex;
-  height: 36px;
-  justify-content: center;
-  margin-left: 12px;
   padding: 0;
   width: 36px;
 }
@@ -359,7 +355,6 @@ button:disabled {
   display: flex;
   flex-direction: column;
   font-size: 30px;
-  font-weight: 600;
   line-height: 1.15;
   margin: 38px 0 0;
 }
@@ -371,7 +366,6 @@ button:disabled {
 .entry-screen-tagline {
   color: white;
   font-size: 32px;
-  font-weight: 600;
   line-height: 1.05;
   margin: 36px 0 0;
 }
@@ -387,7 +381,6 @@ button:disabled {
     0 22px 30px -24px rgba(0, 0, 0, 0.36);
   color: #0f3d90;
   font-size: 20px;
-  font-weight: 600;
   height: var(--entry-control-height);
   min-height: var(--entry-control-height);
   outline: none;
@@ -406,7 +399,6 @@ button:disabled {
 .entry-screen-input:-webkit-autofill:active {
   -webkit-text-fill-color: #0f3d90;
   caret-color: #0f3d90;
-  font-weight: inherit;
 }
 
 .entry-screen-input:focus {
@@ -416,7 +408,6 @@ button:disabled {
 .entry-screen-copy {
   color: white;
   font-size: 22px;
-  font-weight: 600;
   line-height: 1.16;
   margin-top: 40px;
 }
@@ -505,7 +496,6 @@ button:disabled {
 
 .entry-screen-join-pending {
   font-size: 26px;
-  font-weight: 900;
   letter-spacing: 0.18em;
   transform: translateX(0.16em);
 }
@@ -521,7 +511,6 @@ button:disabled {
     0 20px 28px -24px rgba(0, 0, 0, 0.46);
   color: #13421d;
   font-size: var(--font-size-strong-lg);
-  font-weight: 900;
   line-height: 1;
   margin-top: 26px;
   height: var(--entry-control-height);
@@ -534,27 +523,6 @@ button:disabled {
 
 .entry-screen-invite-button {
   margin-top: 32px;
-}
-
-.entry-screen-status {
-  background: rgba(6, 41, 106, 0.34);
-  border: 2px solid rgba(157, 227, 255, 0.32);
-  border-radius: var(--radius-card);
-  color: rgba(234, 245, 255, 0.96);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  line-height: 1.45;
-  margin-top: 22px;
-  max-width: 432px;
-  padding: 12px 16px;
-  text-align: center;
-  width: 100%;
-}
-
-.entry-screen-status-error {
-  background: rgba(113, 39, 43, 0.3);
-  border-color: rgba(255, 191, 157, 0.44);
-  color: #ffebe1;
 }
 
 .lobby-screen {
@@ -590,7 +558,6 @@ button:disabled {
 .lobby-screen-room-code {
   color: white;
   font-size: 30px;
-  font-weight: 800;
   line-height: 1.1;
   margin: 48px 0 0;
 }
@@ -669,7 +636,6 @@ button:disabled {
 .lobby-player-name {
   color: #173f93;
   font-size: 20px;
-  font-weight: 800;
   line-height: 1.15;
   margin: 0;
   text-align: left;
@@ -683,7 +649,6 @@ button:disabled {
   color: #173f93;
   display: inline-flex;
   font-size: var(--font-size-caption);
-  font-weight: 800;
   line-height: 1;
   padding: 12px 16px;
   justify-content: center;
@@ -718,7 +683,6 @@ button:disabled {
     0 20px 24px -24px rgba(0, 0, 0, 0.38);
   color: #17431c;
   font-size: 16px;
-  font-weight: 900;
   line-height: 1;
   min-height: 90px;
   padding: 0 20px;
@@ -754,31 +718,34 @@ button:disabled {
 }
 
 .lobby-start-button {
-  background: linear-gradient(180deg, #224fa7, #173f93);
-  color: white;
-  margin-top: 16px;
+  background: linear-gradient(180deg, #67bcff 0%, #2f76ff 52%, #1a4bc8 100%);
+  border-color: rgba(184, 231, 255, 0.92);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -10px 18px rgba(15, 54, 145, 0.28),
+    0 10px 0 rgba(88, 160, 255, 0.74),
+    0 24px 30px -24px rgba(56, 132, 255, 0.52);
+  color: #fffdf1;
+  margin-top: 20px;
+  text-shadow: 0 2px 0 rgba(16, 48, 122, 0.46);
   width: min(100%, 480px);
 }
 
-.lobby-start-button:disabled,
-.lobby-action-button:disabled {
-  cursor: default;
-  opacity: 0.68;
+.lobby-start-button:disabled {
+  background: linear-gradient(180deg, rgba(34, 79, 167, 0.86), rgba(23, 63, 147, 0.82));
+  border-color: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 8px 0 rgba(23, 63, 147, 0.44),
+    0 20px 24px -24px rgba(0, 0, 0, 0.32);
+  color: rgba(255, 248, 224, 0.86);
+  text-shadow: none;
 }
 
-.lobby-screen-status {
-  background: rgba(6, 41, 106, 0.34);
-  border: 2px solid rgba(157, 227, 255, 0.32);
-  border-radius: var(--radius-card);
-  color: rgba(234, 245, 255, 0.96);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  line-height: 1.45;
-  margin-top: 22px;
-  max-width: 480px;
-  padding: 12px 16px;
-  text-align: center;
-  width: 100%;
+.lobby-action-button:disabled,
+.lobby-start-button:disabled {
+  cursor: default;
+  opacity: 0.68;
 }
 
 @keyframes lobby-skeleton-pulse {
@@ -820,8 +787,7 @@ button:disabled {
 
 .choice-screen-phase-row {
   color: white;
-  font-size: var(--font-size-phase-heading);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
 }
 
@@ -857,36 +823,14 @@ button:disabled {
 
 .choice-screen-timer {
   color: white;
-  font-size: var(--font-size-strong-lg);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
   margin: 0;
 }
 
-.choice-screen-status {
-  background: rgba(6, 41, 106, 0.34);
-  border: 2px solid rgba(157, 227, 255, 0.32);
-  border-radius: var(--radius-card);
-  color: rgba(234, 245, 255, 0.96);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  line-height: 1.45;
-  margin-top: 22px;
-  padding: 14px 16px;
-  text-align: center;
-  width: 100%;
-}
-
-.choice-screen-status-error {
-  background: rgba(113, 39, 43, 0.3);
-  border-color: rgba(255, 191, 157, 0.44);
-  color: #ffebe1;
-}
-
 .choice-screen-prompt-heading {
   color: white;
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-choice-heading);
   line-height: 1.08;
   margin: 48px 0 0;
   text-align: center;
@@ -900,7 +844,7 @@ button:disabled {
 }
 
 .choice-screen-option {
-  align-items: flex-start;
+  align-items: center;
   background: linear-gradient(180deg, rgba(31, 74, 164, 0.98), rgba(24, 61, 145, 0.98));
   border: 2px solid rgba(255, 255, 255, 0.62);
   border-radius: var(--radius-panel);
@@ -909,9 +853,9 @@ button:disabled {
     0 8px 0 rgba(23, 63, 147, 0.44),
     0 18px 24px -24px rgba(0, 0, 0, 0.34);
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   min-height: 224px;
+  position: relative;
   padding: 14px 16px 18px;
   text-align: center;
   width: 100%;
@@ -932,14 +876,16 @@ button:disabled {
 }
 
 .choice-screen-option-badge {
+  left: 16px;
+  position: absolute;
+  top: 14px;
   border-radius: 999px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.32),
     0 4px 8px rgba(0, 0, 0, 0.14);
   color: #0f3d90;
   display: inline-flex;
-  font-size: var(--font-size-body);
-  font-weight: 900;
+  font-size: var(--in-game-font-size-chip);
   line-height: 1;
   min-height: 34px;
   padding: 8px 14px;
@@ -960,20 +906,18 @@ button:disabled {
   align-items: center;
   color: white;
   display: flex;
-  flex: 1;
-  font-size: 30px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-choice-option);
   justify-content: center;
   line-height: 1.14;
-  min-height: 160px;
+  min-height: 100%;
+  padding: 0 20px;
   text-transform: uppercase;
   width: 100%;
 }
 
 .choice-screen-or {
   color: white;
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-choice-heading);
   line-height: 1;
   margin: 0;
   text-align: center;
@@ -982,8 +926,7 @@ button:disabled {
 
 .choice-screen-note {
   color: rgba(255, 255, 255, 0.96);
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--in-game-font-size-helper);
   line-height: 1.25;
   margin: 38px 0 0;
   text-align: center;
@@ -1012,7 +955,6 @@ button:disabled {
 .choice-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  font-weight: 800;
   letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
@@ -1021,7 +963,6 @@ button:disabled {
 .choice-screen-detail-value {
   color: white;
   font-size: var(--font-size-body);
-  font-weight: 800;
   line-height: 1.25;
   margin: 8px 0 0;
 }
@@ -1046,7 +987,6 @@ button:disabled {
 .choice-screen-lock-state {
   color: white;
   font-size: var(--font-size-body);
-  font-weight: 700;
   line-height: 1.2;
   margin: 0;
 }
@@ -1106,7 +1046,6 @@ button:disabled {
 .entry-avatar-caption {
   color: white;
   font-size: var(--font-size-body);
-  font-weight: 800;
   line-height: 1.2;
   margin: 0;
   text-align: center;
@@ -1138,16 +1077,13 @@ button:disabled {
     max-width: 512px;
   }
 
-  .entry-screen-toast {
+  .app-toast {
     width: 100%;
   }
 
-  .entry-screen-toast-stack {
+  .app-toast-stack,
+  .app-toast-fixed {
     width: min(calc(100vw - 48px), 480px);
-  }
-
-  .host-promotion-toast {
-    width: min(calc(100vw - 48px), 496px);
   }
 
   .entry-screen-input,
@@ -1173,9 +1109,6 @@ button:disabled {
     padding-inline: 24px 92px;
   }
 
-  .entry-screen-status {
-    width: min(100%, 452px);
-  }
 }
 
 .toy-page {
@@ -1235,8 +1168,7 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 5px 0 rgba(0, 0, 0, 0.14);
   font-family: var(--font-sans-stack);
-  font-size: 10px;
-  font-weight: 900;
+  font-size: var(--in-game-font-size-chip);
   letter-spacing: 0.14em;
   padding: 8px 12px;
   text-transform: uppercase;
@@ -1249,7 +1181,6 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
     0 8px 0 rgba(19, 73, 161, 0.7);
   display: inline-flex;
-  font-weight: 900;
   justify-content: center;
 }
 
@@ -1261,8 +1192,7 @@ button:disabled {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
   display: inline-flex;
   font-family: var(--font-sans-stack);
-  font-size: var(--font-size-label);
-  font-weight: 900;
+  font-size: var(--in-game-font-size-chip);
   letter-spacing: 0.06em;
   padding: 8px 14px;
   text-transform: uppercase;
@@ -1274,8 +1204,7 @@ button:disabled {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
     0 7px 0 rgba(0, 0, 0, 0.18);
-  font-size: var(--font-size-label);
-  font-weight: 900;
+  font-size: var(--in-game-font-size-chip);
   letter-spacing: 0.08em;
   padding: 10px 14px;
   text-transform: uppercase;
@@ -1328,7 +1257,6 @@ button:disabled {
     0 7px 0 rgba(34, 104, 201, 0.8);
   color: #12376c;
   font-size: var(--font-size-body);
-  font-weight: 800;
   min-height: 52px;
   outline: none;
   padding: 12px 14px;
@@ -1423,7 +1351,6 @@ button:disabled {
 .avatar-picker-eyebrow {
   color: #9fdfff;
   font-size: var(--font-size-label);
-  font-weight: 900;
   letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
@@ -1432,7 +1359,6 @@ button:disabled {
 .avatar-picker-title {
   color: white;
   font-size: 22px;
-  font-weight: 900;
   line-height: 1.1;
   margin: 8px 0 0;
   text-transform: uppercase;
@@ -1460,8 +1386,8 @@ button:disabled {
 }
 
 .toast-close-icon {
-  height: 18px;
-  width: 18px;
+  height: 20px;
+  width: 20px;
 }
 
 .avatar-picker-grid {
@@ -1472,26 +1398,12 @@ button:disabled {
   margin-top: 16px;
 }
 
-.status-callout {
-  background: linear-gradient(180deg, rgba(16, 69, 151, 0.96), rgba(9, 52, 125, 0.98));
-  border: 2px solid rgba(141, 214, 255, 0.7);
-  border-radius: 22px;
-  color: #e4f4ff;
-  padding: 14px 16px;
-}
-
-.status-callout-error {
-  border-color: rgba(255, 184, 127, 0.95);
-  color: #ffe8d4;
-}
-
 .ghost-control {
   background: transparent;
   border: 2px solid rgba(143, 214, 255, 0.65);
   border-radius: 999px;
   color: white;
   font-size: var(--font-size-label);
-  font-weight: 900;
   letter-spacing: 0.08em;
   min-height: 40px;
   padding: 8px 14px;
@@ -1519,8 +1431,7 @@ button:disabled {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     0 7px 0 rgba(0, 0, 0, 0.14);
-  font-size: var(--font-size-caption);
-  font-weight: 900;
+  font-size: var(--in-game-font-size-helper);
   line-height: 1.4;
   min-height: 54px;
   padding: 12px 14px;
@@ -1558,8 +1469,7 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
     0 5px 0 rgba(0, 0, 0, 0.12);
   display: inline-flex;
-  font-size: 10px;
-  font-weight: 900;
+  font-size: var(--in-game-font-size-chip);
   letter-spacing: 0.12em;
   padding: 6px 10px;
   text-transform: uppercase;
@@ -1628,26 +1538,26 @@ button:disabled {
 
 @media (min-width: 1280px) {
   .hud-pill {
-    font-size: 10px;
+    font-size: var(--in-game-font-size-chip);
     padding: 6px 12px;
   }
 
   .score-pill {
-    font-size: var(--font-size-label);
+    font-size: var(--in-game-font-size-chip);
     padding: 6px 12px;
   }
 
   .section-banner {
-    font-size: var(--font-size-label);
+    font-size: var(--in-game-font-size-chip);
     padding: 8px 12px;
   }
 
   .phase-side-pill {
-    font-size: var(--font-size-label);
+    font-size: var(--in-game-font-size-helper);
   }
 
   .choice-tag {
-    font-size: 10px;
+    font-size: var(--in-game-font-size-chip);
     padding: 6px 10px;
   }
 
@@ -1688,49 +1598,6 @@ button:disabled {
   width: 100%;
 }
 
-.argument-screen-toast {
-  align-items: center;
-  background: linear-gradient(180deg, #ffe884, #ffdc62);
-  border: 2px solid rgba(255, 255, 255, 0.58);
-  border-radius: var(--radius-card);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    0 8px 0 rgba(205, 168, 67, 0.34);
-  color: #262626;
-  display: flex;
-  justify-content: space-between;
-  height: 80px;
-  inset-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
-  inset-inline-start: 50%;
-  min-height: 80px;
-  padding: 12px 16px;
-  position: fixed;
-  transform: translateX(-50%);
-  width: min(calc(100vw - 32px), 496px);
-  z-index: 80;
-}
-
-.argument-screen-toast-message {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.2;
-  margin: 0;
-}
-
-.argument-screen-toast-close {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: #262626;
-  cursor: pointer;
-  display: inline-flex;
-  height: 36px;
-  justify-content: center;
-  margin-left: 12px;
-  padding: 0;
-  width: 36px;
-}
-
 .argument-screen-phase-header {
   margin-top: 44px;
 }
@@ -1745,8 +1612,7 @@ button:disabled {
 
 .argument-screen-phase-row {
   color: white;
-  font-size: var(--font-size-phase-heading);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
 }
 
@@ -1786,35 +1652,13 @@ button:disabled {
 
 .argument-screen-timer {
   color: white;
-  font-size: var(--font-size-strong-lg);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
-}
-
-.argument-screen-status {
-  background: rgba(6, 41, 106, 0.34);
-  border: 2px solid rgba(157, 227, 255, 0.32);
-  border-radius: var(--radius-card);
-  color: rgba(234, 245, 255, 0.96);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  line-height: 1.45;
-  margin-top: 20px;
-  padding: 12px 16px;
-  text-align: center;
-  width: 100%;
-}
-
-.argument-screen-status-error {
-  background: rgba(113, 39, 43, 0.3);
-  border-color: rgba(255, 191, 157, 0.44);
-  color: #ffebe1;
 }
 
 .argument-screen-speaking-title {
   color: white;
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-argument-title);
   line-height: 1.1;
   margin-top: 48px;
   text-align: center;
@@ -1823,8 +1667,7 @@ button:disabled {
 
 .argument-screen-penalty-copy {
   color: white;
-  font-size: 18px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-argument-penalty);
   line-height: 1.15;
   margin-top: 16px;
   text-align: center;
@@ -1838,8 +1681,7 @@ button:disabled {
 
 .argument-screen-next-up {
   color: white;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-argument-title);
   line-height: 1.1;
   margin-top: 4px;
   text-align: center;
@@ -1854,7 +1696,7 @@ button:disabled {
     0 8px 0 rgba(205, 168, 67, 0.38),
     0 18px 24px -24px rgba(0, 0, 0, 0.28);
   color: #ff8b4f;
-  font-size: 16px;
+  font-size: var(--in-game-font-size-button);
   height: 82px;
   margin-top: 32px;
   width: 100%;
@@ -1886,7 +1728,6 @@ button:disabled {
 .argument-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  font-weight: 800;
   letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
@@ -1895,7 +1736,6 @@ button:disabled {
 .argument-screen-detail-value {
   color: white;
   font-size: var(--font-size-body);
-  font-weight: 800;
   line-height: 1.25;
   margin: 8px 0 0;
 }
@@ -1960,9 +1800,9 @@ button:disabled {
     inset 0 2px 0 rgba(255, 255, 255, 0.34),
     0 10px 24px -20px rgba(0, 0, 0, 0.32),
     0 7px 0 rgba(13, 72, 161, 0.42);
-  height: 92px;
+  height: var(--in-game-avatar-floating-size);
   overflow: hidden;
-  width: 92px;
+  width: var(--in-game-avatar-floating-size);
 }
 
 .rebuttal-screen {
@@ -1994,8 +1834,7 @@ button:disabled {
 
 .rebuttal-screen-phase-row {
   color: white;
-  font-size: var(--font-size-phase-heading);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
 }
 
@@ -2034,35 +1873,13 @@ button:disabled {
 
 .rebuttal-screen-timer {
   color: white;
-  font-size: var(--font-size-strong-lg);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
-}
-
-.rebuttal-screen-status {
-  background: rgba(6, 41, 106, 0.34);
-  border: 2px solid rgba(157, 227, 255, 0.32);
-  border-radius: var(--radius-card);
-  color: rgba(234, 245, 255, 0.96);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  line-height: 1.45;
-  margin-top: 20px;
-  padding: 12px 16px;
-  text-align: center;
-  width: 100%;
-}
-
-.rebuttal-screen-status-error {
-  background: rgba(113, 39, 43, 0.3);
-  border-color: rgba(255, 191, 157, 0.44);
-  color: #ffebe1;
 }
 
 .rebuttal-screen-title {
   color: white;
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-rebuttal-title);
   line-height: 1.1;
   margin-top: 48px;
   text-align: center;
@@ -2082,7 +1899,7 @@ button:disabled {
     0 8px 0 rgba(205, 168, 67, 0.38),
     0 18px 24px -24px rgba(0, 0, 0, 0.28);
   color: #ff8b4f;
-  font-size: 16px;
+  font-size: var(--in-game-font-size-button);
   height: 82px;
   margin-top: 26px;
   width: 100%;
@@ -2099,8 +1916,7 @@ button:disabled {
 
 .rebuttal-screen-host-note {
   color: white;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-rebuttal-host-note);
   line-height: 1.18;
   margin-top: 28px;
   text-align: center;
@@ -2123,7 +1939,6 @@ button:disabled {
 .rebuttal-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  font-weight: 800;
   letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
@@ -2132,7 +1947,6 @@ button:disabled {
 .rebuttal-screen-detail-value {
   color: white;
   font-size: var(--font-size-body);
-  font-weight: 800;
   line-height: 1.25;
   margin: 8px 0 0;
 }
@@ -2166,8 +1980,7 @@ button:disabled {
 
 .verdict-screen-phase-row {
   color: white;
-  font-size: var(--font-size-phase-heading);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
 }
 
@@ -2207,35 +2020,13 @@ button:disabled {
 
 .verdict-screen-timer {
   color: white;
-  font-size: var(--font-size-strong-lg);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   line-height: 1;
-}
-
-.verdict-screen-status {
-  background: rgba(6, 41, 106, 0.34);
-  border: 2px solid rgba(157, 227, 255, 0.32);
-  border-radius: var(--radius-card);
-  color: rgba(234, 245, 255, 0.96);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  line-height: 1.45;
-  margin-top: 20px;
-  padding: 12px 16px;
-  text-align: center;
-  width: 100%;
-}
-
-.verdict-screen-status-error {
-  background: rgba(113, 39, 43, 0.3);
-  border-color: rgba(255, 191, 157, 0.44);
-  color: #ffebe1;
 }
 
 .verdict-screen-title {
   color: white;
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-verdict-title);
   line-height: 1.12;
   margin-top: 48px;
   text-align: center;
@@ -2244,8 +2035,7 @@ button:disabled {
 
 .verdict-screen-subtitle {
   color: white;
-  font-size: 20px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-helper);
   line-height: 1.25;
   margin-top: 20px;
   text-align: center;
@@ -2295,8 +2085,7 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.32),
     0 4px 8px rgba(0, 0, 0, 0.14);
   display: inline-flex;
-  font-size: var(--font-size-body);
-  font-weight: 900;
+  font-size: var(--in-game-font-size-chip);
   line-height: 1;
   min-height: 34px;
   padding: 8px 14px;
@@ -2323,8 +2112,7 @@ button:disabled {
   color: white;
   display: flex;
   flex: 1;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-verdict-option);
   justify-content: center;
   line-height: 1.15;
   min-height: 140px;
@@ -2334,8 +2122,7 @@ button:disabled {
 
 .verdict-screen-note {
   color: rgba(255, 255, 255, 0.96);
-  font-size: 16px;
-  font-weight: 700;
+  font-size: var(--in-game-font-size-helper);
   line-height: 1.25;
   margin-top: 38px;
   text-align: center;
@@ -2358,7 +2145,6 @@ button:disabled {
 .verdict-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  font-weight: 800;
   letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
@@ -2367,7 +2153,6 @@ button:disabled {
 .verdict-screen-detail-value {
   color: white;
   font-size: var(--font-size-body);
-  font-weight: 800;
   line-height: 1.25;
   margin: 8px 0 0;
 }
@@ -2405,12 +2190,11 @@ button:disabled {
 .results-scoreboard-heading,
 .results-scoreboard-value {
   color: #173f93;
-  font-weight: 800;
   margin: 0;
 }
 
 .results-scoreboard-heading {
-  font-size: 16px;
+  font-size: var(--in-game-font-size-scoreboard-heading);
 }
 
 .results-scoreboard-heading-round,
@@ -2450,10 +2234,10 @@ button:disabled {
     0 4px 0 rgba(58, 113, 190, 0.18);
   display: inline-flex;
   flex: 0 0 auto;
-  height: 48px;
+  height: var(--in-game-avatar-scoreboard-size);
   justify-content: center;
   overflow: hidden;
-  width: 48px;
+  width: var(--in-game-avatar-scoreboard-size);
 }
 
 .results-scoreboard-name-block {
@@ -2469,8 +2253,7 @@ button:disabled {
 
 .results-scoreboard-name {
   color: #173f93;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-scoreboard-value);
   line-height: 1.15;
   margin: 0;
 }
@@ -2483,15 +2266,14 @@ button:disabled {
     0 4px 8px rgba(0, 0, 0, 0.14);
   color: white;
   display: inline-flex;
-  font-size: var(--font-size-caption);
-  font-weight: 900;
+  font-size: var(--in-game-font-size-chip);
   line-height: 1;
   padding: 8px 12px;
   text-transform: uppercase;
 }
 
 .results-scoreboard-value {
-  font-size: 20px;
+  font-size: var(--in-game-font-size-scoreboard-value);
   line-height: 1;
 }
 
@@ -2516,8 +2298,7 @@ button:disabled {
   align-items: center;
   color: white;
   display: grid;
-  font-size: var(--font-size-phase-heading);
-  font-weight: 800;
+  font-size: var(--in-game-font-size-phase-meta);
   gap: 16px;
   grid-template-columns: minmax(0, 1fr) auto;
   line-height: 1;
@@ -2536,31 +2317,9 @@ button:disabled {
   text-align: right;
 }
 
-.resolution-screen-status,
-.end-game-screen-status {
-  background: rgba(6, 41, 106, 0.34);
-  border: 2px solid rgba(157, 227, 255, 0.32);
-  border-radius: var(--radius-card);
-  color: rgba(234, 245, 255, 0.96);
-  font-size: var(--font-size-body);
-  font-weight: 700;
-  line-height: 1.45;
-  margin-top: 22px;
-  padding: 12px 16px;
-  text-align: center;
-  width: 100%;
-}
-
-.resolution-screen-status-error {
-  background: rgba(113, 39, 43, 0.3);
-  border-color: rgba(255, 191, 157, 0.44);
-  color: #ffebe1;
-}
-
 .resolution-screen-title {
   color: white;
-  font-size: 32px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-resolution-title);
   line-height: 1.12;
   margin-top: 50px;
   text-align: center;
@@ -2569,8 +2328,7 @@ button:disabled {
 
 .resolution-screen-subtitle {
   color: white;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-helper);
   line-height: 1.2;
   margin-top: 20px;
   padding: 0 32px;
@@ -2592,8 +2350,7 @@ button:disabled {
     0 8px 0 rgba(205, 168, 67, 0.38),
     0 18px 24px -24px rgba(0, 0, 0, 0.28);
   color: #ff8b4f;
-  font-size: 16px;
-  font-weight: 900;
+  font-size: var(--in-game-font-size-button);
   height: 82px;
   margin-top: 32px;
   text-transform: uppercase;
@@ -2618,8 +2375,7 @@ button:disabled {
 
 .resolution-screen-host-note {
   color: white;
-  font-size: 24px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-resolution-host-note);
   line-height: 1.16;
   margin-top: 32px;
   text-align: center;
@@ -2627,7 +2383,7 @@ button:disabled {
 
 .end-game-screen-logo {
   color: #fffdfc;
-  font-size: 62px;
+  font-size: var(--in-game-font-size-endgame-logo);
   letter-spacing: 0.01em;
   line-height: 0.9;
   margin: 46px 0 0;
@@ -2674,16 +2430,15 @@ button:disabled {
     0 8px 0 rgba(34, 104, 201, 0.35),
     0 18px 24px -22px rgba(0, 0, 0, 0.26);
   display: flex;
-  height: 124px;
+  height: var(--in-game-avatar-floating-size);
   justify-content: center;
   overflow: hidden;
-  width: 124px;
+  width: var(--in-game-avatar-floating-size);
 }
 
 .end-game-screen-headline {
   color: white;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: var(--in-game-font-size-endgame-headline);
   line-height: 1.16;
   margin-top: 32px;
   text-align: center;
@@ -2695,8 +2450,20 @@ button:disabled {
 
 @media (min-width: 768px) {
   :root {
+    --font-size-label: 14px;
+    --font-size-caption: 18px;
+    --font-size-body: 20px;
     --font-size-phase-heading: 32px;
     --font-size-strong-lg: 32px;
+    --in-game-font-size-phase-meta: 24px;
+    --in-game-font-size-choice-heading: 24px;
+    --in-game-font-size-argument-title: 24px;
+    --in-game-font-size-rebuttal-title: 24px;
+    --in-game-font-size-verdict-title: 24px;
+    --in-game-font-size-resolution-title: 24px;
+    --in-game-font-size-rebuttal-host-note: 24px;
+    --in-game-font-size-resolution-host-note: 24px;
+    --in-game-font-size-endgame-headline: 24px;
   }
 
   .title-splash-logo {
@@ -2721,12 +2488,10 @@ button:disabled {
 
   .entry-screen-invite-mode .entry-screen-invite-copy {
     font-size: 28px;
-    font-weight: 600;
   }
 
   .lobby-screen-room-code {
     font-size: 28px;
-    font-weight: 600;
   }
 
   .entry-screen-tagline {
@@ -2735,16 +2500,10 @@ button:disabled {
 
   .entry-screen-invite-mode .entry-screen-tagline {
     font-size: 28px;
-    font-weight: 600;
   }
 
   .entry-screen-input {
     font-size: 28px;
-    font-weight: 400;
-  }
-
-  .entry-screen-input::placeholder {
-    font-weight: 400;
   }
 
   .lobby-player-name {
@@ -2753,7 +2512,6 @@ button:disabled {
 
   .entry-screen-copy {
     font-size: 28px;
-    font-weight: 600;
   }
 
   .entry-avatar-surface {
@@ -2778,18 +2536,15 @@ button:disabled {
 
   .entry-screen-create-button:not(.entry-screen-invite-button) {
     font-size: 24px;
-    font-weight: 400;
   }
 
   .entry-screen-invite-button {
     font-size: 24px;
-    font-weight: 400;
   }
 
   .lobby-action-button,
   .lobby-start-button {
     font-size: 24px;
-    font-weight: 400;
     min-height: 80px;
   }
 
@@ -2816,74 +2571,22 @@ button:disabled {
 
   .lobby-start-button {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.26),
-      0 8px 0 rgba(23, 63, 147, 0.68),
-      0 20px 24px -24px rgba(0, 0, 0, 0.38);
+      inset 0 2px 0 rgba(255, 255, 255, 0.42),
+      inset 0 -10px 18px rgba(15, 54, 145, 0.28),
+      0 8px 0 rgba(88, 160, 255, 0.7),
+      0 20px 24px -24px rgba(56, 132, 255, 0.48);
+    margin-top: 24px;
   }
 
-  .argument-screen-hold-button,
-  .rebuttal-screen-hold-button,
-  .resolution-screen-hold-button,
-  .end-game-screen-return-button,
-  .choice-screen-note,
-  .verdict-screen-note,
-  .results-scoreboard-heading,
-  .resolution-screen-subtitle {
-    font-size: 20px;
-  }
-
-  .choice-screen-prompt-heading,
-  .choice-screen-or,
-  .argument-screen-speaking-title,
-  .rebuttal-screen-title,
-  .verdict-screen-title,
-  .resolution-screen-title {
-    font-size: 40px;
-  }
-
-  .choice-screen-option-copy {
-    font-size: 36px;
+  .lobby-start-button:disabled {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 8px 0 rgba(23, 63, 147, 0.44),
+      0 20px 24px -24px rgba(0, 0, 0, 0.32);
   }
 
   .avatar-picker-title {
     font-size: 28px;
-  }
-
-  .argument-screen-penalty-copy {
-    font-size: 24px;
-  }
-
-  .argument-screen-next-up,
-  .verdict-screen-option-copy {
-    font-size: 34px;
-  }
-
-  .rebuttal-screen-host-note {
-    font-size: 32px;
-  }
-
-  .verdict-screen-subtitle {
-    font-size: 24px;
-  }
-
-  .results-scoreboard-name {
-    font-size: 24px;
-  }
-
-  .results-scoreboard-value {
-    font-size: 28px;
-  }
-
-  .resolution-screen-host-note {
-    font-size: 30px;
-  }
-
-  .end-game-screen-logo {
-    font-size: 84px;
-  }
-
-  .end-game-screen-headline {
-    font-size: 38px;
   }
 
   .argument-screen {

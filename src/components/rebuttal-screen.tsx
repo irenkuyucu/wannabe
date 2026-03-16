@@ -7,7 +7,6 @@ import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
 type RebuttalScreenProps = {
   currentPlayer: PlayerDoc;
-  noticeMessage: string | null;
   nowMs: number;
   onAdvanceRebuttal: () => void;
   pendingAction: string | null;
@@ -15,7 +14,6 @@ type RebuttalScreenProps = {
   room: RoomDoc;
   round: RoundDoc | null;
   showDetails: boolean;
-  statusMessage: string | null;
 };
 
 function formatTimer(secondsRemaining: number | null) {
@@ -30,7 +28,6 @@ function formatTimer(secondsRemaining: number | null) {
 
 export function RebuttalScreen({
   currentPlayer,
-  noticeMessage,
   nowMs,
   onAdvanceRebuttal,
   pendingAction,
@@ -38,7 +35,6 @@ export function RebuttalScreen({
   room,
   round,
   showDetails,
-  statusMessage,
 }: RebuttalScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -52,8 +48,6 @@ export function RebuttalScreen({
     Math.min(100, (1 - viewModel.progressRatio) * 100),
   );
   const isHost = room.hostPlayerId === currentPlayer.playerId;
-  const message = statusMessage ?? noticeMessage;
-
   return (
     <section className="rebuttal-screen">
       <div className="rebuttal-screen-shell toy-float">
@@ -75,15 +69,6 @@ export function RebuttalScreen({
             <p className="rebuttal-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-
-        {message ? (
-          <div
-            className={`rebuttal-screen-status ${statusMessage ? "rebuttal-screen-status-error" : ""}`}
-          >
-            {message}
-          </div>
-        ) : null}
-
         <p className="rebuttal-screen-title">
           Floor is open
           <br />

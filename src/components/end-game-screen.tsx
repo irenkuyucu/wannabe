@@ -13,7 +13,6 @@ type EndGameScreenProps = {
   pendingAction: string | null;
   players: PlayerDoc[];
   room: RoomDoc;
-  statusMessage: string | null;
 };
 
 function formatWinnerNames(names: string[]) {
@@ -34,7 +33,6 @@ export function EndGameScreen({
   pendingAction,
   players,
   room,
-  statusMessage,
 }: EndGameScreenProps) {
   const summary = buildGameOverSummary(players, latestRound);
   const winnerNames = summary.winners.map((winner) => winner.displayName);
@@ -71,9 +69,6 @@ export function EndGameScreen({
         </div>
 
         <p className="end-game-screen-headline">{headline}</p>
-
-        {statusMessage ? <div className="end-game-screen-status">{statusMessage}</div> : null}
-
         <ResultsScoreboardTable
           entries={summary.scoreboard}
           hostPlayerId={room.hostPlayerId}

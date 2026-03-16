@@ -70,10 +70,12 @@ test("seeded phase states render the redesigned argument, resolution, and end-ga
   await expect(hostPage.getByRole("button", { name: /hold to end turn/i })).toHaveCount(0);
   await expect(bobPage.getByRole("button", { name: /hold to end turn/i })).toBeVisible();
 
-  await expect(charliePage.locator(".argument-screen-toast")).toContainText(
+  await expect(charliePage.locator(".app-toast.app-toast-warning")).toContainText(
     /you’re assigned to side b|you're assigned to side b/i,
   );
-  await expect(charliePage.locator(".argument-screen-toast")).toHaveCount(0, { timeout: 4000 });
+  await expect(charliePage.locator(".app-toast.app-toast-warning")).toHaveCount(0, {
+    timeout: 4000,
+  });
 
   await seedRoomPhase({
     roomCode,
@@ -100,7 +102,7 @@ test("seeded phase states render the redesigned argument, resolution, and end-ga
     },
   });
 
-  await expect(bobPage.locator(".argument-screen-toast")).toContainText(
+  await expect(bobPage.locator(".app-toast.app-toast-warning")).toContainText(
     /you’re re-assigned to side b|you're re-assigned to side b/i,
   );
 

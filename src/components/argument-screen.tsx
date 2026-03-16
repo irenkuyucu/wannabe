@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { AppToast } from "@/components/app-toast";
 import { FloatingAvatarField } from "@/components/floating-avatar-field";
 import { HoldButton } from "@/components/hold-button";
 import { buildPhaseViewModel } from "@/lib/in-game-ui";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
-import Image from "next/image";
 
 type ArgumentScreenProps = {
   currentPlayer: PlayerDoc;
-  noticeMessage: string | null;
   nowMs: number;
   onEndArgumentTurn: () => void;
   pendingAction: string | null;
@@ -18,7 +17,6 @@ type ArgumentScreenProps = {
   room: RoomDoc;
   round: RoundDoc | null;
   showDetails: boolean;
-  statusMessage: string | null;
 };
 
 function formatTimer(secondsRemaining: number | null) {
@@ -33,7 +31,6 @@ function formatTimer(secondsRemaining: number | null) {
 
 export function ArgumentScreen({
   currentPlayer,
-  noticeMessage,
   nowMs,
   onEndArgumentTurn,
   pendingAction,
@@ -41,7 +38,6 @@ export function ArgumentScreen({
   room,
   round,
   showDetails,
-  statusMessage,
 }: ArgumentScreenProps) {
   const viewModel = buildPhaseViewModel({
     room,
@@ -110,34 +106,21 @@ export function ArgumentScreen({
     return () => window.clearTimeout(timeout);
   }, [visibleToast]);
 
-  const message = statusMessage ?? noticeMessage;
-
   return (
     <section className="argument-screen">
       <div className="argument-screen-shell toy-float">
         {visibleToast ? (
-          <div className="argument-screen-toast" role="alert">
-            <p className="argument-screen-toast-message">{visibleToast.message}</p>
-            <button
-              aria-label="Dismiss notification"
-              className="argument-screen-toast-close"
-              onClick={() =>
-                setDismissedToastKeys((current) =>
-                  current.includes(visibleToast.key) ? current : [...current, visibleToast.key],
-                )
-              }
-              type="button"
-            >
-              <Image
-                alt=""
-                aria-hidden="true"
-                className="toast-close-icon"
-                height={24}
-                src="/icons/close.svg"
-                width={24}
-              />
-            </button>
-          </div>
+          <AppToast
+            className="app-toast-fixed"
+            closeLabel="Dismiss notification"
+            message={visibleToast.message}
+            onDismiss={() =>
+              setDismissedToastKeys((current) =>
+                current.includes(visibleToast.key) ? current : [...current, visibleToast.key],
+              )
+            }
+            variant="warning"
+          />
         ) : null}
 
         <div className="argument-screen-phase-header">
@@ -158,15 +141,6 @@ export function ArgumentScreen({
             <p className="argument-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-
-        {message ? (
-          <div
-            className={`argument-screen-status ${statusMessage ? "argument-screen-status-error" : ""}`}
-          >
-            {message}
-          </div>
-        ) : null}
-
         <p className="argument-screen-speaking-title">
           Side {speakingSide ?? "A"} is speaking
         </p>

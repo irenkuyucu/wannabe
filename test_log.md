@@ -87,3 +87,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Observed behavior matches expected behavior.
 - Result: `PASS`
 - User feedback: The user reported that the local workflow is now fixed and the stale CSS issue no longer reproduces in their environment.
+
+- Date: 2026-03-15
+- Test ID: TEST-009
+- Milestone/task reference: Route/navigation follow-up on `PLAN.md` M4-T2 and M5 automated scenarios 16-17
+- Scenario: Agent-owned validation of the dedicated join/live route migration and room-code identity simplification after replacing `/?room=` links with `/join/[roomCode]` and `/rooms/[roomCode]`.
+- Expected behavior: Dedicated invite and live-room routes should work end to end, live-room refresh should restore the lobby instead of dropping to join mode, Firestore rules should still enforce membership boundaries, and the overall local verify stack should stay green.
+- Observed behavior: Observed behavior matches expected behavior. `pnpm exec playwright test tests/e2e/home.spec.ts`, `pnpm run test:rules`, and `pnpm verify` all passed after the route split and backend identity changes landed.
+- Result: `PASS`
+- User feedback: The user approved integrating the routing fix back onto `codex/m4-ui-foundation` and continued with the localhost-driven UI polish loop.
