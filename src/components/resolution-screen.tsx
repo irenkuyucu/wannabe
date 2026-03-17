@@ -1,7 +1,7 @@
 "use client";
 
-import { HoldButton } from "@/components/hold-button";
 import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
+import { Button } from "@/components/ui/button";
 import { buildResolutionSummary } from "@/lib/session-summary";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
@@ -77,20 +77,17 @@ export function ResolutionScreen({
         />
 
         {isHost ? (
-          <HoldButton
+          <Button
             className="resolution-screen-hold-button"
             disabled={pendingAction === "advance-resolution"}
             holdingLabel="Keep holding..."
-            idleLabel={
-              pendingAction === "advance-resolution"
-                ? "Advancing..."
-                : "Hold for next round"
-            }
+            interaction="hold"
             onHoldComplete={onAdvanceResolution}
-            progressClassName="resolution-screen-hold-progress"
-            size="lg"
-            variant="secondary"
-          />
+            size="phase"
+            variant="hold"
+          >
+            {pendingAction === "advance-resolution" ? "Advancing..." : "Hold for next round"}
+          </Button>
         ) : (
           <p className="resolution-screen-host-note">
             Host will advance the game

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { fireEvent, render, within } from "@testing-library/react";
+import { act, fireEvent, render, within } from "@testing-library/react";
 
 import { AvatarPickerModal } from "@/components/avatar-picker-modal";
+import { Button } from "@/components/ui/button";
 import { ChoiceScreen } from "@/components/choice-screen";
 import { ResolutionScreen } from "@/components/resolution-screen";
 import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
@@ -123,6 +124,56 @@ test("AvatarPickerModal lists the local avatar set and emits selections", () => 
 
   fireEvent.click(view.getByRole("button", { name: /select avatar 12/i }));
   assert.equal(selectedAvatarId, "avatar-12");
+});
+
+test("Button hold interaction requires a sustained press before completing", async () => {
+  let completions = 0;
+
+  const view = render(
+    <Button
+      durationMs={40}
+      holdingLabel="Keep holding..."
+      interaction="hold"
+      onHoldComplete={() => {
+        completions += 1;
+      }}
+      size="phase"
+      variant="hold"
+    >
+      Hold to end turn
+    </Button>,
+  );
+
+  const button = view.getByRole("button", { name: /hold to end turn/i });
+
+  await act(async () => {
+    fireEvent.pointerDown(button);
+  });
+  assert.match(
+    view.getByRole("button", { name: /keep holding/i }).textContent ?? "",
+    /keep holding/i,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  await act(async () => {
+    fireEvent.pointerUp(button);
+  });
+  assert.equal(completions, 0);
+  assert.match(
+    view.getByRole("button", { name: /hold to end turn/i }).textContent ?? "",
+    /hold to end turn/i,
+  );
+
+  await act(async () => {
+    fireEvent.pointerDown(button);
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 60));
+  });
+
+  assert.equal(completions, 1);
 });
 
 test("VerdictScreen renders vote counters and locked selection state", () => {

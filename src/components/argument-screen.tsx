@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AppToast } from "@/components/app-toast";
 import { FloatingAvatarField } from "@/components/floating-avatar-field";
-import { HoldButton } from "@/components/hold-button";
+import { Button } from "@/components/ui/button";
 import { buildPhaseViewModel } from "@/lib/in-game-ui";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
@@ -160,16 +160,17 @@ export function ArgumentScreen({
         <p className="argument-screen-next-up">Next up: Side {nextSide}</p>
 
         {viewModel.canEndArgumentTurn ? (
-          <HoldButton
+          <Button
             className="argument-screen-hold-button"
             disabled={pendingAction === "end-turn"}
             holdingLabel="Keep holding..."
-            idleLabel={pendingAction === "end-turn" ? "Ending turn..." : "Hold to end turn"}
+            interaction="hold"
             onHoldComplete={onEndArgumentTurn}
-            progressClassName="argument-screen-hold-progress"
-            size="lg"
-            variant="secondary"
-          />
+            size="phase"
+            variant="hold"
+          >
+            {pendingAction === "end-turn" ? "Ending turn..." : "Hold to end turn"}
+          </Button>
         ) : null}
       </div>
     </section>

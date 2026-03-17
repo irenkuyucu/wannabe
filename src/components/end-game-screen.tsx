@@ -3,6 +3,7 @@
 import { bangers } from "@/app/fonts";
 import { AvatarArt } from "@/components/avatar-art";
 import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
+import { Button } from "@/components/ui/button";
 import { getAvatarOption } from "@/lib/avatar-options";
 import { buildGameOverSummary } from "@/lib/session-summary";
 import type { PlayerDoc, RoundDoc, RoomDoc } from "@/lib/firebase-client";
@@ -76,14 +77,15 @@ export function EndGameScreen({
           showRoundColumn={false}
         />
 
-        <button
+        <Button
           className="end-game-screen-return-button"
           disabled={pendingAction === "advance-resolution"}
           onClick={onReturnToMain}
-          type="button"
+          size="phase"
+          variant="hold"
         >
           {pendingAction === "advance-resolution" ? "Returning..." : "Return to main menu"}
-        </button>
+        </Button>
       </div>
     </section>
   );

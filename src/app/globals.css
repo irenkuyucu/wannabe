@@ -30,6 +30,13 @@
   --font-size-label: 12px;
   --font-size-caption: 14px;
   --font-size-body: 16px;
+  --font-size-entry-logo: 48px;
+  --font-size-entry-copy: 20px;
+  --font-size-modal-title: 20px;
+  --icon-size-modal-close: 20px;
+  --font-size-endgame-crown: 48px;
+  --entry-avatar-size: 160px;
+  --font-size-splash-logo: 72px;
   --font-size-phase-heading: 24px;
   --font-size-strong-lg: 24px;
   --in-game-font-size-phase-meta: 20px;
@@ -189,7 +196,7 @@ button:disabled {
 
 .title-splash-logo {
   color: #fffdfc;
-  font-size: 72px;
+  font-size: var(--font-size-splash-logo);
   letter-spacing: 0.01em;
   line-height: 0.9;
   margin: 0;
@@ -339,7 +346,7 @@ button:disabled {
 
 .entry-screen-logo {
   color: #fffdfc;
-  font-size: 64px;
+  font-size: var(--font-size-entry-logo);
   letter-spacing: 0.01em;
   line-height: 0.9;
   margin: 0;
@@ -354,7 +361,7 @@ button:disabled {
   color: white;
   display: flex;
   flex-direction: column;
-  font-size: 30px;
+  font-size: var(--font-size-entry-copy);
   line-height: 1.15;
   margin: 38px 0 0;
 }
@@ -365,7 +372,7 @@ button:disabled {
 
 .entry-screen-tagline {
   color: white;
-  font-size: 32px;
+  font-size: var(--font-size-entry-copy);
   line-height: 1.05;
   margin: 36px 0 0;
 }
@@ -380,7 +387,7 @@ button:disabled {
     0 8px 0 rgba(34, 104, 201, 0.58),
     0 22px 30px -24px rgba(0, 0, 0, 0.36);
   color: #0f3d90;
-  font-size: 20px;
+  font-size: var(--font-size-entry-copy);
   height: var(--entry-control-height);
   min-height: var(--entry-control-height);
   outline: none;
@@ -407,7 +414,7 @@ button:disabled {
 
 .entry-screen-copy {
   color: white;
-  font-size: 22px;
+  font-size: var(--font-size-entry-copy);
   line-height: 1.16;
   margin-top: 40px;
 }
@@ -495,7 +502,7 @@ button:disabled {
 }
 
 .entry-screen-join-pending {
-  font-size: 26px;
+  font-size: var(--font-size-body);
   letter-spacing: 0.18em;
   transform: translateX(0.16em);
 }
@@ -510,7 +517,7 @@ button:disabled {
     0 8px 0 rgba(47, 165, 23, 0.7),
     0 20px 28px -24px rgba(0, 0, 0, 0.46);
   color: #13421d;
-  font-size: var(--font-size-strong-lg);
+  font-size: var(--font-size-body);
   line-height: 1;
   margin-top: 26px;
   height: var(--entry-control-height);
@@ -521,7 +528,16 @@ button:disabled {
   width: min(100%, 360px);
 }
 
+.entry-screen-invite-mode .entry-screen-logo {
+  font-size: var(--font-size-entry-logo);
+}
+
+.entry-screen-invite-mode .entry-screen-tagline {
+  font-size: var(--font-size-entry-copy);
+}
+
 .entry-screen-invite-button {
+  font-size: var(--font-size-body);
   margin-top: 32px;
 }
 
@@ -544,7 +560,7 @@ button:disabled {
 
 .lobby-screen-logo {
   color: #fffdfc;
-  font-size: 64px;
+  font-size: var(--font-size-entry-logo);
   letter-spacing: 0.01em;
   line-height: 0.9;
   margin: 0;
@@ -557,7 +573,7 @@ button:disabled {
 
 .lobby-screen-room-code {
   color: white;
-  font-size: 30px;
+  font-size: var(--font-size-entry-copy);
   line-height: 1.1;
   margin: 48px 0 0;
 }
@@ -635,7 +651,7 @@ button:disabled {
 
 .lobby-player-name {
   color: #173f93;
-  font-size: 20px;
+  font-size: var(--font-size-body);
   line-height: 1.15;
   margin: 0;
   text-align: left;
@@ -648,7 +664,7 @@ button:disabled {
     0 4px 8px rgba(0, 0, 0, 0.14);
   color: #173f93;
   display: inline-flex;
-  font-size: var(--font-size-caption);
+  font-size: var(--font-size-label);
   line-height: 1;
   padding: 12px 16px;
   justify-content: center;
@@ -682,7 +698,7 @@ button:disabled {
     0 8px 0 rgba(37, 98, 183, 0.42),
     0 20px 24px -24px rgba(0, 0, 0, 0.38);
   color: #17431c;
-  font-size: 16px;
+  font-size: var(--font-size-body);
   line-height: 1;
   min-height: 90px;
   padding: 0 20px;
@@ -1007,7 +1023,9 @@ button:disabled {
 .entry-avatar-trigger {
   background: none;
   border: 0;
+  height: var(--entry-avatar-size);
   padding: 0;
+  width: var(--entry-avatar-size);
 }
 
 .entry-avatar-trigger:hover,
@@ -1031,9 +1049,9 @@ button:disabled {
     inset 0 8px 16px rgba(255, 255, 255, 0.3),
     0 10px 0 rgba(47, 99, 174, 0.25);
   display: block;
-  height: clamp(224px, 38vw, 264px);
+  height: var(--entry-avatar-size);
   overflow: hidden;
-  width: clamp(224px, 38vw, 264px);
+  width: var(--entry-avatar-size);
 }
 
 .entry-avatar-image {
@@ -1236,7 +1254,7 @@ button:disabled {
 
 .avatar-picker-title {
   color: white;
-  font-size: 22px;
+  font-size: var(--font-size-modal-title);
   line-height: 1.1;
   margin: 8px 0 0;
   text-transform: uppercase;
@@ -1250,7 +1268,6 @@ button:disabled {
   color: white;
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 26px;
   height: 40px;
   justify-content: center;
   line-height: 1;
@@ -1259,13 +1276,13 @@ button:disabled {
 
 .avatar-picker-close-icon {
   filter: brightness(0) invert(1);
-  height: 18px;
-  width: 18px;
+  height: var(--icon-size-modal-close);
+  width: var(--icon-size-modal-close);
 }
 
 .toast-close-icon {
-  height: 20px;
-  width: 20px;
+  height: var(--icon-size-modal-close);
+  width: var(--icon-size-modal-close);
 }
 
 .avatar-picker-grid {
@@ -1438,26 +1455,8 @@ button:disabled {
 }
 
 .argument-screen-hold-button {
-  background: linear-gradient(180deg, #ffe884, #ffdc62);
-  border-color: rgba(255, 255, 255, 0.56);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 8px 0 rgba(205, 168, 67, 0.38),
-    0 18px 24px -24px rgba(0, 0, 0, 0.28);
-  color: #ff8b4f;
-  font-size: var(--in-game-font-size-button);
-  height: 82px;
+  --button-font-size: var(--in-game-font-size-button);
   margin-top: 32px;
-  width: 100%;
-}
-
-.argument-screen-hold-button:hover,
-.argument-screen-hold-button:active {
-  transform: none;
-}
-
-.argument-screen-hold-progress {
-  background: rgba(255, 255, 255, 0.28);
 }
 
 .argument-screen-details {
@@ -1641,26 +1640,8 @@ button:disabled {
 }
 
 .rebuttal-screen-hold-button {
-  background: linear-gradient(180deg, #ffe884, #ffdc62);
-  border-color: rgba(255, 255, 255, 0.56);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 8px 0 rgba(205, 168, 67, 0.38),
-    0 18px 24px -24px rgba(0, 0, 0, 0.28);
-  color: #ff8b4f;
-  font-size: var(--in-game-font-size-button);
-  height: 82px;
+  --button-font-size: var(--in-game-font-size-button);
   margin-top: 26px;
-  width: 100%;
-}
-
-.rebuttal-screen-hold-button:hover,
-.rebuttal-screen-hold-button:active {
-  transform: none;
-}
-
-.rebuttal-screen-hold-progress {
-  background: rgba(255, 255, 255, 0.28);
 }
 
 .rebuttal-screen-host-note {
@@ -2091,30 +2072,8 @@ button:disabled {
 
 .resolution-screen-hold-button,
 .end-game-screen-return-button {
-  background: linear-gradient(180deg, #ffe884, #ffdc62);
-  border: 2px solid rgba(255, 255, 255, 0.56);
-  border-radius: 30px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 8px 0 rgba(205, 168, 67, 0.38),
-    0 18px 24px -24px rgba(0, 0, 0, 0.28);
-  color: #ff8b4f;
-  font-size: var(--in-game-font-size-button);
-  height: 82px;
+  --button-font-size: var(--in-game-font-size-button);
   margin-top: 32px;
-  text-transform: uppercase;
-  width: 100%;
-}
-
-.resolution-screen-hold-button:hover,
-.resolution-screen-hold-button:active,
-.end-game-screen-return-button:hover,
-.end-game-screen-return-button:active {
-  transform: none;
-}
-
-.resolution-screen-hold-progress {
-  background: rgba(255, 255, 255, 0.28);
 }
 
 .end-game-screen-return-button:disabled {
@@ -2161,7 +2120,7 @@ button:disabled {
 
 .end-game-screen-crown {
   filter: drop-shadow(0 7px 10px rgba(0, 0, 0, 0.2));
-  font-size: 40px;
+  font-size: var(--font-size-endgame-crown);
   left: 50%;
   line-height: 1;
   position: absolute;
@@ -2202,8 +2161,15 @@ button:disabled {
     --font-size-label: 14px;
     --font-size-caption: 18px;
     --font-size-body: 20px;
+    --font-size-splash-logo: 96px;
+    --font-size-entry-logo: 72px;
+    --font-size-entry-copy: 24px;
+    --font-size-modal-title: 24px;
+    --icon-size-modal-close: 24px;
+    --font-size-endgame-crown: 60px;
     --font-size-phase-heading: 32px;
     --font-size-strong-lg: 32px;
+    --entry-avatar-size: 180px;
     --in-game-font-size-phase-meta: 24px;
     --in-game-font-size-choice-heading: 24px;
     --in-game-font-size-argument-title: 24px;
@@ -2215,85 +2181,8 @@ button:disabled {
     --in-game-font-size-endgame-headline: 24px;
   }
 
-  .title-splash-logo {
-    font-size: 96px;
-  }
-
-  .entry-screen-logo {
-    font-size: 72px;
-  }
-
-  .entry-screen-invite-mode .entry-screen-logo {
-    font-size: 72px;
-  }
-
-  .lobby-screen-logo {
-    font-size: 72px;
-  }
-
-  .entry-screen-invite-copy {
-    font-size: 38px;
-  }
-
-  .entry-screen-invite-mode .entry-screen-invite-copy {
-    font-size: 28px;
-  }
-
-  .lobby-screen-room-code {
-    font-size: 28px;
-  }
-
-  .entry-screen-tagline {
-    font-size: 28px;
-  }
-
-  .entry-screen-invite-mode .entry-screen-tagline {
-    font-size: 28px;
-  }
-
-  .entry-screen-input {
-    font-size: 28px;
-  }
-
-  .lobby-player-name {
-    font-size: 24px;
-  }
-
-  .entry-screen-copy {
-    font-size: 28px;
-  }
-
-  .entry-avatar-surface {
-    height: 180px;
-    width: 180px;
-  }
-
-  .entry-screen-invite-mode .entry-avatar-surface {
-    height: 180px;
-    width: 180px;
-  }
-
-  .entry-avatar-trigger {
-    height: 180px;
-    width: 180px;
-  }
-
-  .entry-screen-invite-mode .entry-avatar-trigger {
-    height: 180px;
-    width: 180px;
-  }
-
-  .entry-screen-create-button:not(.entry-screen-invite-button) {
-    font-size: 24px;
-  }
-
-  .entry-screen-invite-button {
-    font-size: 24px;
-  }
-
   .lobby-action-button,
   .lobby-start-button {
-    font-size: 24px;
     min-height: 80px;
   }
 
@@ -2332,10 +2221,6 @@ button:disabled {
       inset 0 1px 0 rgba(255, 255, 255, 0.2),
       0 8px 0 rgba(23, 63, 147, 0.44),
       0 20px 24px -24px rgba(0, 0, 0, 0.32);
-  }
-
-  .avatar-picker-title {
-    font-size: 28px;
   }
 
   .argument-screen {

@@ -1,7 +1,7 @@
 "use client";
 
 import { FloatingAvatarField } from "@/components/floating-avatar-field";
-import { HoldButton } from "@/components/hold-button";
+import { Button } from "@/components/ui/button";
 import { buildPhaseViewModel } from "@/lib/in-game-ui";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
@@ -80,16 +80,17 @@ export function RebuttalScreen({
         />
 
         {isHost ? (
-          <HoldButton
+          <Button
             className="rebuttal-screen-hold-button"
             disabled={pendingAction === "advance-rebuttal"}
             holdingLabel="Keep holding..."
-            idleLabel={pendingAction === "advance-rebuttal" ? "Advancing..." : "Hold to end phase"}
+            interaction="hold"
             onHoldComplete={onAdvanceRebuttal}
-            progressClassName="rebuttal-screen-hold-progress"
-            size="lg"
-            variant="secondary"
-          />
+            size="phase"
+            variant="hold"
+          >
+            {pendingAction === "advance-rebuttal" ? "Advancing..." : "Hold to end phase"}
+          </Button>
         ) : (
           <p className="rebuttal-screen-host-note">
             Host can advance the game
