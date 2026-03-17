@@ -13,11 +13,11 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- 0fea2e0 on codex/m4-ui-foundation — Unify app typography tokens and shared button behavior.
 - fe3a82e on codex/m4-ui-foundation — Remove legacy panel UI path.
 - 29d20d6 on codex/m4-ui-foundation — Unify in-game typography and shared toast styling.
 - 256ee5b on codex/m4-ui-foundation — Refine toast behavior and lobby loading polish.
 - 1d79093 on codex/m4-ui-foundation — Split room routes and restore live lobby refresh.
-- 197b387 on codex/m4-ui-foundation — Refresh project state after dev workflow fix.
 - 1f3fc7a on codex/m4-ui-foundation — Refine UI polish and align entry validation.
 
 ## 3. Project snapshot (max 5)
@@ -31,10 +31,10 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
 - Refactored `src/components/ui/button.tsx` into the sole active shared button primitive, folding the old hold interaction semantics into a tokenized `interaction="hold"` path and deleting `src/components/hold-button.tsx`.
-- Migrated the argument, rebuttal, resolution, and end-game screens onto the shared `Button` component and reduced duplicate per-screen button typography styling in `src/app/globals.css`.
 - Finished tokenizing app-wide text sizing across splash, entry, invite, lobby, modal, toast, in-game, and end-game surfaces for both mobile/base and desktop remaps in `src/app/globals.css`.
-- Added direct component coverage for the shared hold-button interaction in `tests/ui-components.test.tsx` and re-ran the non-Playwright automated suites successfully.
-- The only remaining hardcoded size values in UI styling are now non-typographic visual values like icon/emoji geometry, spacing, and shadows rather than text size/weight rules.
+- Renamed the shared toast surface from `AppToast`/`app-toast*` to `Toast`/`toast*`, moved it to `src/components/toast.tsx`, and updated all active imports/usages and browser tests to the new shared naming.
+- Removed the last hardcoded button tracking override and aligned button/close-icon sizing to shared tokens so the remaining hardcoded UI sizes are now non-typographic geometry values like crowns, spacing, and shadows.
+- Re-ran `pnpm typecheck:web` and `pnpm test:web` successfully after the toast/button cleanup.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)

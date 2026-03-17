@@ -1,5 +1,5 @@
 import { bangers } from "@/app/fonts";
-import { AppToast } from "@/components/app-toast";
+import { Toast } from "@/components/toast";
 import { AvatarPickerModal } from "@/components/avatar-picker-modal";
 import { EntryAvatar } from "@/components/entry-avatar";
 import type { AvatarOption } from "@/lib/avatar-options";
@@ -68,9 +68,9 @@ export function EntryScreen({
       />
       <div className="entry-screen-shell toy-float">
         {validationNotice || errorToastMessage ? (
-          <div className="app-toast-stack" aria-live="polite">
+          <div className="toast-stack" aria-live="polite">
             {validationNotice ? (
-              <AppToast
+              <Toast
                 closeLabel="Dismiss notification"
                 message={validationNotice}
                 onDismiss={onDismissValidationNotice}
@@ -79,7 +79,7 @@ export function EntryScreen({
             ) : null}
 
             {errorToastMessage ? (
-              <AppToast
+              <Toast
                 closeLabel="Dismiss error"
                 message={errorToastMessage}
                 onDismiss={onDismissStatusToast}

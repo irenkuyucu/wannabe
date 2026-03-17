@@ -30,33 +30,28 @@
   --font-size-label: 12px;
   --font-size-caption: 14px;
   --font-size-body: 16px;
-  --font-size-entry-logo: 48px;
-  --font-size-entry-copy: 20px;
-  --font-size-modal-title: 20px;
-  --icon-size-modal-close: 20px;
+  --menu-logo-font-size: 48px;
+  --menu-body-font-size: 20px;
+  --modal-title-font-size: 20px;
+  --toast-body-font-size: var(--font-size-caption);
+  --close-icon-size: 20px;
   --font-size-endgame-crown: 48px;
   --entry-avatar-size: 160px;
-  --font-size-splash-logo: 72px;
+  --logo-font-size-splash: 72px;
+  --logo-font-size-app: var(--menu-logo-font-size);
+  --bangers-font-tracking: 0.04em;
   --font-size-phase-heading: 24px;
   --font-size-strong-lg: 24px;
-  --in-game-font-size-phase-meta: 20px;
-  --in-game-font-size-choice-heading: 20px;
+  --phase-meta-font-size: 20px;
+  --phase-body-font-size: 20px;
+  --phase-helper-font-size: var(--font-size-caption);
   --in-game-font-size-choice-option: var(--font-size-body);
-  --in-game-font-size-argument-title: 20px;
-  --in-game-font-size-argument-penalty: var(--font-size-caption);
-  --in-game-font-size-rebuttal-title: 20px;
-  --in-game-font-size-rebuttal-host-note: 20px;
-  --in-game-font-size-verdict-title: 20px;
   --in-game-font-size-verdict-option: var(--font-size-body);
-  --in-game-font-size-resolution-title: 20px;
-  --in-game-font-size-resolution-host-note: 20px;
   --in-game-font-size-endgame-logo: 36px;
-  --in-game-font-size-endgame-headline: 20px;
-  --in-game-font-size-helper: var(--font-size-caption);
-  --in-game-font-size-chip: var(--font-size-label);
-  --in-game-font-size-button: var(--font-size-body);
-  --in-game-font-size-scoreboard-heading: var(--font-size-caption);
-  --in-game-font-size-scoreboard-value: var(--font-size-body);
+  --chip-font-size: var(--font-size-label);
+  --button-label-font-size: var(--font-size-body);
+  --scoreboard-heading-font-size: var(--font-size-caption);
+  --scoreboard-value-font-size: var(--font-size-body);
   --in-game-avatar-floating-size: 100px;
   --in-game-avatar-scoreboard-size: 40px;
 }
@@ -196,8 +191,8 @@ button:disabled {
 
 .title-splash-logo {
   color: #fffdfc;
-  font-size: var(--font-size-splash-logo);
-  letter-spacing: 0.01em;
+  font-size: var(--logo-font-size-splash);
+  letter-spacing: var(--bangers-font-tracking);
   line-height: 0.9;
   margin: 0;
   text-align: center;
@@ -270,7 +265,7 @@ button:disabled {
   width: 100%;
 }
 
-.app-toast-stack {
+.toast-stack {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -282,7 +277,7 @@ button:disabled {
   z-index: 90;
 }
 
-.app-toast-fixed {
+.toast-fixed {
   inset-block-start: max(16px, calc(env(safe-area-inset-top, 0px) + 16px));
   inset-inline-start: 50%;
   position: fixed;
@@ -291,7 +286,7 @@ button:disabled {
   z-index: 80;
 }
 
-.app-toast {
+.toast {
   align-items: center;
   border: 2px solid rgba(255, 255, 255, 0.52);
   border-radius: var(--radius-card-lg);
@@ -310,28 +305,28 @@ button:disabled {
   width: 100%;
 }
 
-.app-toast-error {
+.toast-error {
   background: #ff9898;
   border-color: rgba(255, 255, 255, 0.22);
 }
 
-.app-toast-warning {
+.toast-warning {
   background: linear-gradient(180deg, #ffe884, #ffdc62);
   border-color: rgba(255, 255, 255, 0.58);
 }
 
-.app-toast-success {
+.toast-success {
   background: linear-gradient(180deg, #abff76, #93f75f);
 }
 
-.app-toast-message {
-  font-size: var(--font-size-caption);
+.toast-body {
+  font-size: var(--toast-body-font-size);
   line-height: 1.1;
   margin: 0;
   max-width: calc(100% - 40px);
 }
 
-.app-toast-close {
+.toast-close {
   align-items: center;
   background: transparent;
   border: 0;
@@ -346,8 +341,8 @@ button:disabled {
 
 .entry-screen-logo {
   color: #fffdfc;
-  font-size: var(--font-size-entry-logo);
-  letter-spacing: 0.01em;
+  font-size: var(--logo-font-size-app);
+  letter-spacing: var(--bangers-font-tracking);
   line-height: 0.9;
   margin: 0;
   text-align: center;
@@ -361,7 +356,7 @@ button:disabled {
   color: white;
   display: flex;
   flex-direction: column;
-  font-size: var(--font-size-entry-copy);
+  font-size: var(--menu-body-font-size);
   line-height: 1.15;
   margin: 38px 0 0;
 }
@@ -372,7 +367,7 @@ button:disabled {
 
 .entry-screen-tagline {
   color: white;
-  font-size: var(--font-size-entry-copy);
+  font-size: var(--menu-body-font-size);
   line-height: 1.05;
   margin: 36px 0 0;
 }
@@ -387,7 +382,7 @@ button:disabled {
     0 8px 0 rgba(34, 104, 201, 0.58),
     0 22px 30px -24px rgba(0, 0, 0, 0.36);
   color: #0f3d90;
-  font-size: var(--font-size-entry-copy);
+  font-size: var(--menu-body-font-size);
   height: var(--entry-control-height);
   min-height: var(--entry-control-height);
   outline: none;
@@ -414,7 +409,7 @@ button:disabled {
 
 .entry-screen-copy {
   color: white;
-  font-size: var(--font-size-entry-copy);
+  font-size: var(--menu-body-font-size);
   line-height: 1.16;
   margin-top: 40px;
 }
@@ -503,7 +498,6 @@ button:disabled {
 
 .entry-screen-join-pending {
   font-size: var(--font-size-body);
-  letter-spacing: 0.18em;
   transform: translateX(0.16em);
 }
 
@@ -529,11 +523,11 @@ button:disabled {
 }
 
 .entry-screen-invite-mode .entry-screen-logo {
-  font-size: var(--font-size-entry-logo);
+  font-size: var(--logo-font-size-app);
 }
 
 .entry-screen-invite-mode .entry-screen-tagline {
-  font-size: var(--font-size-entry-copy);
+  font-size: var(--menu-body-font-size);
 }
 
 .entry-screen-invite-button {
@@ -560,8 +554,8 @@ button:disabled {
 
 .lobby-screen-logo {
   color: #fffdfc;
-  font-size: var(--font-size-entry-logo);
-  letter-spacing: 0.01em;
+  font-size: var(--logo-font-size-app);
+  letter-spacing: var(--bangers-font-tracking);
   line-height: 0.9;
   margin: 0;
   text-align: center;
@@ -573,7 +567,7 @@ button:disabled {
 
 .lobby-screen-room-code {
   color: white;
-  font-size: var(--font-size-entry-copy);
+  font-size: var(--menu-body-font-size);
   line-height: 1.1;
   margin: 48px 0 0;
 }
@@ -803,7 +797,7 @@ button:disabled {
 
 .choice-screen-phase-row {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
 }
 
@@ -839,14 +833,14 @@ button:disabled {
 
 .choice-screen-timer {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
   margin: 0;
 }
 
 .choice-screen-prompt-heading {
   color: white;
-  font-size: var(--in-game-font-size-choice-heading);
+  font-size: var(--phase-body-font-size);
   line-height: 1.08;
   margin: 48px 0 0;
   text-align: center;
@@ -901,7 +895,7 @@ button:disabled {
     0 4px 8px rgba(0, 0, 0, 0.14);
   color: #0f3d90;
   display: inline-flex;
-  font-size: var(--in-game-font-size-chip);
+  font-size: var(--chip-font-size);
   line-height: 1;
   min-height: 34px;
   padding: 8px 14px;
@@ -933,7 +927,7 @@ button:disabled {
 
 .choice-screen-or {
   color: white;
-  font-size: var(--in-game-font-size-choice-heading);
+  font-size: var(--phase-body-font-size);
   line-height: 1;
   margin: 0;
   text-align: center;
@@ -942,7 +936,7 @@ button:disabled {
 
 .choice-screen-note {
   color: rgba(255, 255, 255, 0.96);
-  font-size: var(--in-game-font-size-helper);
+  font-size: var(--phase-helper-font-size);
   line-height: 1.25;
   margin: 38px 0 0;
   text-align: center;
@@ -971,7 +965,6 @@ button:disabled {
 .choice-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
 }
@@ -1095,12 +1088,12 @@ button:disabled {
     max-width: 512px;
   }
 
-  .app-toast {
+  .toast {
     width: 100%;
   }
 
-  .app-toast-stack,
-  .app-toast-fixed {
+  .toast-stack,
+  .toast-fixed {
     width: min(calc(100vw - 48px), 480px);
   }
 
@@ -1247,14 +1240,13 @@ button:disabled {
 .avatar-picker-eyebrow {
   color: #9fdfff;
   font-size: var(--font-size-label);
-  letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
 }
 
 .avatar-picker-title {
   color: white;
-  font-size: var(--font-size-modal-title);
+  font-size: var(--modal-title-font-size);
   line-height: 1.1;
   margin: 8px 0 0;
   text-transform: uppercase;
@@ -1276,13 +1268,13 @@ button:disabled {
 
 .avatar-picker-close-icon {
   filter: brightness(0) invert(1);
-  height: var(--icon-size-modal-close);
-  width: var(--icon-size-modal-close);
+  height: var(--close-icon-size);
+  width: var(--close-icon-size);
 }
 
 .toast-close-icon {
-  height: var(--icon-size-modal-close);
-  width: var(--icon-size-modal-close);
+  height: var(--close-icon-size);
+  width: var(--close-icon-size);
 }
 
 .avatar-picker-grid {
@@ -1321,14 +1313,14 @@ button:disabled {
 
 .phase-sync-screen-title {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1.1;
   text-transform: uppercase;
 }
 
 .phase-sync-screen-copy {
   color: #d8ecff;
-  font-size: var(--in-game-font-size-helper);
+  font-size: var(--phase-helper-font-size);
   line-height: 1.5;
   max-width: 28ch;
 }
@@ -1378,7 +1370,7 @@ button:disabled {
 
 .argument-screen-phase-row {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
 }
 
@@ -1418,13 +1410,13 @@ button:disabled {
 
 .argument-screen-timer {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
 }
 
 .argument-screen-speaking-title {
   color: white;
-  font-size: var(--in-game-font-size-argument-title);
+  font-size: var(--phase-body-font-size);
   line-height: 1.1;
   margin-top: 48px;
   text-align: center;
@@ -1433,7 +1425,7 @@ button:disabled {
 
 .argument-screen-penalty-copy {
   color: white;
-  font-size: var(--in-game-font-size-argument-penalty);
+  font-size: var(--phase-helper-font-size);
   line-height: 1.15;
   margin-top: 16px;
   text-align: center;
@@ -1447,7 +1439,7 @@ button:disabled {
 
 .argument-screen-next-up {
   color: white;
-  font-size: var(--in-game-font-size-argument-title);
+  font-size: var(--phase-body-font-size);
   line-height: 1.1;
   margin-top: 4px;
   text-align: center;
@@ -1455,7 +1447,7 @@ button:disabled {
 }
 
 .argument-screen-hold-button {
-  --button-font-size: var(--in-game-font-size-button);
+  --button-font-size: var(--button-label-font-size);
   margin-top: 32px;
 }
 
@@ -1476,7 +1468,6 @@ button:disabled {
 .argument-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
 }
@@ -1582,7 +1573,7 @@ button:disabled {
 
 .rebuttal-screen-phase-row {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
 }
 
@@ -1621,13 +1612,13 @@ button:disabled {
 
 .rebuttal-screen-timer {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
 }
 
 .rebuttal-screen-title {
   color: white;
-  font-size: var(--in-game-font-size-rebuttal-title);
+  font-size: var(--phase-body-font-size);
   line-height: 1.1;
   margin-top: 48px;
   text-align: center;
@@ -1640,13 +1631,13 @@ button:disabled {
 }
 
 .rebuttal-screen-hold-button {
-  --button-font-size: var(--in-game-font-size-button);
+  --button-font-size: var(--button-label-font-size);
   margin-top: 26px;
 }
 
 .rebuttal-screen-host-note {
   color: white;
-  font-size: var(--in-game-font-size-rebuttal-host-note);
+  font-size: var(--phase-body-font-size);
   line-height: 1.18;
   margin-top: 28px;
   text-align: center;
@@ -1669,7 +1660,6 @@ button:disabled {
 .rebuttal-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
 }
@@ -1710,7 +1700,7 @@ button:disabled {
 
 .verdict-screen-phase-row {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
 }
 
@@ -1750,13 +1740,13 @@ button:disabled {
 
 .verdict-screen-timer {
   color: white;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   line-height: 1;
 }
 
 .verdict-screen-title {
   color: white;
-  font-size: var(--in-game-font-size-verdict-title);
+  font-size: var(--phase-body-font-size);
   line-height: 1.12;
   margin-top: 48px;
   text-align: center;
@@ -1765,7 +1755,7 @@ button:disabled {
 
 .verdict-screen-subtitle {
   color: white;
-  font-size: var(--in-game-font-size-helper);
+  font-size: var(--phase-helper-font-size);
   line-height: 1.25;
   margin-top: 20px;
   text-align: center;
@@ -1815,7 +1805,7 @@ button:disabled {
     inset 0 1px 0 rgba(255, 255, 255, 0.32),
     0 4px 8px rgba(0, 0, 0, 0.14);
   display: inline-flex;
-  font-size: var(--in-game-font-size-chip);
+  font-size: var(--chip-font-size);
   line-height: 1;
   min-height: 34px;
   padding: 8px 14px;
@@ -1852,7 +1842,7 @@ button:disabled {
 
 .verdict-screen-note {
   color: rgba(255, 255, 255, 0.96);
-  font-size: var(--in-game-font-size-helper);
+  font-size: var(--phase-helper-font-size);
   line-height: 1.25;
   margin-top: 38px;
   text-align: center;
@@ -1875,7 +1865,6 @@ button:disabled {
 .verdict-screen-detail-label {
   color: rgba(219, 238, 255, 0.9);
   font-size: var(--font-size-label);
-  letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
 }
@@ -1924,7 +1913,7 @@ button:disabled {
 }
 
 .results-scoreboard-heading {
-  font-size: var(--in-game-font-size-scoreboard-heading);
+  font-size: var(--scoreboard-heading-font-size);
 }
 
 .results-scoreboard-heading-round,
@@ -1983,7 +1972,7 @@ button:disabled {
 
 .results-scoreboard-name {
   color: #173f93;
-  font-size: var(--in-game-font-size-scoreboard-value);
+  font-size: var(--scoreboard-value-font-size);
   line-height: 1.15;
   margin: 0;
 }
@@ -1996,14 +1985,14 @@ button:disabled {
     0 4px 8px rgba(0, 0, 0, 0.14);
   color: white;
   display: inline-flex;
-  font-size: var(--in-game-font-size-chip);
+  font-size: var(--chip-font-size);
   line-height: 1;
   padding: 8px 12px;
   text-transform: uppercase;
 }
 
 .results-scoreboard-value {
-  font-size: var(--in-game-font-size-scoreboard-value);
+  font-size: var(--scoreboard-value-font-size);
   line-height: 1;
 }
 
@@ -2028,7 +2017,7 @@ button:disabled {
   align-items: center;
   color: white;
   display: grid;
-  font-size: var(--in-game-font-size-phase-meta);
+  font-size: var(--phase-meta-font-size);
   gap: 16px;
   grid-template-columns: minmax(0, 1fr) auto;
   line-height: 1;
@@ -2049,7 +2038,7 @@ button:disabled {
 
 .resolution-screen-title {
   color: white;
-  font-size: var(--in-game-font-size-resolution-title);
+  font-size: var(--phase-body-font-size);
   line-height: 1.12;
   margin-top: 50px;
   text-align: center;
@@ -2058,7 +2047,7 @@ button:disabled {
 
 .resolution-screen-subtitle {
   color: white;
-  font-size: var(--in-game-font-size-helper);
+  font-size: var(--phase-helper-font-size);
   line-height: 1.2;
   margin-top: 20px;
   padding: 0 32px;
@@ -2072,7 +2061,7 @@ button:disabled {
 
 .resolution-screen-hold-button,
 .end-game-screen-return-button {
-  --button-font-size: var(--in-game-font-size-button);
+  --button-font-size: var(--button-label-font-size);
   margin-top: 32px;
 }
 
@@ -2083,7 +2072,7 @@ button:disabled {
 
 .resolution-screen-host-note {
   color: white;
-  font-size: var(--in-game-font-size-resolution-host-note);
+  font-size: var(--phase-body-font-size);
   line-height: 1.16;
   margin-top: 32px;
   text-align: center;
@@ -2092,7 +2081,7 @@ button:disabled {
 .end-game-screen-logo {
   color: #fffdfc;
   font-size: var(--in-game-font-size-endgame-logo);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--bangers-font-tracking);
   line-height: 0.9;
   margin: 46px 0 0;
   text-align: center;
@@ -2146,7 +2135,7 @@ button:disabled {
 
 .end-game-screen-headline {
   color: white;
-  font-size: var(--in-game-font-size-endgame-headline);
+  font-size: var(--phase-body-font-size);
   line-height: 1.16;
   margin-top: 32px;
   text-align: center;
@@ -2161,24 +2150,17 @@ button:disabled {
     --font-size-label: 14px;
     --font-size-caption: 18px;
     --font-size-body: 20px;
-    --font-size-splash-logo: 96px;
-    --font-size-entry-logo: 72px;
-    --font-size-entry-copy: 24px;
-    --font-size-modal-title: 24px;
-    --icon-size-modal-close: 24px;
+    --menu-logo-font-size: 72px;
+    --menu-body-font-size: 24px;
+    --modal-title-font-size: 24px;
+    --close-icon-size: 24px;
+    --logo-font-size-splash: 96px;
     --font-size-endgame-crown: 60px;
     --font-size-phase-heading: 32px;
     --font-size-strong-lg: 32px;
     --entry-avatar-size: 180px;
-    --in-game-font-size-phase-meta: 24px;
-    --in-game-font-size-choice-heading: 24px;
-    --in-game-font-size-argument-title: 24px;
-    --in-game-font-size-rebuttal-title: 24px;
-    --in-game-font-size-verdict-title: 24px;
-    --in-game-font-size-resolution-title: 24px;
-    --in-game-font-size-rebuttal-host-note: 24px;
-    --in-game-font-size-resolution-host-note: 24px;
-    --in-game-font-size-endgame-headline: 24px;
+    --phase-meta-font-size: 24px;
+    --phase-body-font-size: 24px;
   }
 
   .lobby-action-button,

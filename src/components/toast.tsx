@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import type { ReactNode } from "react";
 
-type AppToastProps = {
+type ToastProps = {
   className?: string;
   closeLabel?: string;
   message: ReactNode;
@@ -11,31 +10,29 @@ type AppToastProps = {
   variant: "error" | "success" | "warning";
 };
 
-export function AppToast({
+export function Toast({
   className,
   closeLabel = "Dismiss notification",
   message,
   onDismiss,
   variant,
-}: AppToastProps) {
-  const classes = ["app-toast", `app-toast-${variant}`, className].filter(Boolean).join(" ");
+}: ToastProps) {
+  const classes = ["toast", `toast-${variant}`, className].filter(Boolean).join(" ");
 
   return (
     <div className={classes} role="alert">
-      <p className="app-toast-message">{message}</p>
+      <p className="toast-body">{message}</p>
       <button
         aria-label={closeLabel}
-        className="app-toast-close"
+        className="toast-close"
         onClick={onDismiss}
         type="button"
       >
-        <Image
+        <img
           alt=""
           aria-hidden="true"
           className="toast-close-icon"
-          height={20}
           src="/icons/close.svg"
-          width={20}
         />
       </button>
     </div>

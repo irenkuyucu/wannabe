@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { AppToast } from "@/components/app-toast";
+import { Toast } from "@/components/toast";
 import { FloatingAvatarField } from "@/components/floating-avatar-field";
 import { Button } from "@/components/ui/button";
 import { buildPhaseViewModel } from "@/lib/in-game-ui";
@@ -108,8 +108,8 @@ export function ArgumentScreen({
     <section className="argument-screen">
       <div className="argument-screen-shell toy-float">
         {visibleToast ? (
-          <AppToast
-            className="app-toast-fixed"
+          <Toast
+            className="toast-fixed"
             closeLabel="Dismiss notification"
             message={visibleToast.message}
             onDismiss={() =>

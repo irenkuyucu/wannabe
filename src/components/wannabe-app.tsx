@@ -13,7 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { ArgumentScreen } from "@/components/argument-screen";
-import { AppToast } from "@/components/app-toast";
+import { Toast } from "@/components/toast";
 import { EndGameScreen } from "@/components/end-game-screen";
 import { ChoiceScreen } from "@/components/choice-screen";
 import { EntryScreen } from "@/components/entry-screen";
@@ -363,8 +363,8 @@ export function WannabeApp({
     return (
       <>
         {visibleHostPromotionNotice ? (
-          <AppToast
-            className="app-toast-fixed"
+          <Toast
+            className="toast-fixed"
             closeLabel="Dismiss notification"
             message={visibleHostPromotionNotice.message}
             onDismiss={dismissHostPromotionNotice}

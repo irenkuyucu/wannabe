@@ -145,7 +145,7 @@ test("players can progress through a one-round session and the host ends the roo
   await hostPage.getByRole("textbox", { name: /room code/i }).fill(roomCode);
   await hostPage.getByRole("button", { name: /^join room$/i }).click();
 
-  await expect(hostPage.locator(".app-toast.app-toast-error")).toContainText(
+  await expect(hostPage.locator(".toast.toast-error")).toContainText(
     /room is not joinable/i,
   );
   await expect(guestPage.getByRole("textbox", { name: /display name/i })).toBeVisible();
