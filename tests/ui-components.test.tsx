@@ -7,7 +7,7 @@ import { AvatarPickerModal } from "@/components/avatar-picker-modal";
 import { Button } from "@/components/ui/button";
 import { ChoiceScreen } from "@/components/choice-screen";
 import { ResolutionScreen } from "@/components/resolution-screen";
-import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
+import { Scoreboard } from "@/components/scoreboard";
 import { VerdictScreen } from "@/components/verdict-screen";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
 
@@ -131,7 +131,7 @@ test("Button hold interaction requires a sustained press before completing", asy
 
   const view = render(
     <Button
-      durationMs={40}
+      durationMs={80}
       holdingLabel="Keep holding..."
       interaction="hold"
       onHoldComplete={() => {
@@ -170,7 +170,7 @@ test("Button hold interaction requires a sustained press before completing", asy
     fireEvent.pointerDown(button);
   });
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 60));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   assert.equal(completions, 1);
@@ -207,12 +207,12 @@ test("VerdictScreen renders vote counters and locked selection state", () => {
   assert.match(within(options[2]).getByText(/^1 vote$/i).textContent ?? "", /^1 vote$/i);
 });
 
-test("ResultsScoreboardTable shows host and dissenter annotations", () => {
+test("Scoreboard shows host and dissenter annotations", () => {
   const alice = createPlayer({ displayName: "Alice", playerId: "alice", uid: "alice" });
   const charlie = createPlayer({ displayName: "Charlie", playerId: "charlie", uid: "charlie" });
 
   const view = render(
-    <ResultsScoreboardTable
+    <Scoreboard
       entries={[
         {
           displayName: "Alice",

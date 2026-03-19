@@ -47,24 +47,24 @@ export function RebuttalScreen({
   );
   const isHost = room.hostPlayerId === currentPlayer.playerId;
   return (
-    <section className="rebuttal-screen">
-      <div className="rebuttal-screen-shell toy-float">
-        <div className="rebuttal-screen-phase-header">
-          <div className="rebuttal-screen-phase-row">
-            <p className="rebuttal-screen-phase-label">
+    <section className="game-screen rebuttal-screen">
+      <div className="game-screen-shell toy-float">
+        <div className="game-meta">
+          <div className="game-meta-row">
+            <p className="game-meta-label">
               Round {viewModel.roundNumber ?? "-"} / {viewModel.totalRounds}
             </p>
-            <p className="rebuttal-screen-phase-label">Rebuttal</p>
+            <p className="game-meta-label">Rebuttal</p>
           </div>
 
-          <div className="rebuttal-screen-timer-row">
-            <div className="rebuttal-screen-progress-track" aria-hidden="true">
+          <div className="game-timer-row">
+            <div className="game-progress-track" aria-hidden="true">
               <div
-                className="rebuttal-screen-progress-fill"
+                className="game-progress-fill"
                 style={{ width: `${remainingPercent}%` }}
               />
             </div>
-            <p className="rebuttal-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
+            <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
         <p className="rebuttal-screen-title">

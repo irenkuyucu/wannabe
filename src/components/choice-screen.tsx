@@ -45,24 +45,24 @@ export function ChoiceScreen({
     Math.min(100, (1 - viewModel.progressRatio) * 100),
   );
   return (
-    <section className="choice-screen">
-      <div className="choice-screen-shell toy-float">
-        <div className="choice-screen-phase-header">
-          <div className="choice-screen-phase-row">
-            <p className="choice-screen-phase-label">
+    <section className="game-screen choice-screen">
+      <div className="game-screen-shell toy-float">
+        <div className="game-meta">
+          <div className="game-meta-row">
+            <p className="game-meta-label">
               Round {viewModel.roundNumber ?? "-"} / {viewModel.totalRounds}
             </p>
-            <p className="choice-screen-phase-label">Choice</p>
+            <p className="game-meta-label">Choice</p>
           </div>
 
-          <div className="choice-screen-timer-row">
-            <div className="choice-screen-progress-track" aria-hidden="true">
+          <div className="game-timer-row">
+            <div className="game-progress-track" aria-hidden="true">
               <div
-                className="choice-screen-progress-fill"
+                className="game-progress-fill"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="choice-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
+            <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
         <p className="choice-screen-prompt-heading">Would you wanna be</p>

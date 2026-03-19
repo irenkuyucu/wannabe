@@ -105,8 +105,8 @@ export function ArgumentScreen({
   }, [visibleToast]);
 
   return (
-    <section className="argument-screen">
-      <div className="argument-screen-shell toy-float">
+    <section className="game-screen argument-screen">
+      <div className="game-screen-shell toy-float">
         {visibleToast ? (
           <Toast
             className="toast-fixed"
@@ -121,22 +121,22 @@ export function ArgumentScreen({
           />
         ) : null}
 
-        <div className="argument-screen-phase-header">
-          <div className="argument-screen-phase-row">
-            <p className="argument-screen-phase-label">
+        <div className="game-meta">
+          <div className="game-meta-row">
+            <p className="game-meta-label">
               Round {viewModel.roundNumber ?? "-"} / {viewModel.totalRounds}
             </p>
-            <p className="argument-screen-phase-label">Argument</p>
+            <p className="game-meta-label">Argument</p>
           </div>
 
-          <div className="argument-screen-timer-row">
-            <div className="argument-screen-progress-track" aria-hidden="true">
+          <div className="game-timer-row">
+            <div className="game-progress-track" aria-hidden="true">
               <div
-                className="argument-screen-progress-fill"
+                className="game-progress-fill"
                 style={{ width: `${remainingPercent}%` }}
               />
             </div>
-            <p className="argument-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
+            <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
         <p className="argument-screen-speaking-title">

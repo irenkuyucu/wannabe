@@ -60,7 +60,7 @@ export function FloatingAvatarField({
 
         return (
           <div
-            className="floating-avatar"
+            className="floating-avatar-node"
             key={player.playerId}
             style={
               {
@@ -75,9 +75,7 @@ export function FloatingAvatarField({
             }
           >
             <div className="floating-avatar-bob">
-              <div
-                className="avatar-orb floating-avatar-orb flex items-center justify-center rounded-full"
-              >
+              <div className="floating-avatar flex items-center justify-center rounded-full">
                 <AvatarArt avatar={avatar} className="avatar-image" decorative />
               </div>
             </div>

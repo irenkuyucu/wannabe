@@ -5,7 +5,7 @@ import { EntryAvatar } from "@/components/entry-avatar";
 import type { AvatarOption } from "@/lib/avatar-options";
 import Image from "next/image";
 
-type EntryScreenProps = {
+type MenuScreenProps = {
   authError: string | null;
   createDisabled: boolean;
   createPending: boolean;
@@ -29,7 +29,7 @@ type EntryScreenProps = {
   validationNotice: string | null;
 };
 
-export function EntryScreen({
+export function MenuScreen({
   authError,
   createDisabled,
   createPending,
@@ -51,12 +51,12 @@ export function EntryScreen({
   onJoinRoom,
   selectedAvatar,
   validationNotice,
-}: EntryScreenProps) {
+}: MenuScreenProps) {
   const errorToastMessage = (errorMessage ?? authError)?.replace(/\.$/, "") ?? null;
   const isInviteMode = Boolean(inviteRoomCode);
 
   return (
-    <section className={`entry-screen ${isInviteMode ? "entry-screen-invite-mode" : ""}`}>
+    <section className="menu-screen">
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={onAvatarPickerClose}
@@ -66,7 +66,7 @@ export function EntryScreen({
         }}
         selectedAvatarId={selectedAvatar.id}
       />
-      <div className="entry-screen-shell toy-float">
+      <div className="menu-screen-shell toy-float">
         {validationNotice || errorToastMessage ? (
           <div className="toast-stack" aria-live="polite">
             {validationNotice ? (
@@ -89,16 +89,16 @@ export function EntryScreen({
           </div>
         ) : null}
 
-        <h1 className={`${bangers.className} entry-screen-logo`} style={bangers.style}>
+        <h1 className={`${bangers.className} menu-screen-logo`} style={bangers.style}>
           Wannabe!
         </h1>
         {isInviteMode ? (
-          <p className="entry-screen-invite-copy">
+          <p className="menu-invite-copy">
             <span>You&apos;re invited to join</span>
             <span>Room {inviteRoomCode}</span>
           </p>
         ) : null}
-        <p className={`entry-screen-tagline ${isInviteMode ? "entry-screen-tagline-invite" : ""}`}>
+        <p className="menu-screen-tagline">
           Be someone!
         </p>
 
@@ -108,7 +108,7 @@ export function EntryScreen({
           Display name
         </label>
         <input
-          className="entry-screen-input"
+          className="menu-screen-input"
           id="display-name"
           maxLength={12}
           onChange={(event) => onDisplayNameChange(event.target.value)}
@@ -118,7 +118,7 @@ export function EntryScreen({
 
         {isInviteMode ? (
           <button
-            className="entry-screen-create-button entry-screen-invite-button"
+            className="menu-screen-create-button menu-screen-invite-button"
             disabled={joinDisabled}
             onClick={onJoinRoom}
             type="button"
@@ -127,17 +127,17 @@ export function EntryScreen({
           </button>
         ) : (
           <>
-            <div className="entry-screen-copy">
+            <div className="menu-screen-copy">
               <p>Have a code? Enter below</p>
               <p>to join your friends:</p>
             </div>
 
-            <div className="entry-screen-code-row">
+            <div className="menu-screen-code-row">
               <label className="sr-only" htmlFor="room-code">
                 Room code
               </label>
               <input
-                className="entry-screen-input entry-screen-code-input"
+                className="menu-screen-input menu-screen-code-input"
                 id="room-code"
                 inputMode="numeric"
                 onChange={(event) => onJoinCodeChange(event.target.value)}
@@ -146,18 +146,18 @@ export function EntryScreen({
               />
               <button
                 aria-label={joinPending ? "Joining room" : "Join room"}
-                className="entry-screen-join-button"
+                className="menu-screen-join-button"
                 disabled={joinDisabled}
                 onClick={onJoinRoom}
                 type="button"
               >
                 {joinPending ? (
-                  <span className="entry-screen-join-pending">...</span>
+                  <span className="menu-screen-join-pending">...</span>
                 ) : (
                   <Image
                     alt=""
                     aria-hidden="true"
-                    className="entry-screen-arrow-icon"
+                    className="menu-screen-arrow-icon"
                     height={28}
                     src="/icons/right-arrow.svg"
                     width={28}
@@ -166,13 +166,13 @@ export function EntryScreen({
               </button>
             </div>
 
-            <div className="entry-screen-copy entry-screen-copy-create">
+            <div className="menu-screen-copy menu-screen-copy-create">
               <p>No code? No problem.</p>
               <p>Create a new room below:</p>
             </div>
 
             <button
-              className="entry-screen-create-button"
+              className="menu-screen-create-button"
               disabled={createDisabled}
               onClick={onCreateRoom}
               type="button"

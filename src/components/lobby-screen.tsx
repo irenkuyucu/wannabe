@@ -66,10 +66,10 @@ export function LobbyScreen({
           {isLoading ? (
             <div className="lobby-player-row lobby-player-row-skeleton" aria-hidden="true">
               <div className="lobby-player-main">
-                <div className="lobby-avatar lobby-skeleton-block lobby-avatar-skeleton" />
-                <div className="lobby-skeleton-block lobby-player-name-skeleton" />
+                <div className="lobby-avatar skeleton-block lobby-avatar-skeleton" />
+                <div className="skeleton-block lobby-player-name-skeleton" />
               </div>
-              <div className="lobby-ready-pill lobby-skeleton-block lobby-ready-pill-skeleton" />
+              <div className="lobby-ready-pill skeleton-block lobby-ready-pill-skeleton" />
             </div>
           ) : players.map((player) => {
             const avatar = getAvatarOption(player.avatarId);
@@ -96,13 +96,13 @@ export function LobbyScreen({
         {isLoading ? (
           <>
             <div className="lobby-actions-row" aria-hidden="true">
-              <div className="lobby-action-button lobby-action-button-skeleton lobby-skeleton-block" />
-              <div className="lobby-action-button lobby-action-button-skeleton lobby-skeleton-block" />
+              <div className="lobby-action-button lobby-action-button-skeleton skeleton-block" />
+              <div className="lobby-action-button lobby-action-button-skeleton skeleton-block" />
             </div>
             {showStartButton ? (
               <div
                 aria-hidden="true"
-                className="lobby-start-button lobby-start-button-skeleton lobby-skeleton-block"
+                className="lobby-start-button lobby-start-button-skeleton skeleton-block"
               />
             ) : null}
           </>

@@ -15,9 +15,10 @@ import { useRouter } from "next/navigation";
 import { ArgumentScreen } from "@/components/argument-screen";
 import { Toast } from "@/components/toast";
 import { EndGameScreen } from "@/components/end-game-screen";
+import { GameSyncScreen } from "@/components/game-sync-screen";
 import { ChoiceScreen } from "@/components/choice-screen";
-import { EntryScreen } from "@/components/entry-screen";
 import { LobbyScreen } from "@/components/lobby-screen";
+import { MenuScreen } from "@/components/menu-screen";
 import { RebuttalScreen } from "@/components/rebuttal-screen";
 import { ResolutionScreen } from "@/components/resolution-screen";
 import { TitleScreen } from "@/components/title-screen";
@@ -671,7 +672,7 @@ export function WannabeApp({
 
   if (!roomId || !room || !currentPlayer) {
     return (
-      <EntryScreen
+      <MenuScreen
         authError={authError}
         createDisabled={Boolean(pendingAction || authError)}
         createPending={pendingAction === "create"}
@@ -816,19 +817,12 @@ export function WannabeApp({
 
   if (roomId && room?.status === "inGame") {
     return renderWithGlobalToast(
-      <section className="phase-sync-screen">
-        <div className="phase-sync-screen-shell toy-float">
-          <p className="phase-sync-screen-title">Syncing round</p>
-          <p className="phase-sync-screen-copy">
-            Room state is live. Waiting for the active phase to settle.
-          </p>
-        </div>
-      </section>,
+      <GameSyncScreen />,
     );
   }
 
   return (
-    <EntryScreen
+    <MenuScreen
       authError={authError}
       createDisabled={Boolean(pendingAction || authError)}
       createPending={pendingAction === "create"}

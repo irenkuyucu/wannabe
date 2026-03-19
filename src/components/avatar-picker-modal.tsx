@@ -55,7 +55,6 @@ export function AvatarPickerModal({
       >
         <div className="avatar-picker-header">
           <div>
-            <p className="avatar-picker-eyebrow">Choose an avatar</p>
             <h2 id="avatar-picker-title" className="avatar-picker-title">
               Pick who you want to be.
             </h2>

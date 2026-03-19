@@ -1,6 +1,6 @@
 "use client";
 
-import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
+import { Scoreboard } from "@/components/scoreboard";
 import { Button } from "@/components/ui/button";
 import { buildResolutionSummary } from "@/lib/session-summary";
 import type { PlayerDoc, RoomDoc, RoundDoc } from "@/lib/firebase-client";
@@ -58,18 +58,18 @@ export function ResolutionScreen({
   const subtitle = getResolutionSubtitle(summary);
 
   return (
-    <section className="resolution-screen">
-      <div className="resolution-screen-shell toy-float">
-        <div className="resolution-screen-phase-row">
-          <p className="resolution-screen-phase-label">
+    <section className="game-screen game-screen-wide resolution-screen">
+      <div className="game-screen-shell game-screen-shell-wide toy-float">
+        <div className="game-meta-row">
+          <p className="game-meta-label">
             Round {(room.roundIndex ?? 0) + 1} / {room.roundsTotal}
           </p>
-          <p className="resolution-screen-phase-label">Resolution</p>
+          <p className="game-meta-label">Resolution</p>
         </div>
         <p className="resolution-screen-title">{getResolutionTitle(summary)}</p>
         {subtitle ? <p className="resolution-screen-subtitle">{subtitle}</p> : null}
 
-        <ResultsScoreboardTable
+        <Scoreboard
           entries={summary.scoreboard}
           hostPlayerId={room.hostPlayerId}
           players={players}

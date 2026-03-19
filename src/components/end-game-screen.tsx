@@ -2,7 +2,7 @@
 
 import { bangers } from "@/app/fonts";
 import { AvatarArt } from "@/components/avatar-art";
-import { ResultsScoreboardTable } from "@/components/results-scoreboard-table";
+import { Scoreboard } from "@/components/scoreboard";
 import { Button } from "@/components/ui/button";
 import { getAvatarOption } from "@/lib/avatar-options";
 import { buildGameOverSummary } from "@/lib/session-summary";
@@ -43,8 +43,8 @@ export function EndGameScreen({
       : `${formatWinnerNames(winnerNames)} win the game!`;
 
   return (
-    <section className="end-game-screen">
-      <div className="end-game-screen-shell toy-float">
+    <section className="game-screen game-screen-wide end-game-screen">
+      <div className="game-screen-shell game-screen-shell-wide toy-float">
         <h1 className={`${bangers.className} end-game-screen-logo`} style={bangers.style}>
           Winner winner!
         </h1>
@@ -70,7 +70,7 @@ export function EndGameScreen({
         </div>
 
         <p className="end-game-screen-headline">{headline}</p>
-        <ResultsScoreboardTable
+        <Scoreboard
           entries={summary.scoreboard}
           hostPlayerId={room.hostPlayerId}
           players={players}

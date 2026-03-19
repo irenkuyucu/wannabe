@@ -142,7 +142,7 @@ test("seeded phase states render the redesigned argument, resolution, and end-ga
   await expect(hostPage.getByText(/^Dissenter!$/i)).toBeVisible();
   await expect(hostPage.getByRole("button", { name: /hold for next round/i })).toBeVisible();
   await expect(bobPage.getByText(/host will advance the game/i)).toBeVisible();
-  const charlieRow = hostPage.locator(".results-scoreboard-row", { hasText: "Charlie" });
+  const charlieRow = hostPage.locator(".scoreboard-row", { hasText: "Charlie" });
   await expect(charlieRow.getByText(/^Dissenter$/i)).toBeVisible();
 
   await seedRoomPhase({

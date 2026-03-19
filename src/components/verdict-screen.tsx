@@ -71,24 +71,24 @@ export function VerdictScreen({
     Math.min(100, (1 - viewModel.progressRatio) * 100),
   );
   return (
-    <section className="verdict-screen">
-      <div className="verdict-screen-shell toy-float">
-        <div className="verdict-screen-phase-header">
-          <div className="verdict-screen-phase-row">
-            <p className="verdict-screen-phase-label">
+    <section className="game-screen verdict-screen">
+      <div className="game-screen-shell toy-float">
+        <div className="game-meta">
+          <div className="game-meta-row">
+            <p className="game-meta-label">
               Round {viewModel.roundNumber ?? "-"} / {viewModel.totalRounds}
             </p>
-            <p className="verdict-screen-phase-label">Verdict</p>
+            <p className="game-meta-label">Verdict</p>
           </div>
 
-          <div className="verdict-screen-timer-row">
-            <div className="verdict-screen-progress-track" aria-hidden="true">
+          <div className="game-timer-row">
+            <div className="game-progress-track" aria-hidden="true">
               <div
-                className="verdict-screen-progress-fill"
+                className="game-progress-fill"
                 style={{ width: `${remainingPercent}%` }}
               />
             </div>
-            <p className="verdict-screen-timer">{formatTimer(viewModel.secondsRemaining)}</p>
+            <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
         <p className="verdict-screen-title">Who won the round?</p>
