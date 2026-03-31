@@ -96,3 +96,12 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Observed behavior matches expected behavior. `pnpm exec playwright test tests/e2e/home.spec.ts`, `pnpm run test:rules`, and `pnpm verify` all passed after the route split and backend identity changes landed.
 - Result: `PASS`
 - User feedback: The user approved integrating the routing fix back onto `codex/m4-ui-foundation` and continued with the localhost-driven UI polish loop.
+
+- Date: 2026-03-31
+- Test ID: TEST-010
+- Milestone/task reference: M4-T5 gate
+- Scenario: User-owned validation of the completed UI refactor/polish pass, including shared primitive extraction, route-driven entry/lobby/in-game surfaces, skeleton/fallback treatment, and the final pass over button/control geometry.
+- Expected behavior: The refactored UI should be accepted as a passable implementation for the milestone, with the dedicated surfaces, shared primitives, and latest loading/fallback fixes all working well enough to close the initiative even if some taxonomy/polish work remains for later.
+- Observed behavior: Observed behavior matches expected behavior with caveats. The user accepted the current implementation as good enough to close the UI refactoring initiative, while explicitly noting that some areas still are not in the exact compact or fully normalized shape they would want long-term and may receive later cleanup.
+- Result: `PASS`
+- User feedback: The user accepted the refactor as passable for now, with remaining caveats/open issues limited to optional future polish such as button taxonomy cleanup, possible further tokenization/consolidation, and minor non-blocking UI details.

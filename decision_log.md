@@ -144,3 +144,21 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The remaining frontend complexity had shifted from feature logic to duplicated structural CSS and stale naming. Flattening those layers reduces maintenance cost, makes later spacing/rhythm polish easier, and aligns the active route-driven UI around shared primitives instead of repeated per-screen scaffolding.
 - Alternatives considered: Continuing to polish each phase screen independently with separate shell/header/timer class families, or renaming stale structures without consolidating them.
 - Impacted files/modules: `src/app/globals.css`, `src/components/menu-screen.tsx`, `src/components/scoreboard.tsx`, `src/components/game-sync-screen.tsx`, `src/components/choice-screen.tsx`, `src/components/argument-screen.tsx`, `src/components/rebuttal-screen.tsx`, `src/components/verdict-screen.tsx`, `src/components/resolution-screen.tsx`, `src/components/end-game-screen.tsx`, `src/components/floating-avatar-field.tsx`, `src/components/wannabe-app.tsx`
+
+- Date: 2026-03-31
+- Decision ID: DEC-017
+- Spec/Plan reference: `PLAN.md` M4-T5
+- Decision: Finish the UI refactor as a CSS-first shared-primitive pass, promoting reusable field and modal-shell infrastructure while keeping the React `Button` behavior-only and leaving screen-specific layout/rhythm local to each surface.
+- Rationale: The strongest remaining duplication lived in visual/control shells rather than business logic. Extracting shared field, modal, avatar-frame, progress, and shell-adjacent primitives reduced duplication without introducing a prop-heavy component library or flattening genuinely distinct screen layouts into one abstraction.
+- Alternatives considered: Continuing with only per-screen CSS cleanup, or pushing further into a broader React design-system rewrite with more generalized component APIs.
+- Impacted files/modules: `src/app/globals.css`, `src/components/menu-screen.tsx`, `src/components/avatar-picker-modal.tsx`, `src/components/menu-avatar.tsx`, `src/components/ui/button.tsx`, `src/components/ui/field.tsx`, `src/components/ui/modal-shell.tsx`, `src/components/game-sync-screen.tsx`, `src/components/lobby-screen.tsx`, `src/components/floating-avatar-field.tsx`
+- Related commit(s): `3c6b4e8`
+
+- Date: 2026-03-31
+- Decision ID: DEC-018
+- Spec/Plan reference: `PLAN.md` M4-T5 and M5 validation work
+- Decision: Cover transient loading and fallback UI with a split validation strategy: keep seeded/legitimate fallback states in Playwright, but test bootstrapping/loading-only surfaces such as the lobby skeleton at the component-test layer instead of forcing brittle network-failure E2E scenarios.
+- Rationale: Real multiplayer/browser tests are the right fit for seeded room states like the in-game sync fallback, but bootstrapping transients proved sensitive to unrelated transport and auth timing. Moving those checks to component tests gives stable structural coverage without overfitting Playwright to failure mechanics.
+- Alternatives considered: Forcing all loading/fallback coverage through Playwright by sabotaging network/emulator traffic, or leaving the new skeleton surfaces untested.
+- Impacted files/modules: `tests/e2e/loading-surfaces.spec.ts`, `tests/e2e/responsive.spec.ts`, `tests/ui-primitives.test.tsx`
+- Related commit(s): `3c6b4e8`
