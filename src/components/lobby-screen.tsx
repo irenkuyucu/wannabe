@@ -20,7 +20,7 @@ type LobbyScreenProps = {
 
 function LobbyAvatar({ avatar }: { avatar: AvatarOption }) {
   return (
-    <div className="lobby-avatar">
+    <div className="avatar-frame avatar-sm lobby-avatar">
       <AvatarArt avatar={avatar} className="avatar-image" decorative />
     </div>
   );
@@ -53,24 +53,41 @@ export function LobbyScreen({
       : copiedShareLink
         ? "Copied"
         : "Share link";
+  const loadingRowClasses = [
+    "lobby-player-name-skeleton-long",
+    "lobby-player-name-skeleton-medium",
+    "lobby-player-name-skeleton-short",
+  ];
 
   return (
-    <section className="lobby-screen">
-      <div className="lobby-screen-shell toy-float">
-        <h1 className={`${bangers.className} lobby-screen-logo`} style={bangers.style}>
+    <section className="lobby">
+      <div className="lobby-shell surface-enter">
+        <h1 className={`${bangers.className} logo logo-md`} style={bangers.style}>
           Wannabe!
         </h1>
-        <p className="lobby-screen-room-code">Room {roomCode} Lobby</p>
+        <p className="lobby-room-code">Room {roomCode} Lobby</p>
 
-        <div className="lobby-screen-roster">
+        <div className="lobby-roster">
           {isLoading ? (
-            <div className="lobby-player-row lobby-player-row-skeleton" aria-hidden="true">
-              <div className="lobby-player-main">
-                <div className="lobby-avatar skeleton-block lobby-avatar-skeleton" />
-                <div className="skeleton-block lobby-player-name-skeleton" />
-              </div>
-              <div className="lobby-ready-pill skeleton-block lobby-ready-pill-skeleton" />
-            </div>
+            <>
+              {loadingRowClasses.map((nameWidthClass, index) => (
+                <div
+                  aria-hidden="true"
+                  className="lobby-player-row lobby-player-row-skeleton skeleton-ghost"
+                  key={nameWidthClass}
+                >
+                  <div className="lobby-player-main">
+                    <div className="avatar-sm lobby-avatar-skeleton skeleton-ghost" />
+                    <div className={`lobby-player-name-skeleton ${nameWidthClass} skeleton-ghost`} />
+                  </div>
+                  <div
+                    className={`lobby-ready-pill-skeleton skeleton-ghost ${
+                      index === 1 ? "lobby-ready-pill-skeleton-short" : ""
+                    }`}
+                  />
+                </div>
+              ))}
+            </>
           ) : players.map((player) => {
             const avatar = getAvatarOption(player.avatarId);
             const isHost = player.playerId === hostPlayerId;
@@ -84,7 +101,7 @@ export function LobbyScreen({
                   </p>
                 </div>
                 <span
-                  className={`lobby-ready-pill ${player.ready ? "lobby-ready-pill-ready" : "lobby-ready-pill-unready"}`}
+                  className={`badge ${player.ready ? "badge-green" : "badge-pink"} lobby-ready-pill`}
                 >
                   {player.ready ? "Ready" : "Not Ready"}
                 </span>
@@ -96,13 +113,13 @@ export function LobbyScreen({
         {isLoading ? (
           <>
             <div className="lobby-actions-row" aria-hidden="true">
-              <div className="lobby-action-button lobby-action-button-skeleton skeleton-block" />
-              <div className="lobby-action-button lobby-action-button-skeleton skeleton-block" />
+              <div className="btn btn-lg lobby-action-button lobby-action-button-skeleton skeleton-ghost" />
+              <div className="btn btn-lg lobby-action-button lobby-action-button-skeleton skeleton-ghost" />
             </div>
             {showStartButton ? (
               <div
                 aria-hidden="true"
-                className="lobby-start-button lobby-start-button-skeleton skeleton-block"
+                className="btn btn-lg lobby-start-button lobby-start-button-skeleton skeleton-ghost"
               />
             ) : null}
           </>
@@ -110,14 +127,14 @@ export function LobbyScreen({
           <>
             <div className="lobby-actions-row">
               <button
-                className={`lobby-action-button ${currentPlayer?.ready ? "lobby-action-button-unready" : "lobby-action-button-ready"}`}
+                className={`btn btn-lg ${currentPlayer?.ready ? "btn-unready" : "btn-ready"} lobby-action-button`}
                 onClick={onReadyToggle}
                 type="button"
               >
                 {readyButtonLabel}
               </button>
               <button
-                className="lobby-action-button lobby-action-button-share"
+                className="btn btn-lg btn-share lobby-action-button"
                 onClick={onCopyShareLink}
                 type="button"
               >
@@ -127,7 +144,7 @@ export function LobbyScreen({
 
             {showStartButton ? (
               <button
-                className="lobby-start-button"
+                className="btn btn-lg btn-start lobby-start-button"
                 disabled={startDisabled}
                 onClick={onStartGame}
                 type="button"

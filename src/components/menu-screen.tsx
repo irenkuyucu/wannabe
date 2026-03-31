@@ -1,7 +1,8 @@
 import { bangers } from "@/app/fonts";
 import { Toast } from "@/components/toast";
 import { AvatarPickerModal } from "@/components/avatar-picker-modal";
-import { EntryAvatar } from "@/components/entry-avatar";
+import { MenuAvatar } from "@/components/menu-avatar";
+import { FieldActionButton, FieldInput, FieldShell } from "@/components/ui/field";
 import type { AvatarOption } from "@/lib/avatar-options";
 import Image from "next/image";
 
@@ -56,7 +57,7 @@ export function MenuScreen({
   const isInviteMode = Boolean(inviteRoomCode);
 
   return (
-    <section className="menu-screen">
+    <section className="menu">
       <AvatarPickerModal
         isOpen={isAvatarPickerOpen}
         onClose={onAvatarPickerClose}
@@ -66,7 +67,7 @@ export function MenuScreen({
         }}
         selectedAvatarId={selectedAvatar.id}
       />
-      <div className="menu-screen-shell toy-float">
+      <div className="menu-shell surface-enter">
         {validationNotice || errorToastMessage ? (
           <div className="toast-stack" aria-live="polite">
             {validationNotice ? (
@@ -89,7 +90,7 @@ export function MenuScreen({
           </div>
         ) : null}
 
-        <h1 className={`${bangers.className} menu-screen-logo`} style={bangers.style}>
+        <h1 className={`${bangers.className} logo logo-md`} style={bangers.style}>
           Wannabe!
         </h1>
         {isInviteMode ? (
@@ -98,17 +99,16 @@ export function MenuScreen({
             <span>Room {inviteRoomCode}</span>
           </p>
         ) : null}
-        <p className="menu-screen-tagline">
+        <p className="menu-tagline">
           Be someone!
         </p>
 
-        <EntryAvatar avatar={selectedAvatar} onChoose={onAvatarPickerOpen} />
+        <MenuAvatar avatar={selectedAvatar} onChoose={onAvatarPickerOpen} />
 
         <label className="sr-only" htmlFor="display-name">
           Display name
         </label>
-        <input
-          className="menu-screen-input"
+        <FieldInput
           id="display-name"
           maxLength={12}
           onChange={(event) => onDisplayNameChange(event.target.value)}
@@ -118,7 +118,7 @@ export function MenuScreen({
 
         {isInviteMode ? (
           <button
-            className="menu-screen-create-button menu-screen-invite-button"
+            className="btn btn-primary btn-md menu-invite-button"
             disabled={joinDisabled}
             onClick={onJoinRoom}
             type="button"
@@ -127,52 +127,53 @@ export function MenuScreen({
           </button>
         ) : (
           <>
-            <div className="menu-screen-copy">
+            <div className="menu-copy">
               <p>Have a code? Enter below</p>
               <p>to join your friends:</p>
             </div>
 
-            <div className="menu-screen-code-row">
+            <FieldShell className="menu-code-row">
               <label className="sr-only" htmlFor="room-code">
                 Room code
               </label>
-              <input
-                className="menu-screen-input menu-screen-code-input"
+              <FieldInput
+                className="menu-code-input"
+                embedded
                 id="room-code"
                 inputMode="numeric"
                 onChange={(event) => onJoinCodeChange(event.target.value)}
                 placeholder="ROOM CODE"
                 value={joinCode}
               />
-              <button
+              <FieldActionButton
                 aria-label={joinPending ? "Joining room" : "Join room"}
-                className="menu-screen-join-button"
+                className="menu-join-button"
                 disabled={joinDisabled}
                 onClick={onJoinRoom}
                 type="button"
               >
                 {joinPending ? (
-                  <span className="menu-screen-join-pending">...</span>
+                  <span className="menu-join-pending">...</span>
                 ) : (
                   <Image
                     alt=""
                     aria-hidden="true"
-                    className="menu-screen-arrow-icon"
+                    className="menu-arrow-icon"
                     height={28}
                     src="/icons/right-arrow.svg"
                     width={28}
                   />
                 )}
-              </button>
-            </div>
+              </FieldActionButton>
+            </FieldShell>
 
-            <div className="menu-screen-copy menu-screen-copy-create">
+            <div className="menu-copy menu-copy-create">
               <p>No code? No problem.</p>
               <p>Create a new room below:</p>
             </div>
 
             <button
-              className="menu-screen-create-button"
+              className="btn btn-primary btn-md menu-create-button"
               disabled={createDisabled}
               onClick={onCreateRoom}
               type="button"

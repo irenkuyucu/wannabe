@@ -19,19 +19,19 @@ const VERDICT_OPTIONS = [
     id: "A_WON" as const,
     countKey: "A_WON" as const,
     label: "A coffee roaster",
-    pillClassName: "verdict-screen-vote-pill-a",
+    badgeColor: "badge-green",
   },
   {
     id: "B_WON" as const,
     countKey: "B_WON" as const,
     label: "A tea sommelier",
-    pillClassName: "verdict-screen-vote-pill-b",
+    badgeColor: "badge-blue",
   },
   {
     id: "DRAW" as const,
     countKey: "DRAW" as const,
     label: "Draw",
-    pillClassName: "verdict-screen-vote-pill-draw",
+    badgeColor: "badge-pink",
   },
 ];
 
@@ -71,8 +71,8 @@ export function VerdictScreen({
     Math.min(100, (1 - viewModel.progressRatio) * 100),
   );
   return (
-    <section className="game-screen verdict-screen">
-      <div className="game-screen-shell toy-float">
+    <section className="game-screen verdict">
+      <div className="game-screen-shell surface-enter">
         <div className="game-meta">
           <div className="game-meta-row">
             <p className="game-meta-label">
@@ -82,23 +82,23 @@ export function VerdictScreen({
           </div>
 
           <div className="game-timer-row">
-            <div className="game-progress-track" aria-hidden="true">
+            <div className="progress-track" aria-hidden="true">
               <div
-                className="game-progress-fill"
+                className="progress-fill progress-fill-orange"
                 style={{ width: `${remainingPercent}%` }}
               />
             </div>
             <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-        <p className="verdict-screen-title">Who won the round?</p>
-        <p className="verdict-screen-subtitle">
+        <p className="verdict-title">Who won the round?</p>
+        <p className="verdict-subtitle">
           If the group can&apos;t agree,
           <br />
           the round will end as a draw
         </p>
 
-        <div className="verdict-screen-options">
+        <div className="verdict-options">
           {VERDICT_OPTIONS.map((option) => {
             const voteCount = viewModel.verdictCounts[option.countKey];
             const isSelected = viewModel.selectedVerdict === option.id;
@@ -113,22 +113,22 @@ export function VerdictScreen({
             return (
               <button
                 aria-pressed={isSelected}
-                className={`verdict-screen-option ${isSelected ? "verdict-screen-option-active" : ""}`}
+                className={`card verdict-option ${isSelected ? "card-active" : ""}`}
                 disabled={!viewModel.canSubmitVerdict || pendingAction === pendingKey}
                 key={option.id}
                 onClick={() => onSubmitVerdict(option.id)}
                 type="button"
               >
-                <span className={`verdict-screen-vote-pill ${option.pillClassName}`}>
+                <span className={`badge ${option.badgeColor} verdict-vote-pill`}>
                   {formatVoteCount(voteCount)}
                 </span>
-                <span className="verdict-screen-option-copy">{label}</span>
+                <span className="verdict-option-copy">{label}</span>
               </button>
             );
           })}
         </div>
 
-        <p className="verdict-screen-note">Missing votes don&apos;t count toward the result</p>
+        <p className="verdict-note">Missing votes don&apos;t count toward the result</p>
       </div>
     </section>
   );

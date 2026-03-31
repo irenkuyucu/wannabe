@@ -47,8 +47,8 @@ export function RebuttalScreen({
   );
   const isHost = room.hostPlayerId === currentPlayer.playerId;
   return (
-    <section className="game-screen rebuttal-screen">
-      <div className="game-screen-shell toy-float">
+    <section className="game-screen rebuttal">
+      <div className="game-screen-shell surface-enter">
         <div className="game-meta">
           <div className="game-meta-row">
             <p className="game-meta-label">
@@ -58,41 +58,39 @@ export function RebuttalScreen({
           </div>
 
           <div className="game-timer-row">
-            <div className="game-progress-track" aria-hidden="true">
+            <div className="progress-track" aria-hidden="true">
               <div
-                className="game-progress-fill"
+                className="progress-fill progress-fill-orange"
                 style={{ width: `${remainingPercent}%` }}
               />
             </div>
             <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-        <p className="rebuttal-screen-title">
+        <p className="rebuttal-title">
           Floor is open
           <br />
           for discussions
         </p>
 
         <FloatingAvatarField
-          heightClassName="rebuttal-screen-avatar-field"
+          heightClassName="rebuttal-avatar-field"
           phaseKey={`rebuttal:${room.roundIndex ?? 0}`}
           players={players}
         />
 
         {isHost ? (
           <Button
-            className="rebuttal-screen-hold-button"
+            className="btn-hold btn-phase rebuttal-hold-button"
             disabled={pendingAction === "advance-rebuttal"}
             holdingLabel="Keep holding..."
             interaction="hold"
             onHoldComplete={onAdvanceRebuttal}
-            size="phase"
-            variant="hold"
           >
             {pendingAction === "advance-rebuttal" ? "Advancing..." : "Hold to end phase"}
           </Button>
         ) : (
-          <p className="rebuttal-screen-host-note">
+          <p className="rebuttal-host-note">
             Host can advance the game
             <br />
             to the next phase

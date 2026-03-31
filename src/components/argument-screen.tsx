@@ -105,8 +105,8 @@ export function ArgumentScreen({
   }, [visibleToast]);
 
   return (
-    <section className="game-screen argument-screen">
-      <div className="game-screen-shell toy-float">
+    <section className="game-screen argument">
+      <div className="game-screen-shell surface-enter">
         {visibleToast ? (
           <Toast
             className="toast-fixed"
@@ -130,21 +130,21 @@ export function ArgumentScreen({
           </div>
 
           <div className="game-timer-row">
-            <div className="game-progress-track" aria-hidden="true">
+            <div className="progress-track" aria-hidden="true">
               <div
-                className="game-progress-fill"
+                className="progress-fill progress-fill-orange"
                 style={{ width: `${remainingPercent}%` }}
               />
             </div>
             <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-        <p className="argument-screen-speaking-title">
+        <p className="argument-speaking-title">
           Side {speakingSide ?? "A"} is speaking
         </p>
 
         {penalizedPlayer ? (
-          <p className="argument-screen-penalty-copy">
+          <p className="argument-penalty-copy">
             {penalizedPlayer.displayName.toUpperCase()} carries a 20s
             <br />
             dissenter penalty
@@ -152,22 +152,20 @@ export function ArgumentScreen({
         ) : null}
 
         <FloatingAvatarField
-          heightClassName="argument-screen-avatar-field"
+          heightClassName="argument-avatar-field"
           phaseKey={`argument:${room.roundIndex ?? 0}:${speakingSide ?? "A"}`}
           players={speakingPlayers}
         />
 
-        <p className="argument-screen-next-up">Next up: Side {nextSide}</p>
+        <p className="argument-next-up">Next up: Side {nextSide}</p>
 
         {viewModel.canEndArgumentTurn ? (
           <Button
-            className="argument-screen-hold-button"
+            className="btn-hold btn-phase argument-hold-button"
             disabled={pendingAction === "end-turn"}
             holdingLabel="Keep holding..."
             interaction="hold"
             onHoldComplete={onEndArgumentTurn}
-            size="phase"
-            variant="hold"
           >
             {pendingAction === "end-turn" ? "Ending turn..." : "Hold to end turn"}
           </Button>

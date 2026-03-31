@@ -51,7 +51,7 @@ export function Scoreboard({
               key={entry.playerId}
             >
               <div className="scoreboard-player">
-                <div className="scoreboard-avatar">
+                <div className="avatar-frame avatar-sm scoreboard-avatar">
                   <AvatarArt avatar={avatar} className="avatar-image" decorative />
                 </div>
                 <div className="scoreboard-name-block">
@@ -61,7 +61,7 @@ export function Scoreboard({
                       {entry.playerId === hostPlayerId ? " (Host)" : ""}
                     </p>
                     {entry.isDissenter ? (
-                      <span className="scoreboard-dissenter">Dissenter</span>
+                      <span className="badge badge-red">Dissenter</span>
                     ) : null}
                   </div>
                 </div>

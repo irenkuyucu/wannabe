@@ -58,16 +58,16 @@ export function ResolutionScreen({
   const subtitle = getResolutionSubtitle(summary);
 
   return (
-    <section className="game-screen game-screen-wide resolution-screen">
-      <div className="game-screen-shell game-screen-shell-wide toy-float">
+    <section className="game-screen game-screen-wide resolution">
+      <div className="game-screen-shell game-screen-shell-wide surface-enter">
         <div className="game-meta-row">
           <p className="game-meta-label">
             Round {(room.roundIndex ?? 0) + 1} / {room.roundsTotal}
           </p>
           <p className="game-meta-label">Resolution</p>
         </div>
-        <p className="resolution-screen-title">{getResolutionTitle(summary)}</p>
-        {subtitle ? <p className="resolution-screen-subtitle">{subtitle}</p> : null}
+        <p className="resolution-title">{getResolutionTitle(summary)}</p>
+        {subtitle ? <p className="resolution-subtitle">{subtitle}</p> : null}
 
         <Scoreboard
           entries={summary.scoreboard}
@@ -78,18 +78,16 @@ export function ResolutionScreen({
 
         {isHost ? (
           <Button
-            className="resolution-screen-hold-button"
+            className="btn-hold btn-phase resolution-hold-button"
             disabled={pendingAction === "advance-resolution"}
             holdingLabel="Keep holding..."
             interaction="hold"
             onHoldComplete={onAdvanceResolution}
-            size="phase"
-            variant="hold"
           >
             {pendingAction === "advance-resolution" ? "Advancing..." : "Hold for next round"}
           </Button>
         ) : (
-          <p className="resolution-screen-host-note">
+          <p className="resolution-host-note">
             Host will advance the game
             <br />
             to the next round

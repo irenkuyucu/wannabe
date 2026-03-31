@@ -59,8 +59,8 @@ test("players can progress through a one-round session and the host ends the roo
   await expect(hostPage.getByText(/^Choice$/i)).toBeVisible({ timeout: 10000 });
   await expect(guestPage.getByText(/^Choice$/i)).toBeVisible({ timeout: 10000 });
 
-  const hostChoiceOptions = hostPage.locator(".choice-screen-option");
-  const guestChoiceOptions = guestPage.locator(".choice-screen-option");
+  const hostChoiceOptions = hostPage.locator(".choice-option");
+  const guestChoiceOptions = guestPage.locator(".choice-option");
   await hostChoiceOptions.nth(0).click();
   await expect(hostChoiceOptions.nth(0)).toHaveAttribute("aria-pressed", "true");
   await expect(hostChoiceOptions.nth(0)).toBeDisabled();
@@ -113,13 +113,13 @@ test("players can progress through a one-round session and the host ends the roo
   await expect(hostPage.getByText(/^Verdict$/i)).toBeVisible({ timeout: 15000 });
   await expect(guestPage.getByText(/^Verdict$/i)).toBeVisible({ timeout: 15000 });
 
-  const hostVerdictOptions = hostPage.locator(".verdict-screen-option");
+  const hostVerdictOptions = hostPage.locator(".verdict-option");
   await hostVerdictOptions.nth(0).click();
   await expect(hostVerdictOptions.nth(0)).toHaveAttribute("aria-pressed", "true");
   await expect(hostVerdictOptions.nth(0)).toBeDisabled();
   await expect(hostVerdictOptions.nth(0).getByText(/^1 vote$/i)).toBeVisible();
 
-  const guestVerdictOptions = guestPage.locator(".verdict-screen-option");
+  const guestVerdictOptions = guestPage.locator(".verdict-option");
   await guestVerdictOptions.nth(0).click();
 
   await expect(hostPage.getByRole("heading", { name: /^winner winner!$/i })).toBeVisible({

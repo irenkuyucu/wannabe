@@ -131,14 +131,13 @@ test("Button hold interaction requires a sustained press before completing", asy
 
   const view = render(
     <Button
+      className="btn-hold btn-phase"
       durationMs={80}
       holdingLabel="Keep holding..."
       interaction="hold"
       onHoldComplete={() => {
         completions += 1;
       }}
-      size="phase"
-      variant="hold"
     >
       Hold to end turn
     </Button>,

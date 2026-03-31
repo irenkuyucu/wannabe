@@ -45,8 +45,8 @@ export function ChoiceScreen({
     Math.min(100, (1 - viewModel.progressRatio) * 100),
   );
   return (
-    <section className="game-screen choice-screen">
-      <div className="game-screen-shell toy-float">
+    <section className="game-screen choice">
+      <div className="game-screen-shell surface-enter">
         <div className="game-meta">
           <div className="game-meta-row">
             <p className="game-meta-label">
@@ -56,52 +56,52 @@ export function ChoiceScreen({
           </div>
 
           <div className="game-timer-row">
-            <div className="game-progress-track" aria-hidden="true">
+            <div className="progress-track" aria-hidden="true">
               <div
-                className="game-progress-fill"
+                className="progress-fill progress-fill-orange"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
             <p className="game-timer">{formatTimer(viewModel.secondsRemaining)}</p>
           </div>
         </div>
-        <p className="choice-screen-prompt-heading">Would you wanna be</p>
+        <p className="choice-prompt-heading">Would you wanna be</p>
 
-        <div className="choice-screen-options">
+        <div className="choice-options">
           <button
             aria-pressed={selectedChoice === "A"}
-            className={`choice-screen-option ${selectedChoice === "A" ? "choice-screen-option-active" : ""}`}
+            className={`card choice-option ${selectedChoice === "A" ? "card-active" : ""}`}
             disabled={!viewModel.canSubmitChoice || pendingAction === "choice-A"}
             onClick={() => onSubmitChoice("A")}
             type="button"
           >
-            <span className="choice-screen-option-badge choice-screen-option-badge-a">
+            <span className="badge badge-green choice-option-badge">
               {selectedChoice === "A" ? "Locked in" : "Side A"}
             </span>
-            <span className="choice-screen-option-copy">
+            <span className="choice-option-copy">
               {prompt?.sideA ?? "Side A prompt loading"}
             </span>
           </button>
 
-          <p className="choice-screen-or">Or</p>
+          <p className="choice-or">Or</p>
 
           <button
             aria-pressed={selectedChoice === "B"}
-            className={`choice-screen-option ${selectedChoice === "B" ? "choice-screen-option-active" : ""}`}
+            className={`card choice-option ${selectedChoice === "B" ? "card-active" : ""}`}
             disabled={!viewModel.canSubmitChoice || pendingAction === "choice-B"}
             onClick={() => onSubmitChoice("B")}
             type="button"
           >
-            <span className="choice-screen-option-badge choice-screen-option-badge-b">
+            <span className="badge badge-blue choice-option-badge">
               {selectedChoice === "B" ? "Locked in" : "Side B"}
             </span>
-            <span className="choice-screen-option-copy">
+            <span className="choice-option-copy">
               {prompt?.sideB ?? "Side B prompt loading"}
             </span>
           </button>
         </div>
 
-        <p className="choice-screen-note">Missing choices will be auto-assigned</p>
+        <p className="choice-note">Missing choices will be auto-assigned</p>
       </div>
     </section>
   );

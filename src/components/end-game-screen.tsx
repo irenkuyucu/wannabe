@@ -43,25 +43,25 @@ export function EndGameScreen({
       : `${formatWinnerNames(winnerNames)} win the game!`;
 
   return (
-    <section className="game-screen game-screen-wide end-game-screen">
-      <div className="game-screen-shell game-screen-shell-wide toy-float">
-        <h1 className={`${bangers.className} end-game-screen-logo`} style={bangers.style}>
+    <section className="game-screen game-screen-wide endgame">
+      <div className="game-screen-shell game-screen-shell-wide surface-enter">
+        <h1 className={`${bangers.className} logo logo-lg endgame-logo`} style={bangers.style}>
           Winner winner!
         </h1>
 
         <div
-          className={`end-game-screen-winners ${summary.winners.length > 1 ? "end-game-screen-winners-multi" : ""}`}
+          className={`endgame-winners ${summary.winners.length > 1 ? "endgame-winners-multi" : ""}`}
         >
           {summary.winners.map((winner) => {
             const avatar = getAvatarOption(
               players.find((player) => player.playerId === winner.playerId)?.avatarId,
             );
             return (
-              <div className="end-game-screen-winner-avatar-wrap" key={winner.playerId}>
-                <span className="end-game-screen-crown" aria-hidden="true">
+              <div className="endgame-winner-avatar-wrap" key={winner.playerId}>
+                <span className="endgame-crown" aria-hidden="true">
                   👑
                 </span>
-                <div className="end-game-screen-winner-avatar">
+                <div className="avatar-frame avatar-md endgame-winner-avatar">
                   <AvatarArt avatar={avatar} className="avatar-image" decorative />
                 </div>
               </div>
@@ -69,7 +69,7 @@ export function EndGameScreen({
           })}
         </div>
 
-        <p className="end-game-screen-headline">{headline}</p>
+        <p className="endgame-headline">{headline}</p>
         <Scoreboard
           entries={summary.scoreboard}
           hostPlayerId={room.hostPlayerId}
@@ -78,11 +78,9 @@ export function EndGameScreen({
         />
 
         <Button
-          className="end-game-screen-return-button"
+          className="btn-hold btn-phase endgame-return-button"
           disabled={pendingAction === "advance-resolution"}
           onClick={onReturnToMain}
-          size="phase"
-          variant="hold"
         >
           {pendingAction === "advance-resolution" ? "Returning..." : "Return to main menu"}
         </Button>

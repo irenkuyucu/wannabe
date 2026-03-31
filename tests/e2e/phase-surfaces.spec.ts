@@ -178,6 +178,6 @@ test("seeded phase states render the redesigned argument, resolution, and end-ga
 
   await expect(hostPage.getByRole("heading", { name: /^winner winner!$/i })).toBeVisible();
   await expect(hostPage.getByText(/^Alice and Bob win the game!$/i)).toBeVisible();
-  await expect(hostPage.locator(".end-game-screen-winner-avatar-wrap")).toHaveCount(2);
+  await expect(hostPage.locator(".endgame-winner-avatar-wrap")).toHaveCount(2);
   await expect(bobPage.getByRole("button", { name: /return to main menu/i })).toBeVisible();
 });

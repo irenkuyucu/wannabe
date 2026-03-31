@@ -136,3 +136,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: Query-param routing conflated invite intent with active membership, which caused lobby refreshes to fall back into the join flow. Dedicated routes make invite and live-room state explicit, restore the lobby correctly on refresh, and remove the no-longer-needed room-code indirection.
 - Alternatives considered: Keeping query-param routing, adding query-param variants for join/live state, or preserving a separate room-id to room-code mapping layer.
 - Impacted files/modules: `src/app/page.tsx`, `src/app/join/[roomCode]/page.tsx`, `src/app/rooms/[roomCode]/page.tsx`, `src/components/wannabe-app.tsx`, `src/lib/lobby-utils.js`, `functions/src/domain/room-lifecycle.ts`, `functions/src/data/firestore-room-store.ts`, `tests/e2e/home.spec.ts`
+
+- Date: 2026-03-19
+- Decision ID: DEC-016
+- Spec/Plan reference: M4 ongoing frontend polish pass on the dedicated route-driven UI
+- Decision: Consolidate the live dedicated game surfaces around shared structural layers (`MenuScreen`, `Scoreboard`, `GameSyncScreen`, shared `.game-screen*` and `.game-meta*` classes, and shared skeleton blocks), while keeping only truly phase-specific body blocks separated by screen.
+- Rationale: The remaining frontend complexity had shifted from feature logic to duplicated structural CSS and stale naming. Flattening those layers reduces maintenance cost, makes later spacing/rhythm polish easier, and aligns the active route-driven UI around shared primitives instead of repeated per-screen scaffolding.
+- Alternatives considered: Continuing to polish each phase screen independently with separate shell/header/timer class families, or renaming stale structures without consolidating them.
+- Impacted files/modules: `src/app/globals.css`, `src/components/menu-screen.tsx`, `src/components/scoreboard.tsx`, `src/components/game-sync-screen.tsx`, `src/components/choice-screen.tsx`, `src/components/argument-screen.tsx`, `src/components/rebuttal-screen.tsx`, `src/components/verdict-screen.tsx`, `src/components/resolution-screen.tsx`, `src/components/end-game-screen.tsx`, `src/components/floating-avatar-field.tsx`, `src/components/wannabe-app.tsx`

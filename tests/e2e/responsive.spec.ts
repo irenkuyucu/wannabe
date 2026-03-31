@@ -41,4 +41,26 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole("button", { name: /share link|copied/i })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
+
+  test(`invite screen stays usable at ${viewport.name} width`, async ({ browser }) => {
+    const hostContext = await browser.newContext();
+    const hostPage = await hostContext.newPage();
+    const { roomCode } = await createRoomFromEntry(hostPage, `Host ${viewport.name}`);
+
+    const inviteContext = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height },
+    });
+    const invitePage = await inviteContext.newPage();
+
+    await invitePage.goto(`/join/${roomCode}`);
+    await waitForEntrySurface(invitePage);
+
+    await expect(invitePage.getByText(new RegExp(`^Room ${roomCode}$`, "i"))).toBeVisible();
+    await expect(invitePage.getByRole("button", { name: /^join your friends$/i })).toBeVisible();
+    await expect(invitePage.getByRole("textbox", { name: /room code/i })).toHaveCount(0);
+    await expectNoHorizontalOverflow(invitePage);
+
+    await inviteContext.close();
+    await hostContext.close();
+  });
 }
