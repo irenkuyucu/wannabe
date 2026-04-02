@@ -7,18 +7,17 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: Pre-M5 Follow-up — Presence and Disconnect Handling
-- Task: `P-T2` client recovery gate and disconnect UX is implemented on top of `main`, with targeted client coverage and full agent-owned validation complete.
-- Gate status: PASS — Foreground recovery gating, visibility-driven heartbeat handling, explicit leave-on-return-to-main, targeted permission-denied eviction handling, and client automated validation are complete; feature-level verification remains for `P-T3`.
+- Task: `P-T3` feature verification sweep is complete on top of `main`, with the full presence validation matrix rerun after the client recovery-gate work landed.
+- Gate status: PASS — Backend tests, web tests, both emulator presence suites, and the aggregate `pnpm verify` pass are all green; the next step is the user-owned mobile/background validation handoff in `P-T4`.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- 7c60acc on main — Add client presence recovery handling.
 - 29fc5f0 on main — Implement backend presence lifecycle cleanup.
 - 4cc5f76 on main — Update project logs for completed UI refactor.
 - 3c6b4e8 on main — Refine shared UI primitives and loading states.
 - 8556972 on main — Consolidate shared game screen structure.
-- 6e8d0dc on main — Rename shared toast component and remove button tracking.
-- 0fea2e0 on main — Unify app typography tokens and shared button behavior.
 
 ## 3. Project snapshot (max 5)
 (Brief facts about the working state of the project/codebase. No rationale.)
@@ -30,15 +29,15 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Added the client-side presence helper layer: inactivity copy update, lost-membership helper usage, and a pure `shouldEnterPresenceRecovery(...)` decision helper with direct unit coverage.
-- Updated `WannabeApp` to support the approved foreground recovery gate: visibility-driven awaited heartbeat on return, blocked room actions and auto-ticks while recovering, explicit leave-on-return-to-main, and targeted permission-denied eviction handling in the lobby subscription path.
-- Added dedicated recovery-gate integration coverage around `WannabeApp` for blocked actions, resumed play after successful heartbeat, clean exit after lost membership, and suppressed timed phase ticks during recovery.
-- Kept the web client’s presence call surface aligned with backend presence support via `heartbeatRoom`, `isLostRoomMembershipError`, and `PlayerDoc.lastSeenAtMs`.
-- Full agent-owned validation now passes again, including `pnpm test:web` and `pnpm verify`.
+- Reran `pnpm test:functions` after the client presence work to reconfirm the backend two-tier presence rules still hold under the integrated feature.
+- Reran `pnpm test:web`, including the new recovery-gate integration coverage, to verify the client-side foreground return behavior remains green.
+- Reran both emulator-backed presence suites: `pnpm run test:functions:room-lifecycle:emulator` and `pnpm run test:functions:round-actions:emulator`.
+- Reran `pnpm verify` end-to-end, including lint, typecheck, web tests, functions tests, and Firestore rules validation.
+- No new scoped feature code was added in `P-T3`; this task is the bundled verification/logging pass required before the user-owned mobile validation handoff.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
-- `P-T3` feature verification sweep is still outstanding; the presence feature now needs its bundled verification/logging pass before the mobile validation handoff. — Owner: team
+- `P-T4` mobile/background validation handoff is still outstanding; the remaining required signal is real-device confirmation that the implemented recovery and inactivity behavior matches the approved presence spec. — Owner: user + team
 - Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
 - The user accepted the current UI refactor as passable for the milestone, but some optional cleanup remains for later, especially button taxonomy cleanup, deeper geometry/token normalization, and any stricter future design-system compaction. — Owner: user + team
 - The dedicated-screen flow is now the only active UI path; any future detail/debug inspection UI will need to be reintroduced intentionally rather than relying on the deleted composite panel shell. — Owner: team
@@ -49,4 +48,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- Commit/push the completed `P-T2` client recovery gate and disconnect UX slice, then await approval to start `P-T3` feature verification sweep.
+- Commit/push the completed `P-T3` feature verification sweep slice, then hand off `P-T4` with the required mobile/background validation checklist.
