@@ -4,7 +4,11 @@ import test from "node:test";
 import { getFirestore } from "firebase-admin/firestore";
 
 import { FirestoreRoomStore } from "../src/data/firestore-room-store";
-import { RoomLifecycleService } from "../src/domain/room-lifecycle";
+import {
+  HARD_TIMEOUT_MS,
+  HEARTBEAT_INTERVAL_MS,
+  RoomLifecycleService,
+} from "../src/domain/room-lifecycle";
 
 const runWithEmulator = process.env.FIRESTORE_EMULATOR_HOST ? test : test.skip;
 
@@ -66,4 +70,52 @@ runWithEmulator("room lifecycle persists records in Firestore emulator", async (
   assert.equal(roomSnapshot.get("phaseDeadlineAtMs"), now + 60_000);
   assert.equal(hostSnapshot.get("displayName"), "Alex");
   assert.equal(p2Snapshot.get("displayName"), "Alex (2)");
+});
+
+runWithEmulator("heartbeatRoom persists presence timestamps and hard-timeout sweeps end empty rooms", async () => {
+  await clearFirestoreEmulator();
+
+  let now = 1_710_000_100_000;
+  const store = new FirestoreRoomStore();
+  const service = new RoomLifecycleService(store, () => now, () => 0.000322);
+  const db = getFirestore();
+
+  const created = await service.createRoom({
+    uid: "host-uid",
+    displayName: "Alex",
+  });
+
+  now += HEARTBEAT_INTERVAL_MS;
+  await service.heartbeatRoom({
+    uid: "host-uid",
+    roomId: created.roomId,
+  });
+
+  const beforeStale = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("players")
+    .doc("host-uid")
+    .get();
+  assert.equal(beforeStale.get("lastSeenAtMs"), now);
+
+  await store.updatePlayer(created.roomId, "host-uid", {
+    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
+  });
+
+  const sweep = await service.sweepStaleRooms();
+  const roomSnapshot = await db.collection("rooms").doc(created.roomId).get();
+  const hostSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("players")
+    .doc("host-uid")
+    .get();
+
+  assert.deepEqual(sweep, {
+    roomsProcessed: 1,
+    playersRemoved: 1,
+  });
+  assert.equal(roomSnapshot.get("status"), "ended");
+  assert.equal(hostSnapshot.exists, false);
 });

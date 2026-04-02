@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  HARD_TIMEOUT_MS,
+  HEARTBEAT_INTERVAL_MS,
   RoomLifecycleService,
+  SOFT_TIMEOUT_MS,
   validateDisplayName,
   validateRoomCode,
 } from "../src/domain/room-lifecycle";
@@ -127,6 +130,59 @@ test("start game enforces host/all-ready/joinable constraints", async () => {
   );
 });
 
+test("start game ignores inactive players for lobby gating", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.5);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+  await service.joinRoom({ uid: "p3", roomCode: created.roomCode, displayName: "Casey" });
+
+  await service.setReady({ uid: "host-uid", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p3", roomId: created.roomId, ready: true });
+
+  await store.updatePlayer(created.roomId, "p3", {
+    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
+  });
+
+  const started = await service.startGame({ uid: "host-uid", roomId: created.roomId });
+  const inactivePlayer = await store.getPlayer(created.roomId, "p3");
+
+  assert.equal(started.phase, "choice");
+  assert.equal(inactivePlayer?.ready, false);
+});
+
+test("start game requires at least two active players", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.5);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+  await service.joinRoom({ uid: "p3", roomCode: created.roomCode, displayName: "Casey" });
+
+  await service.setReady({ uid: "host-uid", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p3", roomId: created.roomId, ready: true });
+
+  await store.updatePlayer(created.roomId, "p2", {
+    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
+  });
+  await store.updatePlayer(created.roomId, "p3", {
+    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
+  });
+
+  await assert.rejects(
+    () => service.startGame({ uid: "host-uid", roomId: created.roomId }),
+    (error: unknown) =>
+      error instanceof Error &&
+      assertHttpsErrorCode(error, "failed-precondition") &&
+      /At least two active players/i.test(error.message),
+  );
+});
+
 test("leave room handles host reassignment and ended state", async () => {
   const store = new InMemoryRoomStore();
   const now = 1_710_000_000_000;
@@ -176,4 +232,180 @@ test("lobby actions promote a replacement host when the current host is already 
     phase: "choice",
     deadlineAtMs: 1_710_000_060_000,
   });
+});
+
+test("heartbeatRoom refreshes the active player's presence timestamp", async () => {
+  const store = new InMemoryRoomStore();
+  let now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.25);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  now += HEARTBEAT_INTERVAL_MS;
+
+  const heartbeat = await service.heartbeatRoom({
+    uid: "host-uid",
+    roomId: created.roomId,
+  });
+  const host = await store.getPlayer(created.roomId, "host-uid");
+
+  assert.deepEqual(heartbeat, { ok: true });
+  assert.equal(host?.lastSeenAtMs, now);
+});
+
+test("heartbeatRoom pre-refresh prevents self-eviction after hard timeout", async () => {
+  const store = new InMemoryRoomStore();
+  let now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.25);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await store.updatePlayer(created.roomId, "host-uid", {
+    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
+  });
+
+  now += HEARTBEAT_INTERVAL_MS;
+  const heartbeat = await service.heartbeatRoom({
+    uid: "host-uid",
+    roomId: created.roomId,
+  });
+  const host = await store.getPlayer(created.roomId, "host-uid");
+
+  assert.deepEqual(heartbeat, { ok: true });
+  assert.equal(host?.lastSeenAtMs, now);
+});
+
+test("heartbeatRoom returns not-found after hard eviction already happened", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.25);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await store.updatePlayer(created.roomId, "host-uid", {
+    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
+  });
+
+  await service.cleanupRoomPresence(created.roomId);
+
+  await assert.rejects(
+    () => service.heartbeatRoom({ uid: "host-uid", roomId: created.roomId }),
+    (error: unknown) => assertHttpsErrorCode(error, "not-found"),
+  );
+});
+
+test("cleanupRoomPresence marks soft-timed-out players inactive without removing them", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_100_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.25);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+  await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+
+  await store.updatePlayer(created.roomId, "p2", {
+    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
+  });
+
+  const cleaned = await service.cleanupRoomPresence(created.roomId);
+  const host = await store.getPlayer(created.roomId, "host-uid");
+  const inactive = await store.getPlayer(created.roomId, "p2");
+
+  assert.deepEqual(cleaned.removedPlayerIds, []);
+  assert.deepEqual(cleaned.inactivePlayerIds, ["p2"]);
+  assert.equal(cleaned.players.length, 2);
+  assert.equal(host?.playerId, "host-uid");
+  assert.equal(inactive?.ready, false);
+});
+
+test("cleanupRoomPresence does not reset ready during in-game soft timeout", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_200_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+  await service.setReady({ uid: "host-uid", roomId: created.roomId, ready: true });
+  await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
+  await service.startGame({ uid: "host-uid", roomId: created.roomId });
+
+  await store.updatePlayer(created.roomId, "p2", {
+    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
+  });
+
+  const cleaned = await service.cleanupRoomPresence(created.roomId);
+  const player = await store.getPlayer(created.roomId, "p2");
+
+  assert.deepEqual(cleaned.removedPlayerIds, []);
+  assert.deepEqual(cleaned.inactivePlayerIds, ["p2"]);
+  assert.equal(player?.ready, true);
+});
+
+test("cleanupRoomPresence promotes a fresh player when the host becomes inactive", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_200_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+  await service.joinRoom({ uid: "p3", roomCode: created.roomCode, displayName: "Casey" });
+
+  await store.updatePlayer(created.roomId, "host-uid", {
+    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
+  });
+
+  const cleaned = await service.cleanupRoomPresence(created.roomId);
+  const room = await store.getRoom(created.roomId);
+  const host = await store.getPlayer(created.roomId, "host-uid");
+
+  assert.deepEqual(cleaned.removedPlayerIds, []);
+  assert.deepEqual(cleaned.inactivePlayerIds, ["host-uid"]);
+  assert.equal(room?.hostPlayerId, "p2");
+  assert.equal(room?.hostPromotionNonce, 1);
+  assert.equal(room?.lastPromotedHostPlayerId, "p2");
+  assert.equal(host?.playerId, "host-uid");
+});
+
+test("cleanupRoomPresence evicts hard-timed-out non-host players without removing fresh players", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_100_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.25);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+
+  await store.updatePlayer(created.roomId, "p2", {
+    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
+  });
+
+  const cleaned = await service.cleanupRoomPresence(created.roomId);
+  const host = await store.getPlayer(created.roomId, "host-uid");
+  const removed = await store.getPlayer(created.roomId, "p2");
+
+  assert.deepEqual(cleaned.removedPlayerIds, ["p2"]);
+  assert.deepEqual(cleaned.inactivePlayerIds, []);
+  assert.equal(cleaned.players.length, 1);
+  assert.equal(cleaned.players[0]?.playerId, "host-uid");
+  assert.equal(host?.playerId, "host-uid");
+  assert.equal(removed, null);
+});
+
+test("sweepStaleRooms ends a room when the final remaining player is stale", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_300_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.25);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await store.updatePlayer(created.roomId, "host-uid", {
+    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
+  });
+
+  const sweep = await service.sweepStaleRooms();
+  const room = await store.getRoom(created.roomId);
+  const host = await store.getPlayer(created.roomId, "host-uid");
+
+  assert.deepEqual(sweep, {
+    roomsProcessed: 1,
+    playersRemoved: 1,
+  });
+  assert.equal(room?.status, "ended");
+  assert.equal(room?.expiresAtMs, now + ROOM_TTL_MS);
+  assert.equal(host, null);
 });

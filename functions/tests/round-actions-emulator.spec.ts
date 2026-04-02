@@ -101,6 +101,15 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   };
   const actions = new RoundActionService(store, () => now, random);
   const db = getFirestore();
+  const refreshPresence = async (playerIds: string[]) => {
+    await Promise.all(
+      playerIds.map((playerId) =>
+        store.updatePlayer(created.roomId, playerId, {
+          lastSeenAtMs: now,
+        }),
+      ),
+    );
+  };
 
   const created = await lifecycle.createRoom({
     uid: "host",
@@ -130,12 +139,16 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   await actions.submitChoice({ uid: "host", roomId: created.roomId, side: "A" });
 
   now += 60_000;
+  await refreshPresence(["host", "p2", "p3", "p4"]);
   await actions.tickRoom({ uid: "p2", roomId: created.roomId });
   now += 120_000;
+  await refreshPresence(["host", "p2", "p3", "p4"]);
   await actions.tickRoom({ uid: "p3", roomId: created.roomId });
   now += 120_000;
+  await refreshPresence(["host", "p2", "p3", "p4"]);
   await actions.tickRoom({ uid: "p4", roomId: created.roomId });
   now += 60_000;
+  await refreshPresence(["host", "p2", "p3", "p4"]);
   await actions.tickRoom({ uid: "host", roomId: created.roomId });
 
   await actions.submitVerdict({ uid: "host", roomId: created.roomId, verdict: "A_WON" });
@@ -143,6 +156,7 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   await actions.submitVerdict({ uid: "p3", roomId: created.roomId, verdict: "DRAW" });
 
   now += 60_000;
+  await refreshPresence(["host", "p2", "p3", "p4"]);
   await actions.tickRoom({ uid: "p4", roomId: created.roomId });
   await actions.advanceResolution({ uid: "host", roomId: created.roomId });
 

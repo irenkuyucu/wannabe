@@ -6,6 +6,7 @@ import type {
   RoundRecord,
   RoomLifecycleStore,
   RoomRecord,
+  StalePlayerMembership,
 } from "../domain/room-lifecycle";
 
 if (getApps().length === 0) {
@@ -109,9 +110,36 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
     await this.playerRef(roomId, player.playerId).set(player);
   }
 
+  async updatePlayer(
+    roomId: string,
+    playerId: string,
+    patch: Partial<PlayerRecord>,
+  ): Promise<void> {
+    await this.playerRef(roomId, playerId).set(patch, { merge: true });
+  }
+
   async listPlayers(roomId: string): Promise<PlayerRecord[]> {
     const snapshot = await this.roomRef(roomId).collection("players").get();
     return snapshot.docs.map((doc) => doc.data() as PlayerRecord);
+  }
+
+  async listStalePlayers(cutoffLastSeenAtMs: number): Promise<StalePlayerMembership[]> {
+    const snapshot = await this.db
+      .collectionGroup("players")
+      .where("lastSeenAtMs", "<=", cutoffLastSeenAtMs)
+      .get();
+
+    return snapshot.docs.flatMap((playerDoc) => {
+      const roomId = playerDoc.ref.parent.parent?.id;
+      if (!roomId) {
+        return [];
+      }
+
+      return [{
+        roomId,
+        player: playerDoc.data() as PlayerRecord,
+      }];
+    });
   }
 
   async deletePlayer(roomId: string, playerId: string): Promise<void> {

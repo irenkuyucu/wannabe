@@ -24,7 +24,7 @@ This document defines **product behavior and game rules** for the MVP. It intent
 
 ### 2.2 Non-goals (MVP)
 - Multiple game modes, tie-break modes, custom room configuration UI.
-- Robust handling of disconnections/reconnects, mid-game joining, or drop-in/out.
+- Advanced reconnect flows beyond the heartbeat-based recovery gate, mid-game joining, or free drop-in/out after removal.
 - Enterprise-grade security, moderation tools, or anti-abuse systems beyond basic common-sense safeguards.
 - Persistent rooms across multiple full game sessions (room ends after the game).
 
@@ -149,9 +149,16 @@ After Resolution:
   - If duplicates exist, the system automatically assigns a unique variant by appending a numeric suffix:
   - Example: "Alex" → "Alex (2)", then "Alex (3)", etc.
   - The final assigned name is shown to the player and used for the session.
+- While a player is in a room, the client maintains room presence with periodic heartbeats.
+- If a player stops heartbeating for more than **45 seconds**, that player becomes **inactive** but is not removed yet.
+- Inactive players remain in the room, but in the lobby their **Ready** status is reset to **false**.
+- If a player continues without a heartbeat for more than **3 minutes**, that player is removed from the room automatically.
+- Automatic inactive/removed-player handling applies in both lobby and in-game states.
+- If the current host becomes inactive or is removed and other active players remain, a new host is promoted from the active remaining players.
+- If stale-player cleanup leaves no players in the room, the room ends immediately.
 - Each player can toggle their own **Ready** status.
 - The host may start the game only if:
-  - playerCount ≥ 2 AND all players are Ready
+  - activePlayerCount ≥ 2 AND all active players are Ready
 - Once the host starts the game, it transitions to Round 1's Choice phase.
 
 ---
@@ -334,6 +341,7 @@ After the final round:
 
 ### 10.1 End behavior
 - When the game ends and players return to main, the room is considered **ended**.
+- If automatic stale-player cleanup removes the final remaining player, the room is also considered **ended** immediately.
 - The MVP does not support restarting another full game within the same room.
 
 ### 10.2 Expiry
@@ -350,8 +358,16 @@ After the final round:
 ## 11. Constraints and Safety (MVP)
 
 ### 11.1 Disconnections
-- The MVP does not provide special UX for disconnections or reconnects.
-- Timed phases and timeout rules ensure the game progresses regardless of missing player input.
+- The MVP does not provide manual reconnect flows or room rejoin after eviction. Recovery is limited to heartbeat-based presence plus a short foreground recovery gate.
+- In-room clients are considered present while periodic heartbeats succeed.
+- If a player has no heartbeat for more than **45 seconds**, that player becomes **inactive**. Inactive players stay in the room, but lobby readiness resets and inactive players do not count toward lobby start gating.
+- If a player has no heartbeat for more than **3 minutes**, that player becomes eligible for automatic removal from the room.
+- When a player returns to a foregrounded tab while still in the room, the client runs a short recovery gate: it waits for a heartbeat result before allowing room actions or automatic phase-driving ticks to proceed. If the heartbeat succeeds, play resumes immediately. If the player was already removed, the client exits them from the room cleanly.
+- Automatic inactive/removed-player handling applies during both lobby and in-game states, with host promotion or immediate room ending handled by the normal room lifecycle rules.
+- Timed phases and timeout rules still ensure the game progresses regardless of missing player input.
+- If a player becomes inactive or is removed mid-round, any already-recorded choice/verdict data for that round is not rewritten.
+- Inactive or removed players are no longer considered active participants for controls, lobby readiness, lobby start gating, or future scoring updates.
+- Inactivity does not introduce special early-completion behavior for timed phases: the existing “all submitted or deadline” phase rules still apply to the remaining in-room player set until hard removal occurs.
 
 ### 11.2 Common-sense security
 - Do not commit secrets.

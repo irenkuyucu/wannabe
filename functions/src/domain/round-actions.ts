@@ -19,10 +19,12 @@ import {
   type GamePhase,
   pickPromotedHost,
   type PlayerRecord,
+  pruneStalePlayersForRoom,
   REBUTTAL_PHASE_SECONDS,
   type RoomLifecycleStore,
   type RoomRecord,
   type RoomStatus,
+  sortPlayersByJoinedAt,
   validateRoomId,
   VERDICT_PHASE_SECONDS,
 } from "./room-lifecycle";
@@ -66,14 +68,6 @@ function validateVerdict(verdict: string): Exclude<VerdictVote, "ABSTAIN"> {
   return verdict;
 }
 
-function sortPlayers(players: PlayerRecord[]): PlayerRecord[] {
-  return players.slice().sort((left, right) =>
-    left.joinedAtMs === right.joinedAtMs
-      ? left.playerId.localeCompare(right.playerId)
-      : left.joinedAtMs - right.joinedAtMs,
-  );
-}
-
 function requireActiveRound(room: RoomRecord): number {
   if (room.roundIndex === null) {
     throw new HttpsError("failed-precondition", "Room does not have an active round.");
@@ -110,13 +104,25 @@ export class RoundActionService {
       throw new HttpsError("not-found", "Room not found.");
     }
 
+    const cleaned = await pruneStalePlayersForRoom({
+      store: this.store,
+      room,
+      nowMs: this.nowMs(),
+      random: this.random,
+    });
+    const activeRoom = cleaned.room;
+
+    if (!activeRoom) {
+      throw new HttpsError("not-found", "Room not found.");
+    }
+
     const player = await this.store.getPlayer(roomId, uid);
     if (!player) {
       throw new HttpsError("not-found", "Player is not in this room.");
     }
 
-    const players = sortPlayers(await this.store.listPlayers(roomId));
-    const activeHost = await this.ensureActiveHost(room, players);
+    const players = sortPlayersByJoinedAt(cleaned.players);
+    const activeHost = await this.ensureActiveHost(activeRoom, players);
 
     if ("endedResult" in activeHost) {
       throw new HttpsError("failed-precondition", "Room is no longer active.");
@@ -163,7 +169,7 @@ export class RoundActionService {
     | { players: PlayerRecord[]; room: RoomRecord }
     | { endedResult: AdvanceResolutionResult }
   > {
-    const players = sortPlayers(playersInput ?? (await this.store.listPlayers(room.roomId)));
+    const players = sortPlayersByJoinedAt(playersInput ?? (await this.store.listPlayers(room.roomId)));
 
     if (players.some((player) => player.playerId === room.hostPlayerId)) {
       return { players, room };
@@ -542,9 +548,21 @@ export class RoundActionService {
       throw new HttpsError("not-found", "Room not found.");
     }
 
-    this.requireInGamePhase(room, "resolution");
+    const cleaned = await pruneStalePlayersForRoom({
+      store: this.store,
+      room,
+      nowMs: this.nowMs(),
+      random: this.random,
+    });
+    const activeCandidateRoom = cleaned.room;
 
-    const hostResolution = await this.ensureActiveHost(room);
+    if (!activeCandidateRoom) {
+      throw new HttpsError("not-found", "Room not found.");
+    }
+
+    this.requireInGamePhase(activeCandidateRoom, "resolution");
+
+    const hostResolution = await this.ensureActiveHost(activeCandidateRoom, cleaned.players);
     if ("endedResult" in hostResolution) {
       return hostResolution.endedResult;
     }

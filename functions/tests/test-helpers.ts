@@ -5,6 +5,7 @@ import type {
   RoundRecord,
   RoomLifecycleStore,
   RoomRecord,
+  StalePlayerMembership,
 } from "../src/domain/room-lifecycle";
 
 export class InMemoryRoomStore implements RoomLifecycleStore {
@@ -114,6 +115,20 @@ export class InMemoryRoomStore implements RoomLifecycleStore {
     this.players.set(roomId, roomPlayers);
   }
 
+  async updatePlayer(
+    roomId: string,
+    playerId: string,
+    patch: Partial<PlayerRecord>,
+  ): Promise<void> {
+    const roomPlayers = this.players.get(roomId);
+    const player = roomPlayers?.get(playerId);
+    if (!roomPlayers || !player) {
+      return;
+    }
+
+    roomPlayers.set(playerId, { ...player, ...patch });
+  }
+
   async listPlayers(roomId: string): Promise<PlayerRecord[]> {
     const roomPlayers = this.players.get(roomId);
     if (!roomPlayers) {
@@ -121,6 +136,23 @@ export class InMemoryRoomStore implements RoomLifecycleStore {
     }
 
     return [...roomPlayers.values()].map((player) => ({ ...player }));
+  }
+
+  async listStalePlayers(cutoffLastSeenAtMs: number): Promise<StalePlayerMembership[]> {
+    const memberships: StalePlayerMembership[] = [];
+
+    for (const [roomId, roomPlayers] of this.players.entries()) {
+      for (const player of roomPlayers.values()) {
+        if (player.lastSeenAtMs <= cutoffLastSeenAtMs) {
+          memberships.push({
+            roomId,
+            player: { ...player },
+          });
+        }
+      }
+    }
+
+    return memberships;
   }
 
   async deletePlayer(roomId: string, playerId: string): Promise<void> {

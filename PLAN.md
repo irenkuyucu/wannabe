@@ -22,6 +22,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 |---|---|---|---|
 | `createRoom` | `{ displayName, avatarId? }` | `{ roomId, roomCode, playerId, assignedDisplayName }` | Auth required (anonymous allowed). Validates display name per MVP rules, then creates host membership + room code mapping. |
 | `joinRoom` | `{ roomCode, displayName, avatarId? }` | `{ roomId, playerId, assignedDisplayName }` | Auth required. `roomCode` must be 6-digit numeric. Room must be joinable (`status=lobby`). Validates display name per MVP rules and applies unique suffixing for duplicates. |
+| `heartbeatRoom` | `{ roomId }` | `{ ok: true }` | Auth required. Caller must still be an active room member. Refreshes that member's presence timestamp and prunes stale room members before returning. |
 | `leaveRoom` | `{ roomId }` | `{ roomStatus }` | Caller must be current room member. Removes member. If room becomes empty, set `status=ended`. |
 | `setReady` | `{ roomId, ready }` | `{ ready }` | Caller updates only own ready flag. Allowed only in `lobby`. |
 | `startGame` | `{ roomId }` | `{ roundIndex, phase, deadlineAtMs }` | Host only. Requires `playerCount >= 2` and all players ready. Initializes round 1 choice deadline. |
@@ -36,7 +37,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 | Path | Purpose | Required key fields |
 |---|---|---|
 | `rooms/{roomCode}` | canonical room/game state keyed by the 6-digit room code | `status`, `roomCode`, `hostPlayerId`, `roundsTotal`, `roundIndex`, `phase`, `phaseDeadlineAtMs`, `currentPromptId`, `createdAt`, `expiresAt` |
-| `rooms/{roomCode}/players/{playerId}` | player/session state | `uid`, `displayName`, `avatarId`, `ready`, `score`, `joinedAt` |
+| `rooms/{roomCode}/players/{playerId}` | player/session state | `uid`, `displayName`, `avatarId`, `ready`, `score`, `joinedAt`, `lastSeenAtMs` |
 | `rooms/{roomCode}/rounds/{roundIndex}` | immutable round outcomes/history | `promptId`, `choices`, `forceAssignedPlayerIds`, `bonusEligiblePlayerId`, `verdicts`, `outcome`, `dissenterPlayerId`, `startedAt`, `resolvedAt` |
 
 ### Player Session Model
@@ -47,6 +48,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 - `ready`: lobby readiness flag controlled by the player.
 - `score`: cumulative session score across rounds.
 - `joinedAt`: server timestamp used for deterministic list ordering/tie handling.
+- `lastSeenAtMs`: server-maintained presence heartbeat timestamp used to evict stale players after the configured disconnect grace window.
 
 ### Prompt Seed Interface
 | File | Schema |
@@ -109,6 +111,13 @@ Goal: deliver full playable UX with repeated user-owned checks.
 | M4-T4 | Resolution + game over | scoreboard, winner/ties, return-main flow, ended-room messaging | component/integration tests | Validate end-of-round and end-of-game comprehension | PENDING until approval; then PASS/FAIL |
 | M4-T5 | Production-adjacent UI simplification + responsive polish | simplify default UI to player-facing phase screens, move non-essential state inspection behind an explicit details/debug toggle, and complete mobile/desktop polish | regression checks + `pnpm verify` | Validate visual quality, responsiveness, and default player-facing clarity across target devices | PENDING until approval; then PASS/FAIL |
 
+### Pre-M5 Follow-up — Presence and Disconnect Handling
+Goal: close the remaining MVP presence/disconnect gap before broader M5 reliability and release-readiness work.
+
+| Task ID | Task | Deliverables | Agent-owned validation | User-owned validation | Gate |
+|---|---|---|---|---|---|
+| PM5-T1 | Presence/disconnect handling | two-tier heartbeat-based presence (`45s` inactive, `3m` removal), host promotion/empty-room ending for stale cleanup, scheduled cleanup sweep, client recovery gate on foreground return, explicit leave-on-return-to-main, and targeted docs/log updates | targeted functions/web tests for presence flows plus `pnpm verify` | None | PASS on green checks |
+
 ### Milestone M5 — End-to-End Reliability and Release Readiness
 Goal: finalize correctness and deployment readiness.
 
@@ -136,7 +145,13 @@ Goal: finalize correctness and deployment readiness.
 15. Input validation rules: invalid `displayName` values (including non-ASCII letters) and invalid `roomCode` values are rejected by backend validation.
 16. Share-link behavior: room share link uses a dedicated join path and can be copied from lobby, then opens a join path that resolves to the target room by code.
 17. Ended-room lifecycle: room end sets `status=ended` + `expiresAt=now+2h`; ended status blocks resume/rejoin; ended-room data remains readable until expiry for late clients.
-18. Post-expiry cleanup trigger is deferred in MVP; no automatic deletion trigger is implemented in this plan.
+18. Presence heartbeat: active room members refresh `lastSeenAtMs` through the callable presence path, while Firestore rules still deny direct authoritative client writes.
+19. Soft-timeout presence handling: players absent for more than `45s` become inactive without immediate eviction; lobby `ready` resets, inactive players are ignored for lobby start gating, and soft-inactive hosts are replaced by an active host when available.
+20. Hard-timeout stale cleanup: players absent for more than `3m` are removed automatically in both lobby and in-game states; if the removed player was host, a replacement host is promoted from remaining active players, and if none remain, the room transitions to `ended`.
+21. Mid-round inactivity/removal: already-recorded choice/verdict entries remain in round history; inactive/removed players no longer count for lobby readiness/start gating, controls, or future score application, while timed phase completion still follows existing deadline rules until hard removal.
+22. Scheduled disconnect cleanup: a periodic backend sweep processes soft/hard stale-player cleanup and ends empty rooms even if no client remains connected to trigger cleanup.
+23. Recovery gate behavior: when a previously hidden in-room tab returns to foreground, the client awaits a heartbeat result before allowing room actions or phase-driving ticks to proceed; successful recovery resumes play, and failed recovery exits cleanly with the inactivity message.
+24. Post-expiry cleanup trigger is deferred in MVP; no automatic deletion trigger is implemented in this plan.
 
 ## Required User-Owned Validation Checklists (Expanded)
 1. Prompt pack review: appropriateness, variety, and fun factor.
@@ -161,6 +176,7 @@ Goal: finalize correctness and deployment readiness.
 
 ## Assumptions and Defaults
 1. No staging Firebase project is required for emulator/rules testing.
-2. No reconnect UX or rate-limiting implementation in MVP.
-3. Hold-to-act (2s) is treated as UX protection; authoritative validation is role/phase based.
-4. Prompt moderation remains offline/manual via vetted seed content.
+2. Presence uses callable heartbeats every `15s`, a soft timeout at `45s`, hard removal at `3m`, a scheduled cleanup sweep every `1 minute`, and a lightweight foreground recovery gate.
+3. No advanced reconnect flows beyond the recovery gate, RTDB presence, or rate-limiting implementation is included in MVP.
+4. Hold-to-act (2s) is treated as UX protection; authoritative validation is role/phase based.
+5. Prompt moderation remains offline/manual via vetted seed content.

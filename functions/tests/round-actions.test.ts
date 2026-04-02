@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ROOM_TTL_MS, RoomLifecycleService } from "../src/domain/room-lifecycle";
+import {
+  HARD_TIMEOUT_MS,
+  ROOM_TTL_MS,
+  RoomLifecycleService,
+  SOFT_TIMEOUT_MS,
+} from "../src/domain/room-lifecycle";
 import { RoundActionService } from "../src/domain/round-actions";
 import { assertHttpsErrorCode, InMemoryRoomStore } from "./test-helpers";
 
@@ -59,6 +64,15 @@ async function createStartedGame(params?: {
     actions,
     created,
     playerIds,
+    async refreshPresence(activePlayerIds = playerIds) {
+      await Promise.all(
+        activePlayerIds.map((playerId) =>
+          store.updatePlayer(created.roomId, playerId, {
+            lastSeenAtMs: now,
+          }),
+        ),
+      );
+    },
     get now() {
       return now;
     },
@@ -188,6 +202,7 @@ test("tickRoom applies choice timeout, verdict timeout, and next-round dissenter
   await game.actions.submitChoice({ uid: "host", roomId: game.created.roomId, side: "A" });
 
   game.now += 60_000;
+  await game.refreshPresence();
   const afterChoiceTick = await game.actions.tickRoom({
     uid: "host",
     roomId: game.created.roomId,
@@ -210,10 +225,13 @@ test("tickRoom applies choice timeout, verdict timeout, and next-round dissenter
   assert.equal(roomAfterChoiceTick?.activeArgumentSide, "A");
 
   game.now += 120_000;
+  await game.refreshPresence();
   await game.actions.tickRoom({ uid: "p2", roomId: game.created.roomId });
   game.now += 120_000;
+  await game.refreshPresence();
   await game.actions.tickRoom({ uid: "p4", roomId: game.created.roomId });
   game.now += 60_000;
+  await game.refreshPresence();
   await game.actions.tickRoom({ uid: "host", roomId: game.created.roomId });
 
   await game.actions.submitVerdict({
@@ -233,6 +251,7 @@ test("tickRoom applies choice timeout, verdict timeout, and next-round dissenter
   });
 
   game.now += 60_000;
+  await game.refreshPresence();
   const afterVerdictTick = await game.actions.tickRoom({
     uid: "p4",
     roomId: game.created.roomId,
@@ -376,6 +395,109 @@ test("in-game member actions promote a replacement host before resolution", asyn
   assert.equal(roomAfterPromotion?.hostPromotionNonce, 1);
   assert.equal(roomAfterPromotion?.lastPromotedHostPlayerId, "p2");
   assert.equal(roundAfterChoice?.choicesByPlayer.p2, "A");
+});
+
+test("stale players are pruned before choice submissions and no longer block phase advancement", async () => {
+  const game = await createStartedGame({
+    playerIds: ["host", "p2", "p3"],
+  });
+
+  await game.store.updatePlayer(game.created.roomId, "p3", {
+    lastSeenAtMs: game.now - HARD_TIMEOUT_MS - 1,
+  });
+
+  await game.actions.submitChoice({ uid: "host", roomId: game.created.roomId, side: "A" });
+  await game.actions.submitChoice({ uid: "p2", roomId: game.created.roomId, side: "B" });
+
+  const room = await game.store.getRoom(game.created.roomId);
+  const stalePlayer = await game.store.getPlayer(game.created.roomId, "p3");
+
+  assert.equal(room?.phase, "argument");
+  assert.equal(stalePlayer, null);
+  await assert.rejects(
+    () => game.actions.submitChoice({ uid: "p3", roomId: game.created.roomId, side: "A" }),
+    (error: unknown) => assertHttpsErrorCode(error, "not-found"),
+  );
+});
+
+test("soft-inactive players still remain in round membership until hard removal", async () => {
+  const game = await createStartedGame({
+    playerIds: ["host", "p2", "p3"],
+  });
+
+  await game.store.updatePlayer(game.created.roomId, "p3", {
+    lastSeenAtMs: game.now - SOFT_TIMEOUT_MS - 1,
+  });
+
+  await game.actions.submitChoice({ uid: "host", roomId: game.created.roomId, side: "A" });
+  await game.actions.submitChoice({ uid: "p2", roomId: game.created.roomId, side: "B" });
+
+  const room = await game.store.getRoom(game.created.roomId);
+  const softInactivePlayer = await game.store.getPlayer(game.created.roomId, "p3");
+
+  assert.equal(room?.phase, "choice");
+  assert.notEqual(softInactivePlayer, null);
+});
+
+test("resolution scoring ignores players removed for staleness mid-round", async () => {
+  const game = await createStartedGame({
+    playerIds: ["host", "p2", "p3"],
+  });
+
+  await game.actions.submitChoice({ uid: "host", roomId: game.created.roomId, side: "A" });
+  await game.actions.submitChoice({ uid: "p2", roomId: game.created.roomId, side: "B" });
+  await game.actions.submitChoice({ uid: "p3", roomId: game.created.roomId, side: "A" });
+  await game.actions.endArgumentTurn({ uid: "host", roomId: game.created.roomId });
+  await game.actions.endArgumentTurn({ uid: "p2", roomId: game.created.roomId });
+  await game.actions.advanceRebuttal({ uid: "host", roomId: game.created.roomId });
+
+  await game.store.updatePlayer(game.created.roomId, "p3", {
+    lastSeenAtMs: game.now - HARD_TIMEOUT_MS - 1,
+  });
+
+  await game.actions.submitVerdict({
+    uid: "host",
+    roomId: game.created.roomId,
+    verdict: "A_WON",
+  });
+  await game.actions.submitVerdict({
+    uid: "p2",
+    roomId: game.created.roomId,
+    verdict: "A_WON",
+  });
+
+  const host = await game.store.getPlayer(game.created.roomId, "host");
+  const p2 = await game.store.getPlayer(game.created.roomId, "p2");
+  const p3 = await game.store.getPlayer(game.created.roomId, "p3");
+  const round = await game.store.getRound(game.created.roomId, 0);
+
+  assert.equal(host?.score, 1);
+  assert.equal(p2?.score, 0);
+  assert.equal(p3, null);
+  assert.equal(round?.verdictsByPlayer.p3, undefined);
+  assert.equal(round?.outcome, "A_WON");
+});
+
+test("advanceResolution promotes a replacement host when the current host became stale", async () => {
+  const game = await createStartedGame({
+    playerIds: ["host", "p2", "p3"],
+    actionRandom: () => 0,
+  });
+
+  await advanceToResolution(game);
+  await game.store.updatePlayer(game.created.roomId, "host", {
+    lastSeenAtMs: game.now - SOFT_TIMEOUT_MS - 1,
+  });
+
+  await assert.rejects(
+    () => game.actions.advanceResolution({ uid: "p3", roomId: game.created.roomId }),
+    (error: unknown) => assertHttpsErrorCode(error, "permission-denied"),
+  );
+
+  const room = await game.store.getRoom(game.created.roomId);
+  assert.equal(room?.hostPlayerId, "p2");
+  assert.equal(room?.hostPromotionNonce, 1);
+  assert.equal(room?.lastPromotedHostPlayerId, "p2");
 });
 
 test("advanceResolution ends the room immediately when the host is missing and no players remain", async () => {

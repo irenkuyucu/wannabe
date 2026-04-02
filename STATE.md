@@ -6,18 +6,18 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 ---
 
 ## 1. Current status
-- Milestone: M4 — Frontend UX with High-Cadence User Validation
-- Task: Close out the UI refactoring/polish initiative on top of the dedicated join/live-room route model, now with shared field/modal/avatar/progress primitives, centered loading/fallback surfaces, and expanded automated coverage for the refactored UI.
-- Gate status: PASS — The user accepted the refactored UI as passable for the milestone, the work is committed/pushed on the active branch, and the added web/Playwright coverage for the new primitives and fallback surfaces is green.
-- Active branch: codex/m4-ui-refactor
+- Milestone: Pre-M5 Follow-up — Presence and Disconnect Handling
+- Task: `P-T1` backend presence lifecycle is implemented on top of `main`, with the approved scoped spec/plan docs bundled in the same working tree and agent-owned validation complete.
+- Gate status: PASS — Backend two-tier presence cleanup, heartbeat pre-refresh, scheduled stale sweep, Firestore index config, and backend automated validation are complete; client recovery-gate work remains for `P-T2`.
+- Active branch: main
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
-- 3c6b4e8 on codex/m4-ui-refactor — Refine shared UI primitives and loading states.
-- 8556972 on codex/m4-ui-foundation — Consolidate shared game screen structure.
-- 6e8d0dc on codex/m4-ui-foundation — Rename shared toast component and remove button tracking.
-- 0fea2e0 on codex/m4-ui-foundation — Unify app typography tokens and shared button behavior.
-- fe3a82e on codex/m4-ui-foundation — Remove legacy panel UI path.
+- 4cc5f76 on main — Update project logs for completed UI refactor.
+- 3c6b4e8 on main — Refine shared UI primitives and loading states.
+- 8556972 on main — Consolidate shared game screen structure.
+- 6e8d0dc on main — Rename shared toast component and remove button tracking.
+- 0fea2e0 on main — Unify app typography tokens and shared button behavior.
 
 ## 3. Project snapshot (max 5)
 (Brief facts about the working state of the project/codebase. No rationale.)
@@ -29,24 +29,23 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Renamed the lingering `entry-avatar` surface to `menu-avatar`, introduced shared `Field*` and `ModalShell` primitives, and moved the menu/input/avatar-picker flows onto those shared CSS-first shells.
-- Consolidated more shared UI primitives in `src/app/globals.css`, including shared avatar-frame treatment, shared progress bars, renamed `surface-enter` animation, and final menu-control geometry alignment for the invite CTA.
-- Rebuilt `src/components/floating-avatar-field.tsx` around a bounded inner canvas and lightweight JS particle motion so avatars bounce off walls and each other instead of leaking into phase headers or overlapping.
-- Reworked `src/components/game-sync-screen.tsx` and `src/components/lobby-screen.tsx` loading states into ghost-wireframe skeletons that trace their actual UI structure rather than generic filled blocks.
-- Expanded automated coverage with `tests/ui-primitives.test.tsx`, `tests/e2e/loading-surfaces.spec.ts`, and invite-route responsive checks so the new field/modal/loading surfaces are covered alongside the existing gameplay/browser suites.
+- Amended `SPEC.md` and `PLAN.md` only where needed to reflect the approved two-tier presence model and added the auxiliary pair `presence_spec.md` / `presence_plan.md`.
+- Added backend presence lifecycle support: `SOFT_TIMEOUT_MS` / `HARD_TIMEOUT_MS`, shared stale-player cleanup with inactive-player tracking, heartbeat pre-refresh, and the scheduled disconnected-player sweep.
+- Updated backend lobby/game rules so soft-inactive players stay in-room, lobby readiness/start gating uses active players only, hard-removed players still end empty rooms, and stale hosts are promoted from active remaining players.
+- Updated Firestore store/helpers and lifecycle/round-action tests to cover soft inactivity, hard removal, host promotion, and scheduled cleanup under the new backend model.
+- Firestore index config now includes the collection-group `players.lastSeenAtMs` index required for the scheduled stale-player sweep in production.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
+- `P-T2` client recovery gate and disconnect UX is not implemented yet; current app-side return-from-background behavior is still governed by the old in-progress client changes in the working tree and should not be treated as task-complete. — Owner: team
 - Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
 - The user accepted the current UI refactor as passable for the milestone, but some optional cleanup remains for later, especially button taxonomy cleanup, deeper geometry/token normalization, and any stricter future design-system compaction. — Owner: user + team
 - The dedicated-screen flow is now the only active UI path; any future detail/debug inspection UI will need to be reintroduced intentionally rather than relying on the deleted composite panel shell. — Owner: team
-- Firebase CLI project linking for deploy workflows is intentionally deferred to later milestones. — Owner: user
-- `src/components/toast.tsx` still has a non-blocking Next lint warning for using `<img>` instead of `next/image`. — Owner: team
-- True disconnect/presence handling is still unimplemented: closing a tab/browser does not currently remove a player from the room automatically, so host/player removal still depends on explicit backend leave/removal paths. — Owner: team
+- Firebase CLI project linking for deploy workflows is intentionally deferred to later milestones. — Owner: user + team
 
 ## 6. Blockers (max 5)
 (Define any blockers here. Use "None" if empty.)
 - None.
 
 ## 7. Next task (max 1)
-- Move on from M4 UI refactoring into M5 reliability/release-readiness work, with the next likely implementation task being broader end-to-end scenario coverage and release-adjacent validation rather than further design-system cleanup.
+- Commit/push the completed `P-T1` backend presence lifecycle slice, then await approval to start `P-T2` client recovery gate and disconnect UX.

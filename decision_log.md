@@ -162,3 +162,19 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Alternatives considered: Forcing all loading/fallback coverage through Playwright by sabotaging network/emulator traffic, or leaving the new skeleton surfaces untested.
 - Impacted files/modules: `tests/e2e/loading-surfaces.spec.ts`, `tests/e2e/responsive.spec.ts`, `tests/ui-primitives.test.tsx`
 - Related commit(s): `3c6b4e8`
+
+- Date: 2026-03-31
+- Decision ID: DEC-019
+- Spec/Plan reference: `SPEC.md` §§7.1, 10.1, 11.1 and `PLAN.md` pre-M5 follow-up / M5 automated scenarios
+- Decision: Implement disconnect handling as a heartbeat-based presence layer inside the existing Firestore + Cloud Functions stack, using a `15s` callable heartbeat, `45s` stale-player eviction window, automatic host promotion/empty-room ending, and a `1 minute` scheduled cleanup sweep rather than adding RTDB presence or direct Firestore client writes.
+- Rationale: This is the smallest complete solution that fully closes the disconnect gap without introducing a second datastore, relaxing Firestore security rules, or leaving the “everyone disappeared” case unresolved.
+- Alternatives considered: Client-triggered cleanup only, or adding Firebase Realtime Database `onDisconnect` presence alongside Firestore.
+- Impacted files/modules: `SPEC.md`, `PLAN.md`, `functions/src/domain/room-lifecycle.ts`, `functions/src/domain/round-actions.ts`, `functions/src/data/firestore-room-store.ts`, `functions/src/index.ts`, `src/lib/firebase-client.ts`, `src/components/wannabe-app.tsx`
+
+- Date: 2026-04-02
+- Decision ID: DEC-020
+- Spec/Plan reference: `presence_spec.md`, `presence_plan.md`, `SPEC.md` §§7.1 and 11.1, `PLAN.md` pre-M5 follow-up
+- Decision: Presence handling now uses a two-tier heartbeat model with `15s` callable heartbeats, `45s` soft timeout to inactive, `3m` hard timeout to removal, automatic host promotion from active players, and a lightweight client-side foreground recovery gate instead of immediate `45s` eviction.
+- Rationale: The original single-threshold eviction model was too aggressive for common mobile backgrounding cases such as phone calls or short app switches. Splitting inactivity from removal preserves game continuity for short interruptions while still cleaning up truly abandoned players without adding RTDB presence or a larger reconnect subsystem.
+- Alternatives considered: Keeping the original `45s` hard-eviction model, accepting a foreground return race without a recovery gate, or adding RTDB `onDisconnect` presence.
+- Impacted files/modules: `presence_spec.md`, `presence_plan.md`, `SPEC.md`, `PLAN.md`, `functions/src/domain/room-lifecycle.ts`, `functions/src/domain/round-actions.ts`, `functions/src/data/firestore-room-store.ts`, `functions/src/index.ts`, `src/components/wannabe-app.tsx`, `src/lib/room-presence.ts`

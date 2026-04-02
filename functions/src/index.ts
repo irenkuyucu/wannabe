@@ -1,9 +1,11 @@
 import { logger } from "firebase-functions";
 import { HttpsError } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 
 import { FirestoreRoomStore } from "./data/firestore-room-store";
 import type {
   CreateRoomResult,
+  HeartbeatRoomResult,
   JoinRoomResult,
   RoomStatus,
   StartGameResult,
@@ -42,6 +44,10 @@ type JoinRoomRequest = {
 };
 
 type LeaveRoomRequest = {
+  roomId?: unknown;
+};
+
+type HeartbeatRoomRequest = {
   roomId?: unknown;
 };
 
@@ -167,6 +173,14 @@ export const leaveRoom = defineAuthedCallable<LeaveRoomRequest, LeaveRoomRespons
     }),
 );
 
+export const heartbeatRoom = defineAuthedCallable<HeartbeatRoomRequest, HeartbeatRoomResult>(
+  async (request) =>
+    roomLifecycleService.heartbeatRoom({
+      uid: request.auth.uid,
+      roomId: requireStringField(request.data?.roomId, "roomId"),
+    }),
+);
+
 export const setReady = defineAuthedCallable<SetReadyRequest, SetReadyResponse>(
   async (request) => {
     if (typeof request.data?.ready !== "boolean") {
@@ -246,4 +260,16 @@ export const advanceResolution = defineAuthedCallable<
       uid: request.auth.uid,
       roomId: requireStringField(request.data?.roomId, "roomId"),
     }),
+);
+
+export const sweepDisconnectedPlayers = onSchedule(
+  {
+    schedule: "every 1 minutes",
+    region: FUNCTION_REGION,
+  },
+  async () => {
+    const result = await roomLifecycleService.sweepStaleRooms();
+
+    logger.info("swept disconnected players", result);
+  },
 );
