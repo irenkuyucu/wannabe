@@ -1,111 +1,57 @@
 # Wannabe
 
-Wannabe is a synchronous, room-based party game companion web app.
+Wannabe is a playful party game for people who are already in the same room.
 
-## Prerequisites
+Each round asks a simple question:
 
-- Node.js 20.x
-- pnpm 10.x
-- Firebase CLI
-- Java Runtime (required by Firestore emulator)
+> Would you wanna be **this** or **that**?
 
-## Install
+Everyone joins on their phone, picks a side, argues for it out loud, and then votes on the winner. The app keeps the game moving with room codes, timers, scoring, and round flow.
 
-```bash
-pnpm install
-```
+## What Kind Of Game Is It
 
-## Environment Setup
+Wannabe is not meant to replace the fun part. It is there to support it.
 
-Copy `.env.example` to `.env.local` and fill the Firebase Web App values for the local frontend.
+The app takes care of:
+- room creation and joining,
+- round flow,
+- timers,
+- side selection,
+- voting,
+- scorekeeping,
+- and moving the session from lobby to final results.
 
-```bash
-cp .env.example .env.local
-```
+The real game happens between the players in person.
 
-By default, the template is set for local emulator usage:
+## How It Works
 
-- `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`
-- `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`
-- `NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`
-- `NEXT_PUBLIC_FUNCTIONS_EMULATOR_HOST=127.0.0.1:5001`
+1. One player creates a room.
+2. Everyone else joins with the room code or share link.
+3. Players mark ready.
+4. Each round starts with a “Would you rather be…” prompt.
+5. Everyone picks a side.
+6. The two sides make their case in timed speaking turns.
+7. A rebuttal phase follows.
+8. Everyone votes on the outcome.
+9. The game updates scores and moves to the next round.
+10. After the final round, the app shows the winner and full scoreboard.
 
-## Frontend Local Review
+## Best For
 
-The entry, lobby, and in-game phase UI now use Firebase Anonymous Auth, Functions callables, and Firestore subscriptions in the browser.
+- friends hanging out in person
+- party settings
+- quick, replayable group sessions
 
-For local review:
+## What The Current Version Includes
 
-```bash
-cp .env.example .env.local
-pnpm --dir functions build
-firebase emulators:start --only auth,firestore,functions
-pnpm dev
-```
+The current version is intentionally focused and lightweight:
 
-Then open [http://localhost:3000](http://localhost:3000).
+- 6-digit room codes
+- no account creation
+- shared lobby with ready states
+- fixed-length game sessions with multiple rounds
+- timed round phases
+- automatic scoring and game progression
+- inactivity handling so the room does not get stuck if someone drops out
 
-For `M4-T3` review, use at least two browser windows/devices so you can:
-
-- create and join a room,
-- ready both players and start the game,
-- validate choice, argument, rebuttal, and verdict timers,
-- validate the 2-second hold controls for end-turn and host rebuttal advance.
-
-Share links use dedicated join paths:
-
-```text
-/join/482901
-```
-
-## Emulator Setup
-
-Firebase project is configured as:
-
-- default project: `wannabe-game`
-- Firestore rules file: `firestore.rules`
-- Firestore indexes file: `firestore.indexes.json`
-
-Start local emulators:
-
-```bash
-pnpm --dir functions build
-firebase emulators:start --only auth,firestore,functions
-```
-
-Run a quick smoke test:
-
-```bash
-firebase emulators:exec --only auth,firestore "echo emulators-ok"
-```
-
-Emulator UI will be available at [http://127.0.0.1:4000](http://127.0.0.1:4000).
-
-## Quality Checks
-
-```bash
-pnpm verify
-```
-
-## Playwright
-
-Playwright is configured for repo-local browser checks with Chromium.
-
-Run the default e2e suite:
-
-```bash
-pnpm test:e2e
-```
-
-Useful variants:
-
-```bash
-pnpm test:e2e:headed
-pnpm test:e2e:ui
-```
-
-Notes:
-
-- The config starts both the Firebase emulator trio (`auth`, `firestore`, `functions`) and `pnpm dev`, and expects the app at `http://localhost:3000` by default.
-- Override the target URL with `PLAYWRIGHT_BASE_URL` if you want Playwright to attach to an already-running server.
-- The suite includes a main-entry smoke spec plus emulator-backed `M4-T4` resolution/game-over coverage.
+The goal is a clean, reliable social game loop, not a giant feature list.
