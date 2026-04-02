@@ -19,7 +19,7 @@ export function normalizeRoomCodeInput(value) {
  */
 export function buildJoinRoomPath(roomCode) {
   const normalized = normalizeRoomCodeInput(roomCode);
-  return normalized ? `/join/${normalized}` : "/";
+  return normalized ? `/?join=${normalized}` : "/";
 }
 
 /**
@@ -28,7 +28,7 @@ export function buildJoinRoomPath(roomCode) {
  */
 export function buildLiveRoomPath(roomCode) {
   const normalized = normalizeRoomCodeInput(roomCode);
-  return normalized ? `/rooms/${normalized}` : "/";
+  return normalized ? `/?live=${normalized}` : "/";
 }
 
 /**
@@ -38,6 +38,27 @@ export function buildLiveRoomPath(roomCode) {
  */
 export function buildRoomShareLink(origin, roomCode) {
   return new URL(buildJoinRoomPath(roomCode), origin).toString();
+}
+
+/**
+ * @param {string} search
+ * @returns {{ inviteRoomCode: string | null; liveRoomCode: string | null }}
+ */
+export function parseRoomRouteState(search) {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const liveRoomCode = normalizeRoomCodeInput(params.get("live") ?? "");
+  if (liveRoomCode.length === 6) {
+    return {
+      inviteRoomCode: null,
+      liveRoomCode,
+    };
+  }
+
+  const inviteRoomCode = normalizeRoomCodeInput(params.get("join") ?? "");
+  return {
+    inviteRoomCode: inviteRoomCode.length === 6 ? inviteRoomCode : null,
+    liveRoomCode: null,
+  };
 }
 
 /**

@@ -105,3 +105,11 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Observed behavior: Observed behavior matches expected behavior with caveats. The user accepted the current implementation as good enough to close the UI refactoring initiative, while explicitly noting that some areas still are not in the exact compact or fully normalized shape they would want long-term and may receive later cleanup.
 - Result: `PASS`
 - User feedback: The user accepted the refactor as passable for now, with remaining caveats/open issues limited to optional future polish such as button taxonomy cleanup, possible further tokenization/consolidation, and minor non-blocking UI details.
+
+- Date: 2026-04-02
+- Test ID: TEST-011
+- Milestone/task reference: M5-T2 gate
+- Scenario: Agent-owned deployment-readiness validation after switching from Firebase App Hosting to standard Firebase Hosting, including static export build, updated env/runbook wiring, and `firebase deploy --only hosting,functions,firestore:indexes --dry-run`.
+- Expected behavior: The repo should build as a static export, local verification should stay green, and the Firebase deploy dry-run should validate Hosting, Functions, and Firestore indexes successfully against the target project.
+- Observed behavior: Static export and local verification succeeded (`pnpm build`, `pnpm verify`), but the Firebase deploy dry-run failed when enabling required Functions deployment APIs because project `wannabe-game` is not on the Blaze plan. Firebase reported that `cloudbuild.googleapis.com` cannot be enabled until billing is upgraded.
+- Result: `FAIL`

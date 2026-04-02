@@ -20,8 +20,8 @@ test("splash resolves into the redesigned main entry surface", async ({ page }) 
   await expect(page.getByRole("button", { name: /^join room$/i })).toBeVisible();
 });
 
-test("share-link entry opens the dedicated invite join screen", async ({ page }) => {
-  await page.goto("/join/123456");
+test("share-link entry opens the explicit invite query state on the root route", async ({ page }) => {
+  await page.goto("/?join=123456");
   await waitForEntrySurface(page);
 
   await expect(page.getByText(/you.?re invited to join/i)).toBeVisible();
@@ -35,7 +35,7 @@ test("refreshing a live room route restores the lobby instead of dropping to joi
 }) => {
   const { roomCode } = await createRoomFromEntry(page, "Host");
 
-  await expect(page).toHaveURL(new RegExp(`/rooms/${roomCode}$`, "i"));
+  await expect(page).toHaveURL(new RegExp(`[?&]live=${roomCode}$`, "i"));
   await page.reload();
 
   await expect(page.getByText(new RegExp(`^Room ${roomCode} Lobby$`, "i")).first()).toBeVisible();

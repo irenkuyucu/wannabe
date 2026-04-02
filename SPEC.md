@@ -80,6 +80,7 @@ A **Room** is a single game container with:
 ### 4.4 Join Room → Lobby (Player)
 - Join by entering room code OR opening the share link.
 - The same avatar picker used on the main screen is available before joining, including when the room code is prefilled by a share link.
+- Share links and live-room restoration use URL query state on the root app route rather than server-rendered room paths. The app distinguishes invite/join intent from active live-room restoration explicitly in the client URL state.
 - Lobby displays player list and readiness.
 
 ### 4.5 In-Game Round Screens

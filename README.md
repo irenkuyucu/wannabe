@@ -55,3 +55,9 @@ The current version is intentionally focused and lightweight:
 - inactivity handling so the room does not get stuck if someone drops out
 
 The goal is a clean, reliable social game loop, not a giant feature list.
+
+## Deployment
+
+The frontend is deployed as a static export on standard Firebase Hosting, while game actions and cleanup logic stay on Firebase Cloud Functions.
+
+See [DEPLOYMENT.md](/Users/irencankuyucu/wannabe/DEPLOYMENT.md) for the environment variables, dry-run command, and deploy runbook.

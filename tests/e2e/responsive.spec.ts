@@ -52,7 +52,7 @@ for (const viewport of VIEWPORTS) {
     });
     const invitePage = await inviteContext.newPage();
 
-    await invitePage.goto(`/join/${roomCode}`);
+    await invitePage.goto(`/?join=${roomCode}`);
     await waitForEntrySurface(invitePage);
 
     await expect(invitePage.getByText(new RegExp(`^Room ${roomCode}$`, "i"))).toBeVisible();

@@ -6,6 +6,14 @@
   "functions": {
     "source": "functions"
   },
+  "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
   "emulators": {
     "auth": {
       "port": 9099
@@ -19,6 +27,9 @@
     "ui": {
       "enabled": true,
       "port": 4000
+    },
+    "hosting": {
+      "port": 5000
     },
     "singleProjectMode": true
   }

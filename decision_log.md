@@ -194,3 +194,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: `M5-T1` requires true end-to-end emulator confidence rather than isolated unit coverage. The emulator specs all flush shared Firestore state, so serial execution is the correct and simplest way to avoid cross-test interference while still keeping the integration suite part of the standard `pnpm verify` gate.
 - Alternatives considered: Leaving emulator suites as opt-in targeted commands only, or trying to preserve parallel execution by redesigning every emulator spec around isolated databases/ports.
 - Impacted files/modules: `package.json`, `functions/package.json`, `functions/tests/round-actions-emulator.spec.ts`
+
+- Date: 2026-04-02
+- Decision ID: DEC-023
+- Spec/Plan reference: `SPEC.md` §4.4 and `PLAN.md` locked architecture + `M5-T2`
+- Decision: Replace the planned Firebase App Hosting deployment with standard Firebase Hosting, and replace dedicated server-rendered `/join/[roomCode]` and `/rooms/[roomCode]` paths with explicit query-based client routing on the root app route so the frontend can be statically exported cleanly.
+- Rationale: The shipped app architecture is effectively a client-rendered Firebase app: authentication, realtime subscriptions, authoritative game actions, and scheduled cleanup already live in Firebase services, while the Next.js server layer is only validating route params. Standard Hosting is therefore the simpler and better-aligned deployment target, and query-based client routing preserves invite/live-room intent without requiring arbitrary dynamic server routes.
+- Alternatives considered: Keeping Firebase App Hosting, or keeping standard Hosting but preserving dedicated dynamic paths via an extra server-rendered rewrite layer.
+- Impacted files/modules: `SPEC.md`, `PLAN.md`, `STATE.md`, `decision_log.md`, `firebase.json`, `next.config.ts`, `src/app/`, `src/components/wannabe-app.tsx`, `src/lib/lobby-utils.js`, `tests/`

@@ -39,7 +39,7 @@ export async function createRoomFromEntry(page: Page, displayName: string) {
 }
 
 export async function joinRoomFromInvite(page: Page, roomCode: string, displayName: string) {
-  await page.goto(`/join/${roomCode}`);
+  await page.goto(`/?join=${roomCode}`);
   await waitForEntrySurface(page);
   await page.getByRole("textbox", { name: /display name/i }).fill(displayName);
   await page.getByRole("button", { name: /^join your friends$/i }).click();

@@ -8,7 +8,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 1. Frontend: Next.js App Router (TypeScript, mostly client components).
 2. Backend: Cloud Functions v2 callable APIs + Cloud Firestore realtime subscriptions.
 3. Auth: Firebase Anonymous Auth.
-4. Hosting: Firebase App Hosting; region `europe-west1`.
+4. Hosting: standard Firebase Hosting for a static-exported frontend, plus Cloud Functions v2 in region `europe-west1`.
 5. Styling: Tailwind + selective shadcn primitives + custom Wannabe styling.
 6. Repo shape: single app + internal modules.
 7. Presence model for host guardrail: explicit leave/membership only.
@@ -106,7 +106,7 @@ Goal: deliver full playable UX with repeated user-owned checks.
 | Task ID | Task | Deliverables | Agent-owned validation | User-owned validation | Gate |
 |---|---|---|---|---|---|
 | M4-T1 | UI direction draft | first-pass visual system: typography, color tokens, component style patterns, sample screens | visual regression-friendly snapshot/unit checks where applicable | Review/approve visual direction before feature screens | PENDING until approval; then PASS/FAIL |
-| M4-T2 | Entry + lobby UI | main screen, create/join, lobby list, ready toggles, start controls, share-link copy UX (dedicated join path), and join-via-share-link handling | component/integration tests | Validate clarity/usability on real device(s), including share-link flow | PENDING until approval; then PASS/FAIL |
+| M4-T2 | Entry + lobby UI | main screen, create/join, lobby list, ready toggles, start controls, share-link copy UX (explicit invite URL state), and join-via-share-link handling | component/integration tests | Validate clarity/usability on real device(s), including share-link flow | PENDING until approval; then PASS/FAIL |
 | M4-T3 | In-game phase screens | choice, argument, rebuttal, verdict screens with countdowns and controls | component/integration tests for phase-state UI correctness | Validate in-person flow timing and control ergonomics | PENDING until approval; then PASS/FAIL |
 | M4-T4 | Resolution + game over | scoreboard, winner/ties, return-main flow, ended-room messaging | component/integration tests | Validate end-of-round and end-of-game comprehension | PENDING until approval; then PASS/FAIL |
 | M4-T5 | Production-adjacent UI simplification + responsive polish | simplify default UI to player-facing phase screens, move non-essential state inspection behind an explicit details/debug toggle, and complete mobile/desktop polish | regression checks + `pnpm verify` | Validate visual quality, responsiveness, and default player-facing clarity across target devices | PENDING until approval; then PASS/FAIL |
@@ -124,7 +124,7 @@ Goal: finalize correctness and deployment readiness.
 | Task ID | Task | Deliverables | Agent-owned validation | User-owned validation | Gate |
 |---|---|---|---|---|---|
 | M5-T1 | Full emulator scenarios | end-to-end integration suite for full 10-round lifecycle and critical edge cases | full `pnpm verify` including integration/rules suites | None | PASS on green verify |
-| M5-T2 | Deployment readiness | Firebase App Hosting + Functions config, production env var docs, runbook | build/deploy-dry-run checks | None | PASS on successful dry-run checks |
+| M5-T2 | Deployment readiness | standard Firebase Hosting + Functions config, static-export-friendly frontend routing, production env var docs, and deploy/runbook updates | build/export/deploy-dry-run checks | None | PASS on successful dry-run checks |
 | M5-T3 | Final acceptance session | consolidated multiplayer acceptance checklist mapped to spec | re-run `pnpm verify` on final state | Full real-session pass/fail feedback | PENDING until user outcome; then PASS/FAIL |
 
 ## Required Automated Test Scenarios (Must Pass by End of M5)
@@ -143,7 +143,7 @@ Goal: finalize correctness and deployment readiness.
 13. Scoring rules: `A_WON` gives +1 to side A choosers; `B_WON` gives +1 to side B choosers; `DRAW` gives +0 to all players.
 14. Lone-side bonus scoring: if `bonusEligiblePlayerId` exists and that player's side wins, that player gets +2 total for the round (+1 base +1 bonus); otherwise no bonus.
 15. Input validation rules: invalid `displayName` values (including non-ASCII letters) and invalid `roomCode` values are rejected by backend validation.
-16. Share-link behavior: room share link uses a dedicated join path and can be copied from lobby, then opens a join path that resolves to the target room by code.
+16. Share-link behavior: room share link uses explicit root-route query state for invite join, can be copied from lobby, and opens the app with the target room code prefilled without requiring server-rendered dynamic routes.
 17. Ended-room lifecycle: room end sets `status=ended` + `expiresAt=now+2h`; ended status blocks resume/rejoin; ended-room data remains readable until expiry for late clients.
 18. Presence heartbeat: active room members refresh `lastSeenAtMs` through the callable presence path, while Firestore rules still deny direct authoritative client writes.
 19. Soft-timeout presence handling: players absent for more than `45s` become inactive without immediate eviction; lobby `ready` resets, inactive players are ignored for lobby start gating, and soft-inactive hosts are replaced by an active host when available.

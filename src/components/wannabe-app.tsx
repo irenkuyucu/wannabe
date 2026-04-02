@@ -61,6 +61,7 @@ import {
   buildLiveRoomPath,
   getLobbyStartState,
   normalizeRoomCodeInput,
+  parseRoomRouteState,
 } from "@/lib/lobby-utils";
 import { getHostPromotionNotice } from "@/lib/host-promotion";
 import {
@@ -216,6 +217,7 @@ export function WannabeAppInner({
   const tickingPhaseKeyRef = useRef<string | null>(null);
   const hadActiveMembershipRef = useRef(false);
   const wasHiddenRef = useRef(false);
+  const usesInjectedRouteState = initialInviteRoomCode !== null || initialLiveRoomCode !== null;
   const currentPlayer = useMemo(
     () => players.find((player) => player.playerId === authUid) ?? null,
     [authUid, players],
@@ -231,6 +233,30 @@ export function WannabeAppInner({
     setJoinCode("");
     setErrorMessage(nextErrorMessage);
     router.replace("/");
+  }, [router]);
+
+  const enterInviteRouteState = useCallback((nextRoomCode: string) => {
+    const normalizedRoomCode = normalizeRoomCodeInput(nextRoomCode);
+
+    setRoomId(null);
+    setRoom(null);
+    setRound(null);
+    setLatestRound(null);
+    setPlayers([]);
+    setInviteRoomCode(normalizedRoomCode || null);
+    setJoinCode(normalizedRoomCode);
+    setErrorMessage(null);
+    router.replace(buildJoinRoomPath(normalizedRoomCode));
+  }, [router]);
+
+  const enterLiveRouteState = useCallback((nextRoomCode: string) => {
+    const normalizedRoomCode = normalizeRoomCodeInput(nextRoomCode);
+
+    setInviteRoomCode(null);
+    setJoinCode("");
+    setRoomId(normalizedRoomCode || null);
+    setErrorMessage(null);
+    router.replace(buildLiveRoomPath(normalizedRoomCode));
   }, [router]);
 
   const handleReturnToMain = useCallback(async (nextErrorMessage: string | null = null) => {
@@ -316,6 +342,23 @@ export function WannabeAppInner({
       return undefined;
     }
   }, [getErrorMessageForUi, subscribeToAnonymousUserAction]);
+
+  useEffect(() => {
+    if (usesInjectedRouteState || typeof window === "undefined") {
+      return undefined;
+    }
+
+    const syncFromLocation = () => {
+      const nextRouteState = parseRoomRouteState(window.location.search);
+      setInviteRoomCode(nextRouteState.inviteRoomCode);
+      setJoinCode(nextRouteState.inviteRoomCode ?? "");
+      setRoomId(nextRouteState.liveRoomCode);
+    };
+
+    syncFromLocation();
+    window.addEventListener("popstate", syncFromLocation);
+    return () => window.removeEventListener("popstate", syncFromLocation);
+  }, [usesInjectedRouteState]);
 
   useEffect(() => {
     if (!roomId || !authUid) {
@@ -481,7 +524,7 @@ export function WannabeAppInner({
 
   useEffect(() => {
     if (
-      !initialLiveRoomCode ||
+      !roomId ||
       !authUid ||
       room ||
       currentPlayer ||
@@ -490,8 +533,8 @@ export function WannabeAppInner({
       return;
     }
 
-    router.replace(buildJoinRoomPath(initialLiveRoomCode));
-  }, [authUid, currentPlayer, errorMessage, initialLiveRoomCode, room, router]);
+    enterInviteRouteState(roomId);
+  }, [authUid, currentPlayer, enterInviteRouteState, errorMessage, room, roomId]);
 
   const sendRoomHeartbeat = useCallback(async () => {
     const activeRoomId = roomId;
@@ -767,9 +810,7 @@ export function WannabeAppInner({
       }
 
       setRoomId(nextRoomId);
-      setInviteRoomCode(null);
-      setErrorMessage(null);
-      router.replace(buildLiveRoomPath(nextRoomCode));
+      enterLiveRouteState(nextRoomCode);
     } catch (error) {
       handleRoomActionError(error);
     } finally {

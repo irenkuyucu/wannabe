@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "next dev --webpack",
     "dev:turbo": "next dev --turbopack",
-    "build": "next build",
+    "build": "next build --webpack",
+    "deploy:dry-run": "pnpm build && firebase deploy --only hosting,functions,firestore:indexes --dry-run",
     "start": "next start",
     "emulators:start:e2e": "pnpm --dir functions build && firebase emulators:start --only auth,firestore,functions",
-    "typecheck:web": "tsc --noEmit",
+    "typecheck:web": "tsc --noEmit -p tsconfig.typecheck.json",
     "typecheck:functions": "pnpm --dir functions typecheck",
     "typecheck": "pnpm typecheck:web && pnpm typecheck:functions",
     "lint:web": "eslint",
