@@ -4,6 +4,7 @@ import test from "node:test";
 import { getFirestore } from "firebase-admin/firestore";
 
 import { FirestoreRoomStore } from "../src/data/firestore-room-store";
+import { getArgumentTurnOrder, type Side, type VerdictVote } from "../src/domain/game-domain";
 import { ROOM_TTL_MS, RoomLifecycleService } from "../src/domain/room-lifecycle";
 import { RoundActionService } from "../src/domain/round-actions";
 
@@ -84,6 +85,186 @@ async function createResolutionGame(params?: {
       now = value;
     },
   };
+}
+
+async function createStartedGame(params?: {
+  playerIds?: string[];
+  actionRandom?: () => number;
+}) {
+  let now = 1_710_000_000_000;
+  const store = new FirestoreRoomStore();
+  const lifecycle = new RoomLifecycleService(store, () => now, () => 0.000321);
+  const actions = new RoundActionService(store, () => now, params?.actionRandom ?? (() => 0.5));
+  const playerIds = params?.playerIds ?? ["host", "p2", "p3", "p4"];
+  const [hostId, ...joiners] = playerIds;
+  const joinerNames = ["Blake", "Casey", "Devon", "Elliot", "Frankie"];
+
+  const created = await lifecycle.createRoom({
+    uid: hostId,
+    displayName: "Host",
+  });
+
+  for (const [index, joinerId] of joiners.entries()) {
+    await lifecycle.joinRoom({
+      uid: joinerId,
+      roomCode: created.roomCode,
+      displayName: joinerNames[index] ?? `Guest ${String.fromCharCode(65 + index)}`,
+    });
+  }
+
+  for (const playerId of playerIds) {
+    await lifecycle.setReady({
+      uid: playerId,
+      roomId: created.roomId,
+      ready: true,
+    });
+  }
+
+  await lifecycle.startGame({
+    uid: hostId,
+    roomId: created.roomId,
+  });
+
+  return {
+    store,
+    lifecycle,
+    actions,
+    created,
+    playerIds,
+    async refreshPresence(activePlayerIds = playerIds) {
+      await Promise.all(
+        activePlayerIds.map((playerId) =>
+          store.updatePlayer(created.roomId, playerId, {
+            lastSeenAtMs: now,
+          }),
+        ),
+      );
+    },
+    get now() {
+      return now;
+    },
+    set now(value: number) {
+      now = value;
+    },
+  };
+}
+
+async function playRound(
+  game: Awaited<ReturnType<typeof createStartedGame>>,
+  params: {
+    roundIndex: number;
+    choicesByPlayer: Record<string, Side>;
+    verdictsByPlayer: Partial<Record<string, Exclude<VerdictVote, "ABSTAIN">>>;
+    expectedOutcome: "A_WON" | "B_WON" | "DRAW";
+    expectedBonusEligiblePlayerId: string | null;
+    expectedDissenterPlayerId: string | null;
+    expectedPenalizedPlayerId: string | null;
+    expectedInitialBudgetSeconds: number;
+    expectVerdictTimeout?: boolean;
+    finalRound?: boolean;
+  },
+) {
+  const hostId = game.playerIds[0];
+
+  for (const playerId of game.playerIds) {
+    await game.actions.submitChoice({
+      uid: playerId,
+      roomId: game.created.roomId,
+      side: params.choicesByPlayer[playerId],
+    });
+  }
+
+  const roomAfterChoices = await game.store.getRoom(game.created.roomId);
+  const roundAfterChoices = await game.store.getRound(game.created.roomId, params.roundIndex);
+  const [firstSide, secondSide] = getArgumentTurnOrder(params.roundIndex);
+  assert.equal(roomAfterChoices?.phase, "argument");
+  assert.equal(roomAfterChoices?.activeArgumentSide, firstSide);
+  assert.equal(roomAfterChoices?.phaseDeadlineAtMs, game.now + params.expectedInitialBudgetSeconds * 1000);
+  assert.equal(roundAfterChoices?.bonusEligiblePlayerId, params.expectedBonusEligiblePlayerId);
+  assert.equal(roundAfterChoices?.penalizedPlayerId, params.expectedPenalizedPlayerId);
+
+  const firstSpeakerId = game.playerIds.find(
+    (playerId) => params.choicesByPlayer[playerId] === firstSide,
+  );
+  assert.ok(firstSpeakerId);
+  await game.actions.endArgumentTurn({
+    uid: firstSpeakerId,
+    roomId: game.created.roomId,
+  });
+
+  const roomAfterFirstTurn = await game.store.getRoom(game.created.roomId);
+  assert.equal(roomAfterFirstTurn?.phase, "argument");
+  assert.equal(roomAfterFirstTurn?.activeArgumentSide, secondSide);
+  assert.equal(roomAfterFirstTurn?.phaseDeadlineAtMs, game.now + 120_000);
+
+  const secondSpeakerId = game.playerIds.find(
+    (playerId) => params.choicesByPlayer[playerId] === secondSide,
+  );
+  assert.ok(secondSpeakerId);
+  await game.actions.endArgumentTurn({
+    uid: secondSpeakerId,
+    roomId: game.created.roomId,
+  });
+
+  const roomAfterSecondTurn = await game.store.getRoom(game.created.roomId);
+  assert.equal(roomAfterSecondTurn?.phase, "rebuttal");
+  assert.equal(roomAfterSecondTurn?.phaseDeadlineAtMs, game.now + 60_000);
+
+  await game.actions.advanceRebuttal({
+    uid: hostId,
+    roomId: game.created.roomId,
+  });
+
+  for (const playerId of Object.keys(params.verdictsByPlayer)) {
+    await game.actions.submitVerdict({
+      uid: playerId,
+      roomId: game.created.roomId,
+      verdict: params.verdictsByPlayer[playerId]!,
+    });
+  }
+
+  if (params.expectVerdictTimeout) {
+    game.now += 60_000;
+    await game.refreshPresence();
+    await game.actions.tickRoom({
+      uid: hostId,
+      roomId: game.created.roomId,
+    });
+  }
+
+  const roomAfterVerdicts = await game.store.getRoom(game.created.roomId);
+  const resolvedRound = await game.store.getRound(game.created.roomId, params.roundIndex);
+  assert.equal(roomAfterVerdicts?.phase, "resolution");
+  assert.equal(resolvedRound?.outcome, params.expectedOutcome);
+  assert.equal(resolvedRound?.dissenterPlayerId, params.expectedDissenterPlayerId);
+
+  if (params.expectVerdictTimeout) {
+    for (const playerId of game.playerIds) {
+      assert.ok(resolvedRound?.verdictsByPlayer[playerId]);
+    }
+  }
+
+  const advanceResult = await game.actions.advanceResolution({
+    uid: hostId,
+    roomId: game.created.roomId,
+  });
+
+  if (params.finalRound) {
+    assert.deepEqual(advanceResult, {
+      nextState: "ended",
+      roundIndex: params.roundIndex,
+    });
+    return;
+  }
+
+  assert.deepEqual(advanceResult, {
+    nextState: "inGame",
+    roundIndex: params.roundIndex + 1,
+  });
+
+  const nextRoom = await game.store.getRoom(game.created.roomId);
+  assert.equal(nextRoom?.phase, "choice");
+  assert.equal(nextRoom?.roundIndex, params.roundIndex + 1);
 }
 
 runWithEmulator("round actions persist timed transitions in Firestore emulator", async () => {
@@ -195,6 +376,221 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   assert.equal(roundZeroSnapshot.get("dissenterPlayerId"), "p3");
   assert.equal(roundOneSnapshot.get("penalizedPlayerId"), "p3");
   assert.equal(typeof roundOneSnapshot.get("promptId"), "string");
+});
+
+runWithEmulator("full ten-round lifecycle persists deterministic state in Firestore emulator", async () => {
+  await clearFirestoreEmulator();
+
+  const game = await createStartedGame();
+  const db = getFirestore();
+  const promptIds = new Set<string>();
+
+  await playRound(game, {
+    roundIndex: 0,
+    choicesByPlayer: { host: "A", p2: "B", p3: "A", p4: "B" },
+    verdictsByPlayer: {
+      host: "A_WON",
+      p2: "A_WON",
+      p3: "DRAW",
+      p4: "A_WON",
+    },
+    expectedOutcome: "DRAW",
+    expectedBonusEligiblePlayerId: null,
+    expectedDissenterPlayerId: "p3",
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 0))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 1,
+    choicesByPlayer: { host: "A", p2: "A", p3: "B", p4: "A" },
+    verdictsByPlayer: {
+      host: "B_WON",
+      p2: "B_WON",
+      p3: "B_WON",
+      p4: "B_WON",
+    },
+    expectedOutcome: "B_WON",
+    expectedBonusEligiblePlayerId: "p3",
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: "p3",
+    expectedInitialBudgetSeconds: 100,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 1))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 2,
+    choicesByPlayer: { host: "B", p2: "B", p3: "A", p4: "B" },
+    verdictsByPlayer: {
+      host: "B_WON",
+      p2: "B_WON",
+      p3: "B_WON",
+      p4: "B_WON",
+    },
+    expectedOutcome: "B_WON",
+    expectedBonusEligiblePlayerId: "p3",
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 2))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 3,
+    choicesByPlayer: { host: "A", p2: "A", p3: "B", p4: "B" },
+    verdictsByPlayer: {
+      host: "A_WON",
+      p2: "A_WON",
+      p3: "A_WON",
+      p4: "A_WON",
+    },
+    expectedOutcome: "A_WON",
+    expectedBonusEligiblePlayerId: null,
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 3))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 4,
+    choicesByPlayer: { host: "A", p2: "A", p3: "B", p4: "B" },
+    verdictsByPlayer: {
+      host: "DRAW",
+      p2: "DRAW",
+    },
+    expectedOutcome: "DRAW",
+    expectedBonusEligiblePlayerId: null,
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+    expectVerdictTimeout: true,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 4))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 5,
+    choicesByPlayer: { host: "B", p2: "B", p3: "B", p4: "A" },
+    verdictsByPlayer: {
+      host: "A_WON",
+      p2: "A_WON",
+      p3: "A_WON",
+      p4: "A_WON",
+    },
+    expectedOutcome: "A_WON",
+    expectedBonusEligiblePlayerId: "p4",
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 5))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 6,
+    choicesByPlayer: { host: "A", p2: "B", p3: "A", p4: "A" },
+    verdictsByPlayer: {
+      host: "B_WON",
+      p2: "B_WON",
+      p3: "B_WON",
+      p4: "B_WON",
+    },
+    expectedOutcome: "B_WON",
+    expectedBonusEligiblePlayerId: "p2",
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 6))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 7,
+    choicesByPlayer: { host: "A", p2: "B", p3: "A", p4: "B" },
+    verdictsByPlayer: {
+      host: "A_WON",
+      p2: "A_WON",
+      p3: "A_WON",
+      p4: "A_WON",
+    },
+    expectedOutcome: "A_WON",
+    expectedBonusEligiblePlayerId: null,
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 7))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 8,
+    choicesByPlayer: { host: "A", p2: "B", p3: "A", p4: "B" },
+    verdictsByPlayer: {
+      host: "B_WON",
+      p2: "B_WON",
+      p3: "B_WON",
+      p4: "B_WON",
+    },
+    expectedOutcome: "B_WON",
+    expectedBonusEligiblePlayerId: null,
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 8))?.promptId ?? "");
+
+  await playRound(game, {
+    roundIndex: 9,
+    choicesByPlayer: { host: "A", p2: "B", p3: "A", p4: "B" },
+    verdictsByPlayer: {
+      host: "DRAW",
+      p2: "DRAW",
+      p3: "DRAW",
+      p4: "DRAW",
+    },
+    expectedOutcome: "DRAW",
+    expectedBonusEligiblePlayerId: null,
+    expectedDissenterPlayerId: null,
+    expectedPenalizedPlayerId: null,
+    expectedInitialBudgetSeconds: 120,
+    finalRound: true,
+  });
+  promptIds.add((await game.store.getRound(game.created.roomId, 9))?.promptId ?? "");
+
+  const roomSnapshot = await db.collection("rooms").doc(game.created.roomId).get();
+  const roundSnapshots = await db
+    .collection("rooms")
+    .doc(game.created.roomId)
+    .collection("rounds")
+    .get();
+  const scores = Object.fromEntries(
+    await Promise.all(
+      game.playerIds.map(async (playerId) => {
+        const player = await game.store.getPlayer(game.created.roomId, playerId);
+        return [playerId, player?.score ?? null];
+      }),
+    ),
+  );
+
+  assert.equal(promptIds.size, 10);
+  assert.equal(roundSnapshots.size, 10);
+  assert.equal(roomSnapshot.get("status"), "ended");
+  assert.equal(roomSnapshot.get("phase"), null);
+  assert.equal(roomSnapshot.get("expiresAtMs"), game.now + ROOM_TTL_MS);
+  assert.deepEqual(scores, {
+    host: 3,
+    p2: 5,
+    p3: 3,
+    p4: 4,
+  });
+
+  await assert.rejects(
+    () =>
+      game.lifecycle.joinRoom({
+        uid: "p5",
+        roomCode: game.created.roomCode,
+        displayName: "Elliot",
+      }),
+    /Room is not joinable/i,
+  );
 });
 
 runWithEmulator("resolution host guardrail promotes the next remaining player in Firestore emulator", async () => {

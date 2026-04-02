@@ -6,18 +6,18 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 ---
 
 ## 1. Current status
-- Milestone: Transition from Pre-M5 Follow-up to M5
-- Task: `P-T4` real-device/mobile presence validation is user-deferred until a post-M5 deployed environment is available; agent-owned presence implementation and verification remain complete.
-- Gate status: PENDING — User-approved deferment. Mobile/background validation is still required, but it will be executed against the deployed app after M5 instead of blocking current implementation progress.
+- Milestone: M5 — End-to-End Reliability and Release Readiness
+- Task: `M5-T1` full emulator scenarios are implemented on `main`; the repo now carries a deterministic Firestore-emulator 10-round lifecycle suite plus existing critical edge-case coverage, while the deferred post-deployment `P-T4` mobile/background validation remains an explicit open risk.
+- Gate status: PASS — `pnpm verify` is green, including the rules suite and the Firestore-emulator integration suite.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- d40ec7f on main — Update README.
+- db5f5e1 on main — Use next image for toast close icon.
+- f268fab on main — Add emulator coverage for presence timeout cleanup.
+- 86c2fd3 on main — Record presence verification sweep.
 - 7c60acc on main — Add client presence recovery handling.
-- 29fc5f0 on main — Implement backend presence lifecycle cleanup.
-- 4cc5f76 on main — Update project logs for completed UI refactor.
-- 3c6b4e8 on main — Refine shared UI primitives and loading states.
-- 8556972 on main — Consolidate shared game screen structure.
 
 ## 3. Project snapshot (max 5)
 (Brief facts about the working state of the project/codebase. No rationale.)
@@ -29,12 +29,11 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Agent-owned presence validation is complete: `pnpm test:functions`, `pnpm test:web`, both emulator presence suites, and `pnpm verify` all passed after the full feature landed.
-- Added extra Firestore-emulator coverage for the automatable `P-T4` lobby-side cases: soft-timeout host demotion/ready reset/promotion and hard-timeout stale-player removal with single-player start prevention.
-- `P-T4` real-device/mobile validation was explicitly deferred by the user until the app is deployed, because local-only infrastructure makes honest phone testing cumbersome right now.
-- The deferment is intentional risk carry, not a pass: mobile/background presence behavior remains to be validated later against the deployed app.
-- The only current unrelated worktree change is the pre-existing unstaged `src/components/toast.tsx` edit, which is outside the presence task scope.
-- The next required repo updates for this feature are `test_log.md` plus another `STATE.md` update once post-deployment mobile validation is actually performed.
+- Added a deterministic Firestore-emulator full-session scenario that runs a complete 10-round game, verifies prompt uniqueness within the session, penalty carryover, score accumulation, verdict timeout handling, and final ended-room persistence.
+- Promoted the emulator coverage into the main validation path by adding a combined `test:functions:emulator` root script and including it in `pnpm verify`.
+- Serialized the combined emulator runner with `--test-concurrency=1` because the emulator specs intentionally flush shared Firestore state and are not safe to run in parallel.
+- Re-ran the full repository gate successfully: `pnpm verify` now passes with web tests, functions unit tests, Firestore rules, and Firestore-emulator integration coverage.
+- The deferred `P-T4` real-device/mobile validation remains intentionally open for post-deployment execution and is still not counted as a pass.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
@@ -49,4 +48,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- Resume the main plan at `PLAN.md` `M5-T1`, while carrying the deferred `P-T4` mobile/background validation as an explicit open item to be executed post-deployment.
+- Proceed to `PLAN.md` `M5-T2` (deployment readiness), while carrying the deferred `P-T4` mobile/background validation as an explicit post-deployment follow-up item.

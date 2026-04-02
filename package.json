@@ -19,11 +19,12 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
+    "test:functions:emulator": "firebase emulators:exec --only firestore \"pnpm --dir functions run test:emulator\"",
     "test:functions:round-actions:emulator": "firebase emulators:exec --only firestore \"pnpm --dir functions run test:round-actions:emulator\"",
     "test:functions:room-lifecycle:emulator": "firebase emulators:exec --only firestore \"pnpm --dir functions run test:room-lifecycle:emulator\"",
     "test": "pnpm test:web && pnpm test:functions",
     "test:rules": "firebase emulators:exec --only firestore \"node --test tests/firestore.rules.spec.mjs\"",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm run test:rules"
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm run test:rules && pnpm run test:functions:emulator"
   },
   "dependencies": {
     "next": "16.1.6",

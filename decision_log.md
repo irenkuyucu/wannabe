@@ -186,3 +186,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The remaining unchecked risk is specifically real mobile browser background/foreground behavior. Agent-owned validation is already green, there are no live users yet, and deployed-environment phone testing is materially simpler and more representative than investing time now in local network setup.
 - Alternatives considered: Blocking M5 on immediate LAN-based phone testing, or treating the feature as fully validated without any real-device follow-up.
 - Impacted files/modules: `presence_plan.md`, `STATE.md`
+
+- Date: 2026-04-02
+- Decision ID: DEC-022
+- Spec/Plan reference: `PLAN.md` `M5-T1`
+- Decision: Fold Firestore-emulator integration coverage into the main repository gate and run the combined emulator specs serially, with a new deterministic 10-round full-session scenario as the M5 end-to-end anchor.
+- Rationale: `M5-T1` requires true end-to-end emulator confidence rather than isolated unit coverage. The emulator specs all flush shared Firestore state, so serial execution is the correct and simplest way to avoid cross-test interference while still keeping the integration suite part of the standard `pnpm verify` gate.
+- Alternatives considered: Leaving emulator suites as opt-in targeted commands only, or trying to preserve parallel execution by redesigning every emulator spec around isolated databases/ports.
+- Impacted files/modules: `package.json`, `functions/package.json`, `functions/tests/round-actions-emulator.spec.ts`
