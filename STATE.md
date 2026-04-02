@@ -6,9 +6,9 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 ---
 
 ## 1. Current status
-- Milestone: Pre-M5 Follow-up — Presence and Disconnect Handling
-- Task: `P-T3` feature verification sweep is complete on top of `main`, with the full presence validation matrix rerun after the client recovery-gate work landed.
-- Gate status: PASS — Backend tests, web tests, both emulator presence suites, and the aggregate `pnpm verify` pass are all green; the next step is the user-owned mobile/background validation handoff in `P-T4`.
+- Milestone: Transition from Pre-M5 Follow-up to M5
+- Task: `P-T4` real-device/mobile presence validation is user-deferred until a post-M5 deployed environment is available; agent-owned presence implementation and verification remain complete.
+- Gate status: PENDING — User-approved deferment. Mobile/background validation is still required, but it will be executed against the deployed app after M5 instead of blocking current implementation progress.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
@@ -29,23 +29,24 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Reran `pnpm test:functions` after the client presence work to reconfirm the backend two-tier presence rules still hold under the integrated feature.
-- Reran `pnpm test:web`, including the new recovery-gate integration coverage, to verify the client-side foreground return behavior remains green.
-- Reran both emulator-backed presence suites: `pnpm run test:functions:room-lifecycle:emulator` and `pnpm run test:functions:round-actions:emulator`.
-- Reran `pnpm verify` end-to-end, including lint, typecheck, web tests, functions tests, and Firestore rules validation.
-- No new scoped feature code was added in `P-T3`; this task is the bundled verification/logging pass required before the user-owned mobile validation handoff.
+- Agent-owned presence validation is complete: `pnpm test:functions`, `pnpm test:web`, both emulator presence suites, and `pnpm verify` all passed after the full feature landed.
+- Added extra Firestore-emulator coverage for the automatable `P-T4` lobby-side cases: soft-timeout host demotion/ready reset/promotion and hard-timeout stale-player removal with single-player start prevention.
+- `P-T4` real-device/mobile validation was explicitly deferred by the user until the app is deployed, because local-only infrastructure makes honest phone testing cumbersome right now.
+- The deferment is intentional risk carry, not a pass: mobile/background presence behavior remains to be validated later against the deployed app.
+- The only current unrelated worktree change is the pre-existing unstaged `src/components/toast.tsx` edit, which is outside the presence task scope.
+- The next required repo updates for this feature are `test_log.md` plus another `STATE.md` update once post-deployment mobile validation is actually performed.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
-- `P-T4` mobile/background validation handoff is still outstanding; the remaining required signal is real-device confirmation that the implemented recovery and inactivity behavior matches the approved presence spec. — Owner: user + team
+- Real-device/mobile validation is still outstanding for `P-T4`; the remaining required signal is user confirmation that background/foreground recovery and inactivity removal match the approved presence spec in a deployed environment. — Owner: user + team
+- Presence/disconnect handling should not be treated as fully release-validated until the deferred post-deployment mobile checklist is completed. — Owner: user + team
 - Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
 - The user accepted the current UI refactor as passable for the milestone, but some optional cleanup remains for later, especially button taxonomy cleanup, deeper geometry/token normalization, and any stricter future design-system compaction. — Owner: user + team
 - The dedicated-screen flow is now the only active UI path; any future detail/debug inspection UI will need to be reintroduced intentionally rather than relying on the deleted composite panel shell. — Owner: team
-- Firebase CLI project linking for deploy workflows is intentionally deferred to later milestones. — Owner: user + team
 
 ## 6. Blockers (max 5)
 (Define any blockers here. Use "None" if empty.)
 - None.
 
 ## 7. Next task (max 1)
-- Commit/push the completed `P-T3` feature verification sweep slice, then hand off `P-T4` with the required mobile/background validation checklist.
+- Resume the main plan at `PLAN.md` `M5-T1`, while carrying the deferred `P-T4` mobile/background validation as an explicit open item to be executed post-deployment.

@@ -16,7 +16,7 @@ Within the scope of presence, heartbeats, inactivity, disconnect cleanup, and fo
 | P-T1 | Backend presence lifecycle | `SOFT_TIMEOUT_MS` / `HARD_TIMEOUT_MS`, two-tier stale-player cleanup, active-player lobby start gating, heartbeat pre-refresh, scheduled stale-player sweep, required Firestore index update | targeted functions unit tests for room lifecycle and presence rules | None | PASS on green checks |
 | P-T2 | Client recovery gate and disconnect UX | foreground recovery gate, hidden/visible heartbeat handling, recovery-aware action guards, recovery-aware phase-tick suppression, targeted permission-error exit handling, explicit leave on return-to-main, updated presence helper/message utilities | targeted web tests for recovery helper and component integration | None | PASS on green checks |
 | P-T3 | Feature verification sweep | backend + client test additions completed, emulator coverage for stale cleanup behavior, full feature verification run, required docs/log updates bundled with implementation | `pnpm test:functions`, `pnpm test:web`, emulator presence scenarios, `pnpm verify` | None | PASS on green checks |
-| P-T4 | Mobile/background validation handoff | final presence/disconnect checklist executed against built behavior, any user-reported observations captured in logs/state before reconciliation | rerun impacted agent-owned checks after any follow-up fix | Real-device validation of background/foreground recovery and removal behavior | PENDING until user outcome; then PASS/FAIL |
+| P-T4 | Mobile/background validation handoff | final presence/disconnect checklist executed against built behavior, any user-reported observations captured in logs/state before reconciliation | rerun impacted agent-owned checks after any follow-up fix | Real-device validation of background/foreground recovery and removal behavior | User-deferred until post-M5 deployed validation; then PENDING until user outcome; then PASS/FAIL |
 
 ## Task Notes
 
@@ -39,6 +39,9 @@ Within the scope of presence, heartbeats, inactivity, disconnect cleanup, and fo
 
 ### P-T4 Notes
 - This task exists because the main risk surface is real mobile browser background/foreground behavior.
+- The user approved deferring this validation until a post-M5 deployed environment is available, rather than blocking ongoing implementation on LAN/local-phone setup work.
+- Extra emulator coverage now certifies the lobby-side timeout effects that do not depend on real mobile browser suspension behavior, reducing but not eliminating the remaining validation surface.
+- The deferment does not count as completion; the checklist below still must be executed before the feature can be treated as fully release-validated.
 - If the mobile validation uncovers behavior that contradicts [presence_spec.md](/Users/irencankuyucu/wannabe/presence_spec.md), stop and reconcile spec/plan before further coding.
 
 ## Required Automated Test Scenarios

@@ -178,3 +178,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The original single-threshold eviction model was too aggressive for common mobile backgrounding cases such as phone calls or short app switches. Splitting inactivity from removal preserves game continuity for short interruptions while still cleaning up truly abandoned players without adding RTDB presence or a larger reconnect subsystem.
 - Alternatives considered: Keeping the original `45s` hard-eviction model, accepting a foreground return race without a recovery gate, or adding RTDB `onDisconnect` presence.
 - Impacted files/modules: `presence_spec.md`, `presence_plan.md`, `SPEC.md`, `PLAN.md`, `functions/src/domain/room-lifecycle.ts`, `functions/src/domain/round-actions.ts`, `functions/src/data/firestore-room-store.ts`, `functions/src/index.ts`, `src/components/wannabe-app.tsx`, `src/lib/room-presence.ts`
+
+- Date: 2026-04-02
+- Decision ID: DEC-021
+- Spec/Plan reference: `presence_plan.md` `P-T4`, `STATE.md` current status
+- Decision: Defer the required real-device/mobile validation of presence/disconnect handling until after M5, when a deployed environment is available for honest phone testing, instead of blocking current progress on LAN/local-device setup.
+- Rationale: The remaining unchecked risk is specifically real mobile browser background/foreground behavior. Agent-owned validation is already green, there are no live users yet, and deployed-environment phone testing is materially simpler and more representative than investing time now in local network setup.
+- Alternatives considered: Blocking M5 on immediate LAN-based phone testing, or treating the feature as fully validated without any real-device follow-up.
+- Impacted files/modules: `presence_plan.md`, `STATE.md`
