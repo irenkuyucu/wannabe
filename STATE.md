@@ -7,12 +7,13 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: Pre-M5 Follow-up — Presence and Disconnect Handling
-- Task: `P-T1` backend presence lifecycle is implemented on top of `main`, with the approved scoped spec/plan docs bundled in the same working tree and agent-owned validation complete.
-- Gate status: PASS — Backend two-tier presence cleanup, heartbeat pre-refresh, scheduled stale sweep, Firestore index config, and backend automated validation are complete; client recovery-gate work remains for `P-T2`.
+- Task: `P-T2` client recovery gate and disconnect UX is implemented on top of `main`, with targeted client coverage and full agent-owned validation complete.
+- Gate status: PASS — Foreground recovery gating, visibility-driven heartbeat handling, explicit leave-on-return-to-main, targeted permission-denied eviction handling, and client automated validation are complete; feature-level verification remains for `P-T3`.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- 29fc5f0 on main — Implement backend presence lifecycle cleanup.
 - 4cc5f76 on main — Update project logs for completed UI refactor.
 - 3c6b4e8 on main — Refine shared UI primitives and loading states.
 - 8556972 on main — Consolidate shared game screen structure.
@@ -29,15 +30,15 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
-- Amended `SPEC.md` and `PLAN.md` only where needed to reflect the approved two-tier presence model and added the auxiliary pair `presence_spec.md` / `presence_plan.md`.
-- Added backend presence lifecycle support: `SOFT_TIMEOUT_MS` / `HARD_TIMEOUT_MS`, shared stale-player cleanup with inactive-player tracking, heartbeat pre-refresh, and the scheduled disconnected-player sweep.
-- Updated backend lobby/game rules so soft-inactive players stay in-room, lobby readiness/start gating uses active players only, hard-removed players still end empty rooms, and stale hosts are promoted from active remaining players.
-- Updated Firestore store/helpers and lifecycle/round-action tests to cover soft inactivity, hard removal, host promotion, and scheduled cleanup under the new backend model.
-- Firestore index config now includes the collection-group `players.lastSeenAtMs` index required for the scheduled stale-player sweep in production.
+- Added the client-side presence helper layer: inactivity copy update, lost-membership helper usage, and a pure `shouldEnterPresenceRecovery(...)` decision helper with direct unit coverage.
+- Updated `WannabeApp` to support the approved foreground recovery gate: visibility-driven awaited heartbeat on return, blocked room actions and auto-ticks while recovering, explicit leave-on-return-to-main, and targeted permission-denied eviction handling in the lobby subscription path.
+- Added dedicated recovery-gate integration coverage around `WannabeApp` for blocked actions, resumed play after successful heartbeat, clean exit after lost membership, and suppressed timed phase ticks during recovery.
+- Kept the web client’s presence call surface aligned with backend presence support via `heartbeatRoom`, `isLostRoomMembershipError`, and `PlayerDoc.lastSeenAtMs`.
+- Full agent-owned validation now passes again, including `pnpm test:web` and `pnpm verify`.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
-- `P-T2` client recovery gate and disconnect UX is not implemented yet; current app-side return-from-background behavior is still governed by the old in-progress client changes in the working tree and should not be treated as task-complete. — Owner: team
+- `P-T3` feature verification sweep is still outstanding; the presence feature now needs its bundled verification/logging pass before the mobile validation handoff. — Owner: team
 - Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
 - The user accepted the current UI refactor as passable for the milestone, but some optional cleanup remains for later, especially button taxonomy cleanup, deeper geometry/token normalization, and any stricter future design-system compaction. — Owner: user + team
 - The dedicated-screen flow is now the only active UI path; any future detail/debug inspection UI will need to be reintroduced intentionally rather than relying on the deleted composite panel shell. — Owner: team
@@ -48,4 +49,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None.
 
 ## 7. Next task (max 1)
-- Commit/push the completed `P-T1` backend presence lifecycle slice, then await approval to start `P-T2` client recovery gate and disconnect UX.
+- Commit/push the completed `P-T2` client recovery gate and disconnect UX slice, then await approval to start `P-T3` feature verification sweep.

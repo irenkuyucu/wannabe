@@ -38,7 +38,10 @@ import {
   createRoom,
   endArgumentTurn,
   getErrorMessage,
+  heartbeatRoom,
+  isLostRoomMembershipError,
   joinRoom,
+  leaveRoom,
   setReady,
   startGame,
   submitChoice,
@@ -60,15 +63,73 @@ import {
   normalizeRoomCodeInput,
 } from "@/lib/lobby-utils";
 import { getHostPromotionNotice } from "@/lib/host-promotion";
+import {
+  ROOM_DISCONNECTED_MESSAGE,
+  shouldEnterPresenceRecovery,
+  shouldHandleLostRoomMembership,
+  shouldMaintainRoomPresence,
+} from "@/lib/room-presence";
 
 type EntryMode = "create" | "join";
 const SPLASH_MIN_DURATION_MS = 2000;
+const ROOM_HEARTBEAT_INTERVAL_MS = 15_000;
 
 type WannabeAppProps = {
   initialInviteRoomCode?: string | null;
   initialLiveRoomCode?: string | null;
   initialShowSplash?: boolean;
 };
+
+type AppRouter = {
+  replace: ReturnType<typeof useRouter>["replace"];
+};
+
+export type WannabeAppDependencies = {
+  advanceResolution: typeof advanceResolution;
+  advanceRebuttal: typeof advanceRebuttal;
+  createRoom: typeof createRoom;
+  endArgumentTurn: typeof endArgumentTurn;
+  getErrorMessage: typeof getErrorMessage;
+  heartbeatRoom: typeof heartbeatRoom;
+  isLostRoomMembershipError: typeof isLostRoomMembershipError;
+  joinRoom: typeof joinRoom;
+  leaveRoom: typeof leaveRoom;
+  setReady: typeof setReady;
+  startGame: typeof startGame;
+  submitChoice: typeof submitChoice;
+  submitVerdict: typeof submitVerdict;
+  subscribeToAnonymousUser: typeof subscribeToAnonymousUser;
+  subscribeToLobby: typeof subscribeToLobby;
+  subscribeToRound: typeof subscribeToRound;
+  tickRoom: typeof tickRoom;
+};
+
+type WannabeAppInnerProps = WannabeAppProps & {
+  dependencies?: Partial<WannabeAppDependencies>;
+  router: AppRouter;
+};
+
+const defaultDependencies: WannabeAppDependencies = {
+  advanceResolution,
+  advanceRebuttal,
+  createRoom,
+  endArgumentTurn,
+  getErrorMessage,
+  heartbeatRoom,
+  isLostRoomMembershipError,
+  joinRoom,
+  leaveRoom,
+  setReady,
+  startGame,
+  submitChoice,
+  submitVerdict,
+  subscribeToAnonymousUser,
+  subscribeToLobby,
+  subscribeToRound,
+  tickRoom,
+};
+
+const PERMISSION_DENIED_MESSAGE_PATTERN = /Missing or insufficient permissions/i;
 
 function getValidationError(displayName: string, roomCode: string, mode: EntryMode) {
   if (getDisplayNameIssue(displayName)) {
@@ -88,6 +149,49 @@ export function WannabeApp({
   initialShowSplash = true,
 }: WannabeAppProps) {
   const router = useRouter();
+  return (
+    <WannabeAppInner
+      initialInviteRoomCode={initialInviteRoomCode}
+      initialLiveRoomCode={initialLiveRoomCode}
+      initialShowSplash={initialShowSplash}
+      router={router}
+    />
+  );
+}
+
+export function WannabeAppInner({
+  dependencies,
+  initialInviteRoomCode = null,
+  initialLiveRoomCode = null,
+  initialShowSplash = true,
+  router,
+}: WannabeAppInnerProps) {
+  const appDependencies = useMemo(
+    () => ({
+      ...defaultDependencies,
+      ...dependencies,
+    }),
+    [dependencies],
+  );
+  const {
+    advanceResolution: advanceResolutionAction,
+    advanceRebuttal: advanceRebuttalAction,
+    createRoom: createRoomAction,
+    endArgumentTurn: endArgumentTurnAction,
+    getErrorMessage: getErrorMessageForUi,
+    heartbeatRoom: heartbeatRoomAction,
+    isLostRoomMembershipError: isLostRoomMembershipErrorMatcher,
+    joinRoom: joinRoomAction,
+    leaveRoom: leaveRoomAction,
+    setReady: setReadyAction,
+    startGame: startGameAction,
+    submitChoice: submitChoiceAction,
+    submitVerdict: submitVerdictAction,
+    subscribeToAnonymousUser: subscribeToAnonymousUserAction,
+    subscribeToLobby: subscribeToLobbyAction,
+    subscribeToRound: subscribeToRoundAction,
+    tickRoom: tickRoomAction,
+  } = appDependencies;
   const [displayName, setDisplayName] = useState("");
   const [selectedAvatarId, setSelectedAvatarId] = useState(DEFAULT_AVATAR_ID);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
@@ -108,8 +212,16 @@ export function WannabeApp({
   const [validationNotice, setValidationNotice] = useState<string | null>(null);
   const [dismissedHostPromotionKeys, setDismissedHostPromotionKeys] = useState<string[]>([]);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [isRecoveringPresence, setIsRecoveringPresence] = useState(false);
   const tickingPhaseKeyRef = useRef<string | null>(null);
-  const handleReturnToMain = useCallback(() => {
+  const hadActiveMembershipRef = useRef(false);
+  const wasHiddenRef = useRef(false);
+  const currentPlayer = useMemo(
+    () => players.find((player) => player.playerId === authUid) ?? null,
+    [authUid, players],
+  );
+  const currentPlayerId = currentPlayer?.playerId ?? null;
+  const resetToMain = useCallback((nextErrorMessage: string | null = null) => {
     setRoomId(null);
     setRoom(null);
     setRound(null);
@@ -117,9 +229,44 @@ export function WannabeApp({
     setPlayers([]);
     setInviteRoomCode(null);
     setJoinCode("");
-    setErrorMessage(null);
+    setErrorMessage(nextErrorMessage);
     router.replace("/");
   }, [router]);
+
+  const handleReturnToMain = useCallback(async (nextErrorMessage: string | null = null) => {
+    const activeRoomId = roomId;
+    const shouldLeave = Boolean(activeRoomId && currentPlayer && room?.status !== "ended");
+    let message = nextErrorMessage;
+
+    if (shouldLeave && activeRoomId) {
+      try {
+        await leaveRoomAction({ roomId: activeRoomId });
+      } catch (error) {
+        if (!isLostRoomMembershipErrorMatcher(error)) {
+          message = getErrorMessageForUi(error);
+        }
+      }
+    }
+
+    resetToMain(message);
+  }, [
+    currentPlayer,
+    getErrorMessageForUi,
+    isLostRoomMembershipErrorMatcher,
+    leaveRoomAction,
+    resetToMain,
+    room?.status,
+    roomId,
+  ]);
+
+  const handleRoomActionError = useCallback((error: unknown) => {
+    if (isLostRoomMembershipErrorMatcher(error)) {
+      void handleReturnToMain(ROOM_DISCONNECTED_MESSAGE);
+      return;
+    }
+
+    setErrorMessage(getErrorMessageForUi(error));
+  }, [getErrorMessageForUi, handleReturnToMain, isLostRoomMembershipErrorMatcher]);
 
   useEffect(() => {
     if (!showSplash) {
@@ -151,7 +298,7 @@ export function WannabeApp({
 
   useEffect(() => {
     try {
-      return subscribeToAnonymousUser(
+      return subscribeToAnonymousUserAction(
         (user) => {
           startTransition(() => {
             setAuthUid(user?.uid ?? null);
@@ -165,10 +312,10 @@ export function WannabeApp({
         },
       );
     } catch (error) {
-      setAuthError(getErrorMessage(error));
+      setAuthError(getErrorMessageForUi(error));
       return undefined;
     }
-  }, []);
+  }, [getErrorMessageForUi, subscribeToAnonymousUserAction]);
 
   useEffect(() => {
     if (!roomId || !authUid) {
@@ -181,7 +328,7 @@ export function WannabeApp({
     }
 
     try {
-      return subscribeToLobby(roomId, {
+      return subscribeToLobbyAction(roomId, {
         onRoom: (nextRoom) => {
           startTransition(() => {
             setRoom(nextRoom);
@@ -197,15 +344,22 @@ export function WannabeApp({
         },
         onError: (message) => {
           startTransition(() => {
+            if (
+              hadActiveMembershipRef.current &&
+              PERMISSION_DENIED_MESSAGE_PATTERN.test(message)
+            ) {
+              void handleReturnToMain(ROOM_DISCONNECTED_MESSAGE);
+              return;
+            }
             setErrorMessage(message);
           });
         },
       });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      setErrorMessage(getErrorMessageForUi(error));
       return undefined;
     }
-  }, [authUid, roomId]);
+  }, [authUid, getErrorMessageForUi, handleReturnToMain, roomId, subscribeToLobbyAction]);
 
   useEffect(() => {
     if (
@@ -220,7 +374,7 @@ export function WannabeApp({
     }
 
     try {
-      return subscribeToRound(roomId, room.roundIndex, {
+      return subscribeToRoundAction(roomId, room.roundIndex, {
         onRound: (nextRound) => {
           startTransition(() => {
             setRound(nextRound);
@@ -236,10 +390,10 @@ export function WannabeApp({
         },
       });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      setErrorMessage(getErrorMessageForUi(error));
       return undefined;
     }
-  }, [authUid, room?.roundIndex, room?.status, roomId]);
+  }, [authUid, getErrorMessageForUi, room?.roundIndex, room?.status, roomId, subscribeToRoundAction]);
 
   useEffect(() => {
     if (!validationNotice) {
@@ -249,11 +403,6 @@ export function WannabeApp({
     const timeout = window.setTimeout(() => setValidationNotice(null), 2000);
     return () => window.clearTimeout(timeout);
   }, [validationNotice]);
-
-  const currentPlayer = useMemo(
-    () => players.find((player) => player.playerId === authUid) ?? null,
-    [authUid, players],
-  );
 
   useEffect(() => {
     if ((errorMessage ?? authError) === null || room || currentPlayer) {
@@ -267,6 +416,34 @@ export function WannabeApp({
 
     return () => window.clearTimeout(timeout);
   }, [authError, currentPlayer, errorMessage, room]);
+
+  useEffect(() => {
+    if (!roomId) {
+      hadActiveMembershipRef.current = false;
+      wasHiddenRef.current = false;
+      setIsRecoveringPresence(false);
+      return;
+    }
+
+    if (currentPlayer) {
+      hadActiveMembershipRef.current = true;
+      return;
+    }
+
+    if (
+      !shouldHandleLostRoomMembership({
+        roomId,
+        roomStatus: room?.status,
+        hasRoom: Boolean(room),
+        currentPlayerId: null,
+        hadActiveMembership: hadActiveMembershipRef.current,
+      })
+    ) {
+      return;
+    }
+
+    void handleReturnToMain(ROOM_DISCONNECTED_MESSAGE);
+  }, [currentPlayer, handleReturnToMain, room, roomId]);
 
   const hostPromotionNotice = getHostPromotionNotice({
     currentPlayerId: currentPlayer?.playerId ?? null,
@@ -303,12 +480,127 @@ export function WannabeApp({
   }, [copiedShareLink]);
 
   useEffect(() => {
-    if (!initialLiveRoomCode || !authUid || room || currentPlayer || !errorMessage) {
+    if (
+      !initialLiveRoomCode ||
+      !authUid ||
+      room ||
+      currentPlayer ||
+      errorMessage !== "Room is no longer available."
+    ) {
       return;
     }
 
     router.replace(buildJoinRoomPath(initialLiveRoomCode));
   }, [authUid, currentPlayer, errorMessage, initialLiveRoomCode, room, router]);
+
+  const sendRoomHeartbeat = useCallback(async () => {
+    const activeRoomId = roomId;
+    if (!activeRoomId) {
+      return;
+    }
+
+    if (
+      !shouldMaintainRoomPresence({
+        roomId: activeRoomId,
+        roomStatus: room?.status,
+        currentPlayerId,
+      })
+    ) {
+      return;
+    }
+
+    try {
+      await heartbeatRoomAction({ roomId: activeRoomId });
+    } catch (error) {
+      handleRoomActionError(error);
+    }
+  }, [currentPlayerId, handleRoomActionError, heartbeatRoomAction, room?.status, roomId]);
+
+  useEffect(() => {
+    if (
+      !shouldMaintainRoomPresence({
+        roomId,
+        roomStatus: room?.status,
+        currentPlayerId,
+      })
+    ) {
+      return undefined;
+    }
+
+    void sendRoomHeartbeat();
+    const interval = window.setInterval(() => {
+      void sendRoomHeartbeat();
+    }, ROOM_HEARTBEAT_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [currentPlayerId, room?.status, roomId, sendRoomHeartbeat]);
+
+  useEffect(() => {
+    if (
+      !shouldMaintainRoomPresence({
+        roomId,
+        roomStatus: room?.status,
+        currentPlayerId,
+      })
+    ) {
+      return undefined;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        wasHiddenRef.current = true;
+        void sendRoomHeartbeat();
+        return;
+      }
+
+      if (
+        !shouldEnterPresenceRecovery({
+          wasHidden: wasHiddenRef.current,
+          isVisible: document.visibilityState === "visible",
+          roomId,
+          roomStatus: room?.status,
+          currentPlayerId,
+        })
+      ) {
+        return;
+      }
+
+      const activeRoomId = roomId;
+      if (!activeRoomId) {
+        return;
+      }
+
+      wasHiddenRef.current = false;
+      setIsRecoveringPresence(true);
+
+      void (async () => {
+        try {
+          await heartbeatRoomAction({ roomId: activeRoomId });
+          setIsRecoveringPresence(false);
+        } catch (error) {
+          if (isLostRoomMembershipErrorMatcher(error)) {
+            void handleReturnToMain(ROOM_DISCONNECTED_MESSAGE);
+            return;
+          }
+
+          setIsRecoveringPresence(false);
+          handleRoomActionError(error);
+        }
+      })();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [
+    currentPlayerId,
+    handleReturnToMain,
+    handleRoomActionError,
+    heartbeatRoomAction,
+    isLostRoomMembershipErrorMatcher,
+    room?.status,
+    roomId,
+    sendRoomHeartbeat,
+  ]);
 
   useEffect(() => {
     setNowMs(Date.now());
@@ -329,7 +621,7 @@ export function WannabeApp({
       return;
     }
 
-    handleReturnToMain();
+    void handleReturnToMain();
     setPendingAction(null);
   }, [handleReturnToMain, pendingAction, room?.status]);
 
@@ -393,9 +685,9 @@ export function WannabeApp({
     tickingPhaseKeyRef.current = phaseKey;
 
     try {
-      await tickRoom({ roomId });
+      await tickRoomAction({ roomId });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       tickingPhaseKeyRef.current = null;
     }
@@ -409,7 +701,8 @@ export function WannabeApp({
       room.phase === null ||
       room.phase === "resolution" ||
       room.phaseDeadlineAtMs === null ||
-      !currentPlayer
+      !currentPlayer ||
+      isRecoveringPresence
     ) {
       return undefined;
     }
@@ -426,6 +719,7 @@ export function WannabeApp({
     return () => window.clearTimeout(timeout);
   }, [
     currentPlayer,
+    isRecoveringPresence,
     players,
     room,
     roomId,
@@ -456,14 +750,14 @@ export function WannabeApp({
       let nextRoomId = "";
       let nextRoomCode = "";
       if (mode === "create") {
-        const result = await createRoom({
+        const result = await createRoomAction({
           displayName: requestedName,
           avatarId: selectedAvatarId,
         });
         nextRoomId = result.roomId;
         nextRoomCode = result.roomCode;
       } else {
-        const result = await joinRoom({
+        const result = await joinRoomAction({
           roomCode: joinCode,
           displayName: requestedName,
           avatarId: selectedAvatarId,
@@ -477,14 +771,14 @@ export function WannabeApp({
       setErrorMessage(null);
       router.replace(buildLiveRoomPath(nextRoomCode));
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleReadyToggle(nextReady: boolean) {
-    if (!roomId) {
+    if (!roomId || isRecoveringPresence) {
       return;
     }
 
@@ -492,16 +786,16 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await setReady({ roomId, ready: nextReady });
+      await setReadyAction({ roomId, ready: nextReady });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleStartGame() {
-    if (!roomId || !startState.canStart) {
+    if (!roomId || !startState.canStart || isRecoveringPresence) {
       return;
     }
 
@@ -509,16 +803,16 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await startGame({ roomId });
+      await startGameAction({ roomId });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleSubmitChoice(side: "A" | "B") {
-    if (!roomId) {
+    if (!roomId || isRecoveringPresence) {
       return;
     }
 
@@ -526,16 +820,16 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await submitChoice({ roomId, side });
+      await submitChoiceAction({ roomId, side });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleEndArgumentTurn() {
-    if (!roomId) {
+    if (!roomId || isRecoveringPresence) {
       return;
     }
 
@@ -543,16 +837,16 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await endArgumentTurn({ roomId });
+      await endArgumentTurnAction({ roomId });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleAdvanceRebuttal() {
-    if (!roomId) {
+    if (!roomId || isRecoveringPresence) {
       return;
     }
 
@@ -560,16 +854,16 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await advanceRebuttal({ roomId });
+      await advanceRebuttalAction({ roomId });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleSubmitVerdict(verdict: "A_WON" | "B_WON" | "DRAW") {
-    if (!roomId) {
+    if (!roomId || isRecoveringPresence) {
       return;
     }
 
@@ -577,16 +871,16 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await submitVerdict({ roomId, verdict });
+      await submitVerdictAction({ roomId, verdict });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleAdvanceResolution() {
-    if (!roomId) {
+    if (!roomId || isRecoveringPresence) {
       return;
     }
 
@@ -594,17 +888,17 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await advanceResolution({ roomId });
+      await advanceResolutionAction({ roomId });
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleEndGameReturnToMain() {
-    if (!roomId) {
-      handleReturnToMain();
+    if (!roomId || isRecoveringPresence) {
+      void handleReturnToMain();
       return;
     }
 
@@ -614,7 +908,7 @@ export function WannabeApp({
       currentPlayer?.playerId === room.hostPlayerId;
 
     if (!isFinalRoundResolutionHost) {
-      handleReturnToMain();
+      void handleReturnToMain();
       return;
     }
 
@@ -622,10 +916,10 @@ export function WannabeApp({
     setErrorMessage(null);
 
     try {
-      await advanceResolution({ roomId });
-      handleReturnToMain();
+      await advanceResolutionAction({ roomId });
+      resetToMain();
     } catch (error) {
-      setErrorMessage(getErrorMessage(error));
+      handleRoomActionError(error);
     } finally {
       setPendingAction(null);
     }

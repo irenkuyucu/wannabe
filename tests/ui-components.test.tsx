@@ -20,6 +20,7 @@ function createPlayer(overrides: Partial<PlayerDoc>): PlayerDoc {
     avatarId: "avatar-1",
     displayName: "Player",
     joinedAtMs: 1,
+    lastSeenAtMs: 1,
     playerId: "player-1",
     ready: true,
     score: 0,

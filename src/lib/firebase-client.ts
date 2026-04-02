@@ -52,6 +52,7 @@ export type PlayerDoc = {
   ready: boolean;
   score: number;
   joinedAtMs: number;
+  lastSeenAtMs: number;
 };
 
 export type RoundDoc = {
@@ -294,6 +295,16 @@ export async function leaveRoom(input: { roomId: string }) {
   return result.data;
 }
 
+export async function heartbeatRoom(input: { roomId: string }): Promise<{ ok: true }> {
+  const { functions } = getFirebaseServices();
+  const callable = httpsCallable<{ roomId: string }, { ok: true }>(
+    functions,
+    "heartbeatRoom",
+  );
+  const result = await callable(input);
+  return result.data;
+}
+
 export function subscribeToLobby(
   roomId: string,
   callbacks: {
@@ -427,4 +438,15 @@ export function getErrorMessage(error: unknown) {
   }
 
   return "Something went wrong. Please try again.";
+}
+
+export function isLostRoomMembershipError(error: unknown) {
+  const message = getErrorMessage(error);
+
+  return (
+    /Player is not in this room\./i.test(message) ||
+    /Room not found\./i.test(message) ||
+    /Room is not currently in an active game\./i.test(message) ||
+    /Room is no longer active\./i.test(message)
+  );
 }
