@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 type ToastProps = {
@@ -28,11 +29,13 @@ export function Toast({
         onClick={onDismiss}
         type="button"
       >
-        <img
+        <Image
           alt=""
           aria-hidden="true"
           className="toast-close-icon"
+          height={18}
           src="/icons/close.svg"
+          width={18}
         />
       </button>
     </div>
