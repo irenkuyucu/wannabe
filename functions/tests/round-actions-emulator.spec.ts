@@ -133,11 +133,14 @@ async function createStartedGame(params?: {
     playerIds,
     async refreshPresence(activePlayerIds = playerIds) {
       await Promise.all(
-        activePlayerIds.map((playerId) =>
+        activePlayerIds.flatMap((playerId) => [
           store.updatePlayer(created.roomId, playerId, {
             lastSeenAtMs: now,
           }),
-        ),
+          store.updatePresence(created.roomId, playerId, {
+            lastSeenAtMs: now,
+          }),
+        ]),
       );
     },
     get now() {
@@ -284,11 +287,14 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   const db = getFirestore();
   const refreshPresence = async (playerIds: string[]) => {
     await Promise.all(
-      playerIds.map((playerId) =>
+      playerIds.flatMap((playerId) => [
         store.updatePlayer(created.roomId, playerId, {
           lastSeenAtMs: now,
         }),
-      ),
+        store.updatePresence(created.roomId, playerId, {
+          lastSeenAtMs: now,
+        }),
+      ]),
     );
   };
 
@@ -600,6 +606,7 @@ runWithEmulator("resolution host guardrail promotes the next remaining player in
   const db = getFirestore();
 
   await game.store.deletePlayer(game.created.roomId, "host");
+  await game.store.deletePresence(game.created.roomId, "host");
 
   await assert.rejects(
     () => game.actions.advanceResolution({ uid: "p3", roomId: game.created.roomId }),

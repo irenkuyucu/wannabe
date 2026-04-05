@@ -63,6 +63,11 @@ async function seedRoomData() {
       joinedAtMs: 1_710_000_000_100,
     });
 
+    await db.doc("rooms/123456/presence/host").set({
+      playerId: "host",
+      lastSeenAtMs: 1_710_000_000_200,
+    });
+
     await db.doc("rooms/123456/rounds/0").set({
       roundIndex: 0,
       promptId: "WB001",
@@ -112,9 +117,11 @@ test("non-members and unauthenticated clients cannot read room internals", async
 
   await assertFails(nonMemberDb.doc("rooms/123456").get());
   await assertFails(nonMemberDb.doc("rooms/123456/players/host").get());
+  await assertFails(nonMemberDb.doc("rooms/123456/presence/host").get());
   await assertFails(nonMemberDb.doc("rooms/123456/rounds/0").get());
   await assertFails(guestDb.doc("rooms/123456").get());
   await assertFails(guestDb.doc("rooms/123456/players/host").get());
+  await assertFails(guestDb.doc("rooms/123456/presence/host").get());
 });
 
 test("clients cannot directly write authoritative room state", async () => {
@@ -142,6 +149,14 @@ test("clients cannot directly write authoritative room state", async () => {
     memberDb.doc("rooms/123456/rounds/0").set(
       {
         outcome: "A_WON",
+      },
+      { merge: true },
+    ),
+  );
+  await assertFails(
+    memberDb.doc("rooms/123456/presence/host").set(
+      {
+        lastSeenAtMs: 99,
       },
       { merge: true },
     ),

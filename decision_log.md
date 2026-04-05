@@ -202,3 +202,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The shipped app architecture is effectively a client-rendered Firebase app: authentication, realtime subscriptions, authoritative game actions, and scheduled cleanup already live in Firebase services, while the Next.js server layer is only validating route params. Standard Hosting is therefore the simpler and better-aligned deployment target, and query-based client routing preserves invite/live-room intent without requiring arbitrary dynamic server routes.
 - Alternatives considered: Keeping Firebase App Hosting, or keeping standard Hosting but preserving dedicated dynamic paths via an extra server-rendered rewrite layer.
 - Impacted files/modules: `SPEC.md`, `PLAN.md`, `STATE.md`, `decision_log.md`, `firebase.json`, `next.config.ts`, `src/app/`, `src/components/wannabe-app.tsx`, `src/lib/lobby-utils.js`, `tests/`
+
+- Date: 2026-04-05
+- Decision ID: DEC-024
+- Spec/Plan reference: `SPEC.md` §7.1 and `PLAN.md` `M5-T1A` / `M5-T1B`
+- Decision: Split room liveness into a dedicated server-owned Firestore `presence` subcollection through a conservative two-release migration: phase 1 adds true dual-write compatibility and presence-aware cleanup, while phase 2 removes the legacy player-doc heartbeat path after validation.
+- Rationale: Presence and stable player/game state have different write patterns and responsibilities. Separating them is a cleaner model, prepares the repo for lower Firestore read fanout, and avoids taking unnecessary migration risk by shipping the data-model split before removing the legacy compatibility path.
+- Alternatives considered: Leaving heartbeat timestamps permanently on player docs, or attempting a one-release clean cut directly to the `presence` collection.
+- Impacted files/modules: `SPEC.md`, `PLAN.md`, `STATE.md`, `decision_log.md`, `firestore.rules`, `firestore.indexes.json`, `functions/src/domain/room-lifecycle.ts`, `functions/src/data/firestore-room-store.ts`, `functions/tests/`

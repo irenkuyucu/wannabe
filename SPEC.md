@@ -151,6 +151,7 @@ After Resolution:
   - Example: "Alex" → "Alex (2)", then "Alex (3)", etc.
   - The final assigned name is shown to the player and used for the session.
 - While a player is in a room, the client maintains room presence with periodic heartbeats.
+- Room liveness is tracked separately from stable player/game state in a dedicated server-owned presence record per room member.
 - If a player stops heartbeating for more than **45 seconds**, that player becomes **inactive** but is not removed yet.
 - Inactive players remain in the room, but in the lobby their **Ready** status is reset to **false**.
 - If a player continues without a heartbeat for more than **3 minutes**, that player is removed from the room automatically.

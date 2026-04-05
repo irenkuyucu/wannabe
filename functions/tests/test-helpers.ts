@@ -2,9 +2,11 @@ import { HttpsError } from "firebase-functions/v2/https";
 
 import type {
   PlayerRecord,
+  PresenceRecord,
   RoundRecord,
   RoomLifecycleStore,
   RoomRecord,
+  StalePresenceMembership,
   StalePlayerMembership,
 } from "../src/domain/room-lifecycle";
 
@@ -12,6 +14,7 @@ export class InMemoryRoomStore implements RoomLifecycleStore {
   private readonly rooms = new Map<string, RoomRecord>();
   private readonly rounds = new Map<string, Map<number, RoundRecord>>();
   private readonly players = new Map<string, Map<string, PlayerRecord>>();
+  private readonly presence = new Map<string, Map<string, PresenceRecord>>();
 
   async createRoom(record: RoomRecord): Promise<boolean> {
     if (this.rooms.has(record.roomId)) {
@@ -138,6 +141,58 @@ export class InMemoryRoomStore implements RoomLifecycleStore {
     return [...roomPlayers.values()].map((player) => ({ ...player }));
   }
 
+  async getPresence(roomId: string, playerId: string): Promise<PresenceRecord | null> {
+    const roomPresence = this.presence.get(roomId);
+    const presence = roomPresence?.get(playerId);
+    return presence ? { ...presence } : null;
+  }
+
+  async setPresence(roomId: string, presence: PresenceRecord): Promise<void> {
+    const roomPresence = this.presence.get(roomId) ?? new Map<string, PresenceRecord>();
+    roomPresence.set(presence.playerId, { ...presence });
+    this.presence.set(roomId, roomPresence);
+  }
+
+  async updatePresence(
+    roomId: string,
+    playerId: string,
+    patch: Partial<PresenceRecord>,
+  ): Promise<void> {
+    const roomPresence = this.presence.get(roomId);
+    const presence = roomPresence?.get(playerId);
+    if (!roomPresence || !presence) {
+      return;
+    }
+
+    roomPresence.set(playerId, { ...presence, ...patch });
+  }
+
+  async listPresence(roomId: string): Promise<PresenceRecord[]> {
+    const roomPresence = this.presence.get(roomId);
+    if (!roomPresence) {
+      return [];
+    }
+
+    return [...roomPresence.values()].map((presence) => ({ ...presence }));
+  }
+
+  async listStalePresence(cutoffLastSeenAtMs: number): Promise<StalePresenceMembership[]> {
+    const memberships: StalePresenceMembership[] = [];
+
+    for (const [roomId, roomPresence] of this.presence.entries()) {
+      for (const presence of roomPresence.values()) {
+        if (presence.lastSeenAtMs <= cutoffLastSeenAtMs) {
+          memberships.push({
+            roomId,
+            presence: { ...presence },
+          });
+        }
+      }
+    }
+
+    return memberships;
+  }
+
   async listStalePlayers(cutoffLastSeenAtMs: number): Promise<StalePlayerMembership[]> {
     const memberships: StalePlayerMembership[] = [];
 
@@ -157,6 +212,10 @@ export class InMemoryRoomStore implements RoomLifecycleStore {
 
   async deletePlayer(roomId: string, playerId: string): Promise<void> {
     this.players.get(roomId)?.delete(playerId);
+  }
+
+  async deletePresence(roomId: string, playerId: string): Promise<void> {
+    this.presence.get(roomId)?.delete(playerId);
   }
 }
 

@@ -13,6 +13,22 @@ import { assertHttpsErrorCode, InMemoryRoomStore } from "./test-helpers";
 
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 
+async function setPresenceTimestamp(
+  store: InMemoryRoomStore,
+  roomId: string,
+  playerId: string,
+  lastSeenAtMs: number,
+) {
+  await Promise.all([
+    store.updatePlayer(roomId, playerId, {
+      lastSeenAtMs,
+    }),
+    store.updatePresence(roomId, playerId, {
+      lastSeenAtMs,
+    }),
+  ]);
+}
+
 test("display name validation enforces MVP rules", () => {
   assert.equal(validateDisplayName("Alex"), "Alex");
   assert.equal(validateDisplayName("Jean-Luc"), "Jean-Luc");
@@ -102,6 +118,35 @@ test("room lifecycle supports create/join collisions/ready/start", async () => {
   assert.equal(typeof round?.promptId, "string");
 });
 
+test("create and join allocate matching presence records", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_000_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.000123);
+
+  const created = await service.createRoom({
+    uid: "host-uid",
+    displayName: "Alex",
+    avatarId: "avatar-1",
+  });
+  await service.joinRoom({
+    uid: "p2",
+    roomCode: created.roomCode,
+    displayName: "Blake",
+  });
+
+  const hostPresence = await store.getPresence(created.roomId, "host-uid");
+  const guestPresence = await store.getPresence(created.roomId, "p2");
+
+  assert.deepEqual(hostPresence, {
+    playerId: "host-uid",
+    lastSeenAtMs: now,
+  });
+  assert.deepEqual(guestPresence, {
+    playerId: "p2",
+    lastSeenAtMs: now,
+  });
+});
+
 test("start game enforces host/all-ready/joinable constraints", async () => {
   const store = new InMemoryRoomStore();
   const service = new RoomLifecycleService(store, () => 1_710_000_000_000, () => 0.5);
@@ -143,9 +188,7 @@ test("start game ignores inactive players for lobby gating", async () => {
   await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
   await service.setReady({ uid: "p3", roomId: created.roomId, ready: true });
 
-  await store.updatePlayer(created.roomId, "p3", {
-    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "p3", now - SOFT_TIMEOUT_MS - 1);
 
   const started = await service.startGame({ uid: "host-uid", roomId: created.roomId });
   const inactivePlayer = await store.getPlayer(created.roomId, "p3");
@@ -167,12 +210,8 @@ test("start game requires at least two active players", async () => {
   await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
   await service.setReady({ uid: "p3", roomId: created.roomId, ready: true });
 
-  await store.updatePlayer(created.roomId, "p2", {
-    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
-  });
-  await store.updatePlayer(created.roomId, "p3", {
-    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "p2", now - SOFT_TIMEOUT_MS - 1);
+  await setPresenceTimestamp(store, created.roomId, "p3", now - SOFT_TIMEOUT_MS - 1);
 
   await assert.rejects(
     () => service.startGame({ uid: "host-uid", roomId: created.roomId }),
@@ -216,6 +255,7 @@ test("lobby actions promote a replacement host when the current host is already 
   await service.joinRoom({ uid: "p3", roomCode: created.roomCode, displayName: "Casey" });
 
   await store.deletePlayer(created.roomId, "host-uid");
+  await store.deletePresence(created.roomId, "host-uid");
 
   await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
 
@@ -247,9 +287,11 @@ test("heartbeatRoom refreshes the active player's presence timestamp", async () 
     roomId: created.roomId,
   });
   const host = await store.getPlayer(created.roomId, "host-uid");
+  const hostPresence = await store.getPresence(created.roomId, "host-uid");
 
   assert.deepEqual(heartbeat, { ok: true });
   assert.equal(host?.lastSeenAtMs, now);
+  assert.equal(hostPresence?.lastSeenAtMs, now);
 });
 
 test("heartbeatRoom pre-refresh prevents self-eviction after hard timeout", async () => {
@@ -258,9 +300,7 @@ test("heartbeatRoom pre-refresh prevents self-eviction after hard timeout", asyn
   const service = new RoomLifecycleService(store, () => now, () => 0.25);
 
   const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
-  await store.updatePlayer(created.roomId, "host-uid", {
-    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "host-uid", now - HARD_TIMEOUT_MS - 1);
 
   now += HEARTBEAT_INTERVAL_MS;
   const heartbeat = await service.heartbeatRoom({
@@ -279,9 +319,7 @@ test("heartbeatRoom returns not-found after hard eviction already happened", asy
   const service = new RoomLifecycleService(store, () => now, () => 0.25);
 
   const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
-  await store.updatePlayer(created.roomId, "host-uid", {
-    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "host-uid", now - HARD_TIMEOUT_MS - 1);
 
   await service.cleanupRoomPresence(created.roomId);
 
@@ -289,6 +327,30 @@ test("heartbeatRoom returns not-found after hard eviction already happened", asy
     () => service.heartbeatRoom({ uid: "host-uid", roomId: created.roomId }),
     (error: unknown) => assertHttpsErrorCode(error, "not-found"),
   );
+});
+
+test("cleanupRoomPresence prefers dedicated presence records when present", async () => {
+  const store = new InMemoryRoomStore();
+  const now = 1_710_000_050_000;
+  const service = new RoomLifecycleService(store, () => now, () => 0.25);
+
+  const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
+  await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
+
+  await store.updatePlayer(created.roomId, "p2", {
+    lastSeenAtMs: now,
+  });
+  await store.updatePresence(created.roomId, "p2", {
+    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
+  });
+
+  const cleaned = await service.cleanupRoomPresence(created.roomId);
+  const stalePlayer = await store.getPlayer(created.roomId, "p2");
+  const stalePresence = await store.getPresence(created.roomId, "p2");
+
+  assert.deepEqual(cleaned.removedPlayerIds, ["p2"]);
+  assert.equal(stalePlayer, null);
+  assert.equal(stalePresence, null);
 });
 
 test("cleanupRoomPresence marks soft-timed-out players inactive without removing them", async () => {
@@ -300,9 +362,7 @@ test("cleanupRoomPresence marks soft-timed-out players inactive without removing
   await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
   await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
 
-  await store.updatePlayer(created.roomId, "p2", {
-    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "p2", now - SOFT_TIMEOUT_MS - 1);
 
   const cleaned = await service.cleanupRoomPresence(created.roomId);
   const host = await store.getPlayer(created.roomId, "host-uid");
@@ -326,9 +386,7 @@ test("cleanupRoomPresence does not reset ready during in-game soft timeout", asy
   await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
   await service.startGame({ uid: "host-uid", roomId: created.roomId });
 
-  await store.updatePlayer(created.roomId, "p2", {
-    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "p2", now - SOFT_TIMEOUT_MS - 1);
 
   const cleaned = await service.cleanupRoomPresence(created.roomId);
   const player = await store.getPlayer(created.roomId, "p2");
@@ -347,9 +405,7 @@ test("cleanupRoomPresence promotes a fresh player when the host becomes inactive
   await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
   await service.joinRoom({ uid: "p3", roomCode: created.roomCode, displayName: "Casey" });
 
-  await store.updatePlayer(created.roomId, "host-uid", {
-    lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "host-uid", now - SOFT_TIMEOUT_MS - 1);
 
   const cleaned = await service.cleanupRoomPresence(created.roomId);
   const room = await store.getRoom(created.roomId);
@@ -371,13 +427,12 @@ test("cleanupRoomPresence evicts hard-timed-out non-host players without removin
   const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
   await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
 
-  await store.updatePlayer(created.roomId, "p2", {
-    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "p2", now - HARD_TIMEOUT_MS - 1);
 
   const cleaned = await service.cleanupRoomPresence(created.roomId);
   const host = await store.getPlayer(created.roomId, "host-uid");
   const removed = await store.getPlayer(created.roomId, "p2");
+  const removedPresence = await store.getPresence(created.roomId, "p2");
 
   assert.deepEqual(cleaned.removedPlayerIds, ["p2"]);
   assert.deepEqual(cleaned.inactivePlayerIds, []);
@@ -385,6 +440,7 @@ test("cleanupRoomPresence evicts hard-timed-out non-host players without removin
   assert.equal(cleaned.players[0]?.playerId, "host-uid");
   assert.equal(host?.playerId, "host-uid");
   assert.equal(removed, null);
+  assert.equal(removedPresence, null);
 });
 
 test("sweepStaleRooms ends a room when the final remaining player is stale", async () => {
@@ -393,13 +449,12 @@ test("sweepStaleRooms ends a room when the final remaining player is stale", asy
   const service = new RoomLifecycleService(store, () => now, () => 0.25);
 
   const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
-  await store.updatePlayer(created.roomId, "host-uid", {
-    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "host-uid", now - HARD_TIMEOUT_MS - 1);
 
   const sweep = await service.sweepStaleRooms();
   const room = await store.getRoom(created.roomId);
   const host = await store.getPlayer(created.roomId, "host-uid");
+  const hostPresence = await store.getPresence(created.roomId, "host-uid");
 
   assert.deepEqual(sweep, {
     roomsProcessed: 1,
@@ -408,4 +463,5 @@ test("sweepStaleRooms ends a room when the final remaining player is stale", asy
   assert.equal(room?.status, "ended");
   assert.equal(room?.expiresAtMs, now + ROOM_TTL_MS);
   assert.equal(host, null);
+  assert.equal(hostPresence, null);
 });

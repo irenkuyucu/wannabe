@@ -35,6 +35,11 @@ export type PlayerRecord = {
   lastSeenAtMs: number;
 };
 
+export type PresenceRecord = {
+  playerId: string;
+  lastSeenAtMs: number;
+};
+
 export type RoundRecord = {
   roundIndex: number;
   promptId: string;
@@ -83,6 +88,11 @@ export type StalePlayerMembership = {
   player: PlayerRecord;
 };
 
+export type StalePresenceMembership = {
+  roomId: string;
+  presence: PresenceRecord;
+};
+
 export type StaleRoomCleanupResult = {
   room: RoomRecord | null;
   players: PlayerRecord[];
@@ -117,7 +127,17 @@ export type RoomLifecycleStore = {
   setPlayer(roomId: string, player: PlayerRecord): Promise<void>;
   updatePlayer(roomId: string, playerId: string, patch: Partial<PlayerRecord>): Promise<void>;
   listPlayers(roomId: string): Promise<PlayerRecord[]>;
+  getPresence(roomId: string, playerId: string): Promise<PresenceRecord | null>;
+  setPresence(roomId: string, presence: PresenceRecord): Promise<void>;
+  updatePresence(
+    roomId: string,
+    playerId: string,
+    patch: Partial<PresenceRecord>,
+  ): Promise<void>;
+  listPresence(roomId: string): Promise<PresenceRecord[]>;
+  listStalePresence(cutoffLastSeenAtMs: number): Promise<StalePresenceMembership[]>;
   listStalePlayers(cutoffLastSeenAtMs: number): Promise<StalePlayerMembership[]>;
+  deletePresence(roomId: string, playerId: string): Promise<void>;
   deletePlayer(roomId: string, playerId: string): Promise<void>;
 };
 
@@ -271,6 +291,13 @@ export function sortPlayersByJoinedAt(players: PlayerRecord[]): PlayerRecord[] {
   );
 }
 
+function getEffectiveLastSeenAtMs(
+  player: PlayerRecord,
+  presenceByPlayerId: Map<string, PresenceRecord>,
+) {
+  return presenceByPlayerId.get(player.playerId)?.lastSeenAtMs ?? player.lastSeenAtMs;
+}
+
 export async function pruneStalePlayersForRoom(params: {
   store: RoomLifecycleStore;
   room: RoomRecord;
@@ -284,8 +311,21 @@ export async function pruneStalePlayersForRoom(params: {
     random = () => Math.random(),
   } = params;
   const players = sortPlayersByJoinedAt(await store.listPlayers(room.roomId));
+  const roomPresence = await store.listPresence(room.roomId);
+  const presenceByPlayerId = new Map(
+    roomPresence.map((presence) => [presence.playerId, presence]),
+  );
 
-  if (room.status === "ended" || players.length === 0) {
+  if (players.length === 0) {
+    if (roomPresence.length > 0) {
+      await Promise.all(
+        roomPresence.map((presence) => store.deletePresence(room.roomId, presence.playerId)),
+      );
+    }
+    return { room, players, removedPlayerIds: [], inactivePlayerIds: [] };
+  }
+
+  if (room.status === "ended") {
     return { room, players, removedPlayerIds: [], inactivePlayerIds: [] };
   }
 
@@ -293,10 +333,12 @@ export async function pruneStalePlayersForRoom(params: {
   const hardCutoffMs = nowMs - HARD_TIMEOUT_MS;
   const inactivePlayers = players.filter(
     (player) =>
-      player.lastSeenAtMs <= softCutoffMs &&
-      player.lastSeenAtMs > hardCutoffMs,
+      getEffectiveLastSeenAtMs(player, presenceByPlayerId) <= softCutoffMs &&
+      getEffectiveLastSeenAtMs(player, presenceByPlayerId) > hardCutoffMs,
   );
-  const abandonedPlayers = players.filter((player) => player.lastSeenAtMs <= hardCutoffMs);
+  const abandonedPlayers = players.filter(
+    (player) => getEffectiveLastSeenAtMs(player, presenceByPlayerId) <= hardCutoffMs,
+  );
 
   if (inactivePlayers.length === 0 && abandonedPlayers.length === 0) {
     return { room, players, removedPlayerIds: [], inactivePlayerIds: [] };
@@ -304,7 +346,10 @@ export async function pruneStalePlayersForRoom(params: {
 
   if (abandonedPlayers.length > 0) {
     await Promise.all(
-      abandonedPlayers.map((player) => store.deletePlayer(room.roomId, player.playerId)),
+      abandonedPlayers.flatMap((player) => [
+        store.deletePlayer(room.roomId, player.playerId),
+        store.deletePresence(room.roomId, player.playerId),
+      ]),
     );
   }
 
@@ -318,8 +363,17 @@ export async function pruneStalePlayersForRoom(params: {
   }
 
   const remainingPlayers = sortPlayersByJoinedAt(await store.listPlayers(room.roomId));
+  const remainingPresence = await store.listPresence(room.roomId);
+  const remainingPresenceByPlayerId = new Map(
+    remainingPresence.map((presence) => [presence.playerId, presence]),
+  );
 
   if (remainingPlayers.length === 0) {
+    if (remainingPresence.length > 0) {
+      await Promise.all(
+        remainingPresence.map((presence) => store.deletePresence(room.roomId, presence.playerId)),
+      );
+    }
     const ended = createEndedRoomState(nowMs);
     const endedRoom = { ...room, ...ended.roomPatch };
     await store.updateRoom(room.roomId, ended.roomPatch);
@@ -334,12 +388,12 @@ export async function pruneStalePlayersForRoom(params: {
 
   const remainingInactivePlayers = remainingPlayers.filter(
     (player) =>
-      player.lastSeenAtMs <= softCutoffMs &&
-      player.lastSeenAtMs > hardCutoffMs,
+      getEffectiveLastSeenAtMs(player, remainingPresenceByPlayerId) <= softCutoffMs &&
+      getEffectiveLastSeenAtMs(player, remainingPresenceByPlayerId) > hardCutoffMs,
   );
   const remainingInactivePlayerIds = remainingInactivePlayers.map((player) => player.playerId);
   const remainingActivePlayers = remainingPlayers.filter(
-    (player) => player.lastSeenAtMs > softCutoffMs,
+    (player) => getEffectiveLastSeenAtMs(player, remainingPresenceByPlayerId) > softCutoffMs,
   );
   const hostNeedsPromotion =
     abandonedPlayers.some((player) => player.playerId === room.hostPlayerId) ||
@@ -474,6 +528,10 @@ export class RoomLifecycleService {
         joinedAtMs: now,
         lastSeenAtMs: now,
       });
+      await this.store.setPresence(roomId, {
+        playerId: uid,
+        lastSeenAtMs: now,
+      });
 
       return {
         roomId,
@@ -514,8 +572,13 @@ export class RoomLifecycleService {
 
     const existingPlayer = await this.store.getPlayer(cleanedRoom.room.roomId, uid);
     if (existingPlayer) {
+      const now = this.nowMs();
       await this.store.updatePlayer(cleanedRoom.room.roomId, uid, {
-        lastSeenAtMs: this.nowMs(),
+        lastSeenAtMs: now,
+      });
+      await this.store.setPresence(cleanedRoom.room.roomId, {
+        playerId: uid,
+        lastSeenAtMs: now,
       });
 
       return {
@@ -552,6 +615,10 @@ export class RoomLifecycleService {
       joinedAtMs: now,
       lastSeenAtMs: now,
     });
+    await this.store.setPresence(cleanedRoom.room.roomId, {
+      playerId: uid,
+      lastSeenAtMs: now,
+    });
 
     return {
       roomId: cleanedRoom.room.roomId,
@@ -574,8 +641,13 @@ export class RoomLifecycleService {
       throw new HttpsError("not-found", "Player is not in this room.");
     }
 
+    const now = this.nowMs();
     await this.store.updatePlayer(roomId, uid, {
-      lastSeenAtMs: this.nowMs(),
+      lastSeenAtMs: now,
+    });
+    await this.store.setPresence(roomId, {
+      playerId: uid,
+      lastSeenAtMs: now,
     });
 
     await this.cleanupRoomPresence(roomId);
@@ -585,8 +657,13 @@ export class RoomLifecycleService {
 
   async sweepStaleRooms(): Promise<SweepStaleRoomsResult> {
     const now = this.nowMs();
+    const stalePresence = await this.store.listStalePresence(now - SOFT_TIMEOUT_MS);
     const stalePlayers = await this.store.listStalePlayers(now - SOFT_TIMEOUT_MS);
-    const roomIds = [...new Set(stalePlayers.map((membership) => membership.roomId))];
+    const roomIds = [
+      ...new Set(
+        [...stalePresence, ...stalePlayers].map((membership) => membership.roomId),
+      ),
+    ];
 
     let playersRemoved = 0;
 
@@ -615,6 +692,7 @@ export class RoomLifecycleService {
     }
 
     await this.store.deletePlayer(roomId, uid);
+    await this.store.deletePresence(roomId, uid);
     const remainingPlayers = await this.store.listPlayers(roomId);
 
     if (remainingPlayers.length === 0) {

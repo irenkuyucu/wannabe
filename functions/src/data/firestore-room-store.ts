@@ -3,9 +3,11 @@ import { getFirestore } from "firebase-admin/firestore";
 
 import type {
   PlayerRecord,
+  PresenceRecord,
   RoundRecord,
   RoomLifecycleStore,
   RoomRecord,
+  StalePresenceMembership,
   StalePlayerMembership,
 } from "../domain/room-lifecycle";
 
@@ -26,6 +28,10 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
 
   private roundRef(roomId: string, roundIndex: number) {
     return this.roomRef(roomId).collection("rounds").doc(String(roundIndex));
+  }
+
+  private presenceRef(roomId: string, playerId: string) {
+    return this.roomRef(roomId).collection("presence").doc(playerId);
   }
 
   async createRoom(record: RoomRecord): Promise<boolean> {
@@ -123,6 +129,50 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
     return snapshot.docs.map((doc) => doc.data() as PlayerRecord);
   }
 
+  async getPresence(roomId: string, playerId: string): Promise<PresenceRecord | null> {
+    const snapshot = await this.presenceRef(roomId, playerId).get();
+    if (!snapshot.exists) {
+      return null;
+    }
+    return snapshot.data() as PresenceRecord;
+  }
+
+  async setPresence(roomId: string, presence: PresenceRecord): Promise<void> {
+    await this.presenceRef(roomId, presence.playerId).set(presence);
+  }
+
+  async updatePresence(
+    roomId: string,
+    playerId: string,
+    patch: Partial<PresenceRecord>,
+  ): Promise<void> {
+    await this.presenceRef(roomId, playerId).set(patch, { merge: true });
+  }
+
+  async listPresence(roomId: string): Promise<PresenceRecord[]> {
+    const snapshot = await this.roomRef(roomId).collection("presence").get();
+    return snapshot.docs.map((doc) => doc.data() as PresenceRecord);
+  }
+
+  async listStalePresence(cutoffLastSeenAtMs: number): Promise<StalePresenceMembership[]> {
+    const snapshot = await this.db
+      .collectionGroup("presence")
+      .where("lastSeenAtMs", "<=", cutoffLastSeenAtMs)
+      .get();
+
+    return snapshot.docs.flatMap((presenceDoc) => {
+      const roomId = presenceDoc.ref.parent.parent?.id;
+      if (!roomId) {
+        return [];
+      }
+
+      return [{
+        roomId,
+        presence: presenceDoc.data() as PresenceRecord,
+      }];
+    });
+  }
+
   async listStalePlayers(cutoffLastSeenAtMs: number): Promise<StalePlayerMembership[]> {
     const snapshot = await this.db
       .collectionGroup("players")
@@ -144,6 +194,10 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
 
   async deletePlayer(roomId: string, playerId: string): Promise<void> {
     await this.playerRef(roomId, playerId).delete();
+  }
+
+  async deletePresence(roomId: string, playerId: string): Promise<void> {
+    await this.presenceRef(roomId, playerId).delete();
   }
 
   private isAlreadyExistsError(error: unknown): boolean {

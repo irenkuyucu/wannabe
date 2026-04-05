@@ -24,6 +24,10 @@ service cloud.firestore {
         allow get, list: if isRoomMember(roomId);
         allow create, update, delete: if false;
       }
+
+      match /presence/{playerId} {
+        allow get, list, create, update, delete: if false;
+      }
     }
 
     match /{document=**} {

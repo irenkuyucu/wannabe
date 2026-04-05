@@ -11,7 +11,7 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 4. Hosting: standard Firebase Hosting for a static-exported frontend, plus Cloud Functions v2 in region `europe-west1`.
 5. Styling: Tailwind + selective shadcn primitives + custom Wannabe styling.
 6. Repo shape: single app + internal modules.
-7. Presence model for host guardrail: explicit leave/membership only.
+7. Presence model: server-owned heartbeat records in Firestore, separated from stable player session/game state via a dedicated `presence` subcollection rollout.
 8. Quality gates: local `pnpm verify` required (no hosted CI in MVP).
 9. User-owned validation cadence: high (multiple UX checkpoints, not only release-end).
 
@@ -37,7 +37,8 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 | Path | Purpose | Required key fields |
 |---|---|---|
 | `rooms/{roomCode}` | canonical room/game state keyed by the 6-digit room code | `status`, `roomCode`, `hostPlayerId`, `roundsTotal`, `roundIndex`, `phase`, `phaseDeadlineAtMs`, `currentPromptId`, `createdAt`, `expiresAt` |
-| `rooms/{roomCode}/players/{playerId}` | player/session state | `uid`, `displayName`, `avatarId`, `ready`, `score`, `joinedAt`, `lastSeenAtMs` |
+| `rooms/{roomCode}/players/{playerId}` | stable player/session state (plus temporary phase-1 compatibility timestamp during presence migration) | `uid`, `displayName`, `avatarId`, `ready`, `score`, `joinedAt`, `lastSeenAtMs` |
+| `rooms/{roomCode}/presence/{playerId}` | server-owned room liveness state | `playerId`, `lastSeenAtMs` |
 | `rooms/{roomCode}/rounds/{roundIndex}` | immutable round outcomes/history | `promptId`, `choices`, `forceAssignedPlayerIds`, `bonusEligiblePlayerId`, `verdicts`, `outcome`, `dissenterPlayerId`, `startedAt`, `resolvedAt` |
 
 ### Player Session Model
@@ -48,7 +49,12 @@ The plan uses high-cadence user-owned validation across UX tasks, an agent-first
 - `ready`: lobby readiness flag controlled by the player.
 - `score`: cumulative session score across rounds.
 - `joinedAt`: server timestamp used for deterministic list ordering/tie handling.
-- `lastSeenAtMs`: server-maintained presence heartbeat timestamp used to evict stale players after the configured disconnect grace window.
+- `lastSeenAtMs`: temporary phase-1 compatibility field retained on the player doc during the presence-split rollout; the dedicated presence record is the long-term authoritative liveness source.
+
+### Presence Session Model
+`Presence` is a server-owned room-liveness model stored at `rooms/{roomId}/presence/{playerId}`.
+- `playerId`: player/session id matching the player doc id.
+- `lastSeenAtMs`: server-maintained heartbeat timestamp used for inactive/removal decisions.
 
 ### Prompt Seed Interface
 | File | Schema |
@@ -124,6 +130,8 @@ Goal: finalize correctness and deployment readiness.
 | Task ID | Task | Deliverables | Agent-owned validation | User-owned validation | Gate |
 |---|---|---|---|---|---|
 | M5-T1 | Full emulator scenarios | end-to-end integration suite for full 10-round lifecycle and critical edge cases | full `pnpm verify` including integration/rules suites | None | PASS on green verify |
+| M5-T1A | Presence data-model split (phase 1) | dedicated `presence` subcollection, true dual-write heartbeat compatibility, presence-aware cleanup/sweep paths, and corresponding docs/rules/index updates | targeted functions/web tests plus full `pnpm verify` | None | PASS on green checks |
+| M5-T1B | Presence data-model cleanup (phase 2) | remove legacy player heartbeat writes, remove legacy fallback cleanup reads, and finalize the stable player/presence boundary after validating phase 1 | targeted functions/web tests plus full `pnpm verify` | None | PASS on green checks |
 | M5-T2 | Deployment readiness | standard Firebase Hosting + Functions config, static-export-friendly frontend routing, production env var docs, and deploy/runbook updates | build/export/deploy-dry-run checks | None | PASS on successful dry-run checks |
 | M5-T3 | Final acceptance session | consolidated multiplayer acceptance checklist mapped to spec | re-run `pnpm verify` on final state | Full real-session pass/fail feedback | PENDING until user outcome; then PASS/FAIL |
 
@@ -152,6 +160,7 @@ Goal: finalize correctness and deployment readiness.
 22. Scheduled disconnect cleanup: a periodic backend sweep processes soft/hard stale-player cleanup and ends empty rooms even if no client remains connected to trigger cleanup.
 23. Recovery gate behavior: when a previously hidden in-room tab returns to foreground, the client awaits a heartbeat result before allowing room actions or phase-driving ticks to proceed; successful recovery resumes play, and failed recovery exits cleanly with the inactivity message.
 24. Post-expiry cleanup trigger is deferred in MVP; no automatic deletion trigger is implemented in this plan.
+25. Presence split phase 1: room create/join allocate matching `presence` docs, `heartbeatRoom` dual-writes both `presence.lastSeenAtMs` and legacy `players.lastSeenAtMs`, cleanup prefers `presence` when present and falls back to legacy player timestamps otherwise, and hard-removal leaves no orphaned `presence` docs.
 
 ## Required User-Owned Validation Checklists (Expanded)
 1. Prompt pack review: appropriateness, variety, and fun factor.
@@ -176,7 +185,7 @@ Goal: finalize correctness and deployment readiness.
 
 ## Assumptions and Defaults
 1. No staging Firebase project is required for emulator/rules testing.
-2. Presence uses callable heartbeats every `15s`, a soft timeout at `45s`, hard removal at `3m`, a scheduled cleanup sweep every `1 minute`, and a lightweight foreground recovery gate.
+2. Presence uses callable heartbeats every `15s`, a soft timeout at `45s`, hard removal at `3m`, a scheduled cleanup sweep every `1 minute`, and a lightweight foreground recovery gate. Presence state is being migrated in two releases: phase 1 dual-writes `players` + `presence`, while phase 2 removes the legacy player heartbeat writes and fallback reads.
 3. No advanced reconnect flows beyond the recovery gate, RTDB presence, or rate-limiting implementation is included in MVP.
 4. Hold-to-act (2s) is treated as UX protection; authoritative validation is role/phase based.
 5. Prompt moderation remains offline/manual via vetted seed content.

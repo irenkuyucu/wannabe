@@ -24,6 +24,22 @@ async function clearFirestoreEmulator(): Promise<void> {
   }
 }
 
+async function setPresenceTimestamp(
+  store: FirestoreRoomStore,
+  roomId: string,
+  playerId: string,
+  lastSeenAtMs: number,
+) {
+  await Promise.all([
+    store.updatePlayer(roomId, playerId, {
+      lastSeenAtMs,
+    }),
+    store.updatePresence(roomId, playerId, {
+      lastSeenAtMs,
+    }),
+  ]);
+}
+
 runWithEmulator("room lifecycle persists records in Firestore emulator", async () => {
   await clearFirestoreEmulator();
 
@@ -59,10 +75,22 @@ runWithEmulator("room lifecycle persists records in Firestore emulator", async (
     .collection("players")
     .doc("host-uid")
     .get();
+  const hostPresenceSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("presence")
+    .doc("host-uid")
+    .get();
   const p2Snapshot = await db
     .collection("rooms")
     .doc(created.roomId)
     .collection("players")
+    .doc("p2")
+    .get();
+  const p2PresenceSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("presence")
     .doc("p2")
     .get();
 
@@ -70,7 +98,9 @@ runWithEmulator("room lifecycle persists records in Firestore emulator", async (
   assert.equal(roomSnapshot.get("phase"), "choice");
   assert.equal(roomSnapshot.get("phaseDeadlineAtMs"), now + 60_000);
   assert.equal(hostSnapshot.get("displayName"), "Alex");
+  assert.equal(hostPresenceSnapshot.get("lastSeenAtMs"), 1_710_000_000_000);
   assert.equal(p2Snapshot.get("displayName"), "Alex (2)");
+  assert.equal(p2PresenceSnapshot.get("lastSeenAtMs"), 1_710_000_000_000);
 });
 
 runWithEmulator("heartbeatRoom persists presence timestamps and hard-timeout sweeps end empty rooms", async () => {
@@ -98,11 +128,16 @@ runWithEmulator("heartbeatRoom persists presence timestamps and hard-timeout swe
     .collection("players")
     .doc("host-uid")
     .get();
+  const beforeStalePresence = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("presence")
+    .doc("host-uid")
+    .get();
   assert.equal(beforeStale.get("lastSeenAtMs"), now);
+  assert.equal(beforeStalePresence.get("lastSeenAtMs"), now);
 
-  await store.updatePlayer(created.roomId, "host-uid", {
-    lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
-  });
+  await setPresenceTimestamp(store, created.roomId, "host-uid", now - HARD_TIMEOUT_MS - 1);
 
   const sweep = await service.sweepStaleRooms();
   const roomSnapshot = await db.collection("rooms").doc(created.roomId).get();
@@ -112,6 +147,12 @@ runWithEmulator("heartbeatRoom persists presence timestamps and hard-timeout swe
     .collection("players")
     .doc("host-uid")
     .get();
+  const hostPresenceSnapshot = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("presence")
+    .doc("host-uid")
+    .get();
 
   assert.deepEqual(sweep, {
     roomsProcessed: 1,
@@ -119,6 +160,7 @@ runWithEmulator("heartbeatRoom persists presence timestamps and hard-timeout swe
   });
   assert.equal(roomSnapshot.get("status"), "ended");
   assert.equal(hostSnapshot.exists, false);
+  assert.equal(hostPresenceSnapshot.exists, false);
 });
 
 runWithEmulator(
@@ -143,9 +185,7 @@ runWithEmulator(
     });
     await service.setReady({ uid: "host-uid", roomId: created.roomId, ready: true });
 
-    await store.updatePlayer(created.roomId, "host-uid", {
-      lastSeenAtMs: now - SOFT_TIMEOUT_MS - 1,
-    });
+    await setPresenceTimestamp(store, created.roomId, "host-uid", now - SOFT_TIMEOUT_MS - 1);
 
     await service.setReady({ uid: "p2", roomId: created.roomId, ready: true });
 
@@ -191,9 +231,7 @@ runWithEmulator(
       roomCode: created.roomCode,
       displayName: "Blake",
     });
-    await store.updatePlayer(created.roomId, "p2", {
-      lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
-    });
+    await setPresenceTimestamp(store, created.roomId, "p2", now - HARD_TIMEOUT_MS - 1);
 
     await service.setReady({ uid: "host-uid", roomId: created.roomId, ready: true });
 
@@ -210,11 +248,18 @@ runWithEmulator(
       .collection("players")
       .doc("p2")
       .get();
+    const guestPresenceSnapshot = await db
+      .collection("rooms")
+      .doc(created.roomId)
+      .collection("presence")
+      .doc("p2")
+      .get();
 
     assert.equal(roomSnapshot.get("status"), "lobby");
     assert.equal(roomSnapshot.get("hostPlayerId"), "host-uid");
     assert.equal(hostSnapshot.get("ready"), true);
     assert.equal(guestSnapshot.exists, false);
+    assert.equal(guestPresenceSnapshot.exists, false);
 
     await assert.rejects(
       () => service.startGame({ uid: "host-uid", roomId: created.roomId }),

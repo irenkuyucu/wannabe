@@ -66,12 +66,25 @@ async function createStartedGame(params?: {
     playerIds,
     async refreshPresence(activePlayerIds = playerIds) {
       await Promise.all(
-        activePlayerIds.map((playerId) =>
+        activePlayerIds.flatMap((playerId) => [
           store.updatePlayer(created.roomId, playerId, {
             lastSeenAtMs: now,
           }),
-        ),
+          store.updatePresence(created.roomId, playerId, {
+            lastSeenAtMs: now,
+          }),
+        ]),
       );
+    },
+    async setPresenceTimestamp(playerId: string, lastSeenAtMs: number) {
+      await Promise.all([
+        store.updatePlayer(created.roomId, playerId, {
+          lastSeenAtMs,
+        }),
+        store.updatePresence(created.roomId, playerId, {
+          lastSeenAtMs,
+        }),
+      ]);
     },
     get now() {
       return now;
@@ -352,6 +365,7 @@ test("advanceResolution auto-promotes the next remaining player when the host is
 
   await advanceToResolution(game);
   await game.store.deletePlayer(game.created.roomId, "host");
+  await game.store.deletePresence(game.created.roomId, "host");
 
   await assert.rejects(
     () => game.actions.advanceResolution({ uid: "p3", roomId: game.created.roomId }),
@@ -381,6 +395,7 @@ test("in-game member actions promote a replacement host before resolution", asyn
   });
 
   await game.store.deletePlayer(game.created.roomId, "host");
+  await game.store.deletePresence(game.created.roomId, "host");
 
   await game.actions.submitChoice({
     uid: "p2",
@@ -402,9 +417,7 @@ test("stale players are pruned before choice submissions and no longer block pha
     playerIds: ["host", "p2", "p3"],
   });
 
-  await game.store.updatePlayer(game.created.roomId, "p3", {
-    lastSeenAtMs: game.now - HARD_TIMEOUT_MS - 1,
-  });
+  await game.setPresenceTimestamp("p3", game.now - HARD_TIMEOUT_MS - 1);
 
   await game.actions.submitChoice({ uid: "host", roomId: game.created.roomId, side: "A" });
   await game.actions.submitChoice({ uid: "p2", roomId: game.created.roomId, side: "B" });
@@ -425,9 +438,7 @@ test("soft-inactive players still remain in round membership until hard removal"
     playerIds: ["host", "p2", "p3"],
   });
 
-  await game.store.updatePlayer(game.created.roomId, "p3", {
-    lastSeenAtMs: game.now - SOFT_TIMEOUT_MS - 1,
-  });
+  await game.setPresenceTimestamp("p3", game.now - SOFT_TIMEOUT_MS - 1);
 
   await game.actions.submitChoice({ uid: "host", roomId: game.created.roomId, side: "A" });
   await game.actions.submitChoice({ uid: "p2", roomId: game.created.roomId, side: "B" });
@@ -451,9 +462,7 @@ test("resolution scoring ignores players removed for staleness mid-round", async
   await game.actions.endArgumentTurn({ uid: "p2", roomId: game.created.roomId });
   await game.actions.advanceRebuttal({ uid: "host", roomId: game.created.roomId });
 
-  await game.store.updatePlayer(game.created.roomId, "p3", {
-    lastSeenAtMs: game.now - HARD_TIMEOUT_MS - 1,
-  });
+  await game.setPresenceTimestamp("p3", game.now - HARD_TIMEOUT_MS - 1);
 
   await game.actions.submitVerdict({
     uid: "host",
@@ -485,9 +494,7 @@ test("advanceResolution promotes a replacement host when the current host became
   });
 
   await advanceToResolution(game);
-  await game.store.updatePlayer(game.created.roomId, "host", {
-    lastSeenAtMs: game.now - SOFT_TIMEOUT_MS - 1,
-  });
+  await game.setPresenceTimestamp("host", game.now - SOFT_TIMEOUT_MS - 1);
 
   await assert.rejects(
     () => game.actions.advanceResolution({ uid: "p3", roomId: game.created.roomId }),
@@ -508,6 +515,8 @@ test("advanceResolution ends the room immediately when the host is missing and n
   await advanceToResolution(game);
   await game.store.deletePlayer(game.created.roomId, "host");
   await game.store.deletePlayer(game.created.roomId, "p2");
+  await game.store.deletePresence(game.created.roomId, "host");
+  await game.store.deletePresence(game.created.roomId, "p2");
 
   const result = await game.actions.advanceResolution({
     uid: "host",
