@@ -134,6 +134,15 @@ test("players can progress through a one-round session and the host ends the roo
   await expect(hostPage.getByRole("button", { name: /return to main menu/i })).toBeVisible();
   await expect(guestPage.getByRole("button", { name: /return to main menu/i })).toBeVisible();
 
+  const lateMemberPage = await hostPage.context().newPage();
+  await lateMemberPage.goto(`/?live=${roomCode}`);
+  await expect(lateMemberPage.getByRole("heading", { name: /^winner winner!$/i })).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(lateMemberPage.getByText(/^Alice wins the game!$/i)).toBeVisible();
+  await expect(lateMemberPage.getByRole("button", { name: /return to main menu/i })).toBeVisible();
+  await lateMemberPage.close();
+
   await guestPage.getByRole("button", { name: /return to main menu/i }).click();
   await waitForEntrySurface(guestPage);
   await expect(guestPage.getByText(/^Be someone!$/i)).toBeVisible();

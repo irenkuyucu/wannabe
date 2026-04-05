@@ -30,6 +30,21 @@ test("share-link entry opens the explicit invite query state on the root route",
   await expect(page.getByRole("textbox", { name: /room code/i })).toHaveCount(0);
 });
 
+test("lobby share-link action copies the explicit invite URL", async ({ page }) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"], {
+    origin: "http://localhost:3000",
+  });
+
+  const { roomCode } = await createRoomFromEntry(page, "Host");
+  const shareButton = page.getByRole("button", { name: /^share link$/i });
+
+  await shareButton.click();
+  await expect(page.getByRole("button", { name: /^copied$/i })).toBeVisible();
+
+  const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+  expect(clipboardText).toBe(`http://localhost:3000/?join=${roomCode}`);
+});
+
 test("refreshing a live room route restores the lobby instead of dropping to join mode", async ({
   page,
 }) => {

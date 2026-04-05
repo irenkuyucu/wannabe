@@ -117,7 +117,7 @@ export async function joinRoomFromInvite(page: Page, roomCode: string, displayNa
   try {
     await waitForLobbyReadyWithRecovery(page, roomCode, [displayName]);
     return page;
-  } catch (error) {
+  } catch {
     const recoveredPage = await page.context().newPage();
     await recoveredPage.goto(`/?live=${roomCode}`);
     await waitForLobbyReadyWithRecovery(recoveredPage, roomCode, [displayName]);

@@ -48,16 +48,17 @@ This command:
 
 1. builds the static frontend export with `pnpm build`
 2. validates Firebase Hosting output from `out/`
-3. validates Functions and Firestore index deployment with `firebase deploy --dry-run`
+3. validates Functions and Firestore index deployment against `wannabe-game`
 
 ## Production Deploy
 
 Deploy the frontend, functions, and Firestore indexes together:
 
 ```bash
-pnpm build
-firebase deploy --only hosting,functions,firestore:indexes
+pnpm deploy
 ```
+
+The root deploy scripts pin the Firebase project explicitly with `--project wannabe-game`, and [firebase.json](/Users/irencankuyucu/wannabe/firebase.json) now pins the default Hosting site as `wannabe-game`, so the first production release does not depend on CLI alias inference.
 
 ## Post-Deploy Checks
 

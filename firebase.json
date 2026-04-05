@@ -8,6 +8,7 @@
   },
   "hosting": {
     "public": "out",
+    "site": "wannabe-game",
     "ignore": [
       "firebase.json",
       "**/.*",
