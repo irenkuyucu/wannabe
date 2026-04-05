@@ -131,6 +131,8 @@ const defaultDependencies: WannabeAppDependencies = {
 };
 
 const PERMISSION_DENIED_MESSAGE_PATTERN = /Missing or insufficient permissions/i;
+const INITIAL_LOBBY_PERMISSION_RETRY_LIMIT = 8;
+const INITIAL_LOBBY_PERMISSION_RETRY_BASE_MS = 150;
 
 function getValidationError(displayName: string, roomCode: string, mode: EntryMode) {
   if (getDisplayNameIssue(displayName)) {
@@ -214,16 +216,29 @@ export function WannabeAppInner({
   const [dismissedHostPromotionKeys, setDismissedHostPromotionKeys] = useState<string[]>([]);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [isRecoveringPresence, setIsRecoveringPresence] = useState(false);
+  const [lobbySubscriptionNonce, setLobbySubscriptionNonce] = useState(0);
   const tickingPhaseKeyRef = useRef<string | null>(null);
   const hadActiveMembershipRef = useRef(false);
   const wasHiddenRef = useRef(false);
+  const initialLobbyRetryCountRef = useRef(0);
+  const initialLobbyRetryTimeoutRef = useRef<number | null>(null);
   const usesInjectedRouteState = initialInviteRoomCode !== null || initialLiveRoomCode !== null;
   const currentPlayer = useMemo(
-    () => players.find((player) => player.playerId === authUid) ?? null,
+    () => players.find((player) => player.uid === authUid) ?? null,
     [authUid, players],
   );
   const currentPlayerId = currentPlayer?.playerId ?? null;
+  const clearInitialLobbyRetryTimeout = useCallback(() => {
+    if (initialLobbyRetryTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(initialLobbyRetryTimeoutRef.current);
+    initialLobbyRetryTimeoutRef.current = null;
+  }, []);
   const resetToMain = useCallback((nextErrorMessage: string | null = null) => {
+    clearInitialLobbyRetryTimeout();
+    initialLobbyRetryCountRef.current = 0;
     setRoomId(null);
     setRoom(null);
     setRound(null);
@@ -233,7 +248,7 @@ export function WannabeAppInner({
     setJoinCode("");
     setErrorMessage(nextErrorMessage);
     router.replace("/");
-  }, [router]);
+  }, [clearInitialLobbyRetryTimeout, router]);
 
   const enterInviteRouteState = useCallback((nextRoomCode: string) => {
     const normalizedRoomCode = normalizeRoomCodeInput(nextRoomCode);
@@ -293,6 +308,28 @@ export function WannabeAppInner({
 
     setErrorMessage(getErrorMessageForUi(error));
   }, [getErrorMessageForUi, handleReturnToMain, isLostRoomMembershipErrorMatcher]);
+
+  const handleLobbySubscriptionError = useEffectEvent((message: string) => {
+    startTransition(() => {
+      if (
+        PERMISSION_DENIED_MESSAGE_PATTERN.test(message) &&
+        scheduleInitialLobbyRetry()
+      ) {
+        setRoom(null);
+        setPlayers([]);
+        setErrorMessage(null);
+        return;
+      }
+      if (
+        hadActiveMembershipRef.current &&
+        PERMISSION_DENIED_MESSAGE_PATTERN.test(message)
+      ) {
+        void handleReturnToMain(ROOM_DISCONNECTED_MESSAGE);
+        return;
+      }
+      setErrorMessage(message);
+    });
+  });
 
   useEffect(() => {
     if (!showSplash) {
@@ -362,11 +399,46 @@ export function WannabeAppInner({
 
   useEffect(() => {
     if (!roomId || !authUid) {
+      clearInitialLobbyRetryTimeout();
+      initialLobbyRetryCountRef.current = 0;
+      setLobbySubscriptionNonce(0);
       setRoom(null);
       setPlayers([]);
       setRound(null);
       setLatestRound(null);
       setDismissedHostPromotionKeys([]);
+      return undefined;
+    }
+  }, [authUid, clearInitialLobbyRetryTimeout, roomId]);
+
+  const scheduleInitialLobbyRetry = useEffectEvent(() => {
+    if (
+      !roomId ||
+      !authUid ||
+      hadActiveMembershipRef.current ||
+      initialLobbyRetryTimeoutRef.current !== null ||
+      initialLobbyRetryCountRef.current >= INITIAL_LOBBY_PERMISSION_RETRY_LIMIT
+    ) {
+      return false;
+    }
+
+    clearInitialLobbyRetryTimeout();
+    const delayMs = Math.min(
+      INITIAL_LOBBY_PERMISSION_RETRY_BASE_MS * 2 ** initialLobbyRetryCountRef.current,
+      1_500,
+    );
+    initialLobbyRetryCountRef.current += 1;
+    initialLobbyRetryTimeoutRef.current = window.setTimeout(() => {
+      startTransition(() => {
+        setLobbySubscriptionNonce((current) => current + 1);
+      });
+    }, delayMs);
+
+    return true;
+  });
+
+  useEffect(() => {
+    if (!roomId || !authUid) {
       return undefined;
     }
 
@@ -377,32 +449,56 @@ export function WannabeAppInner({
             setRoom(nextRoom);
             if (!nextRoom) {
               setErrorMessage("Room is no longer available.");
+            } else {
+              setErrorMessage(null);
             }
           });
         },
         onPlayers: (nextPlayers) => {
           startTransition(() => {
+            if (nextPlayers.some((player) => player.uid === authUid)) {
+              clearInitialLobbyRetryTimeout();
+              initialLobbyRetryCountRef.current = 0;
+              setErrorMessage(null);
+            }
             setPlayers(nextPlayers);
           });
         },
-        onError: (message) => {
-          startTransition(() => {
-            if (
-              hadActiveMembershipRef.current &&
-              PERMISSION_DENIED_MESSAGE_PATTERN.test(message)
-            ) {
-              void handleReturnToMain(ROOM_DISCONNECTED_MESSAGE);
-              return;
-            }
-            setErrorMessage(message);
-          });
-        },
+        onError: handleLobbySubscriptionError,
       });
     } catch (error) {
       setErrorMessage(getErrorMessageForUi(error));
       return undefined;
     }
-  }, [authUid, getErrorMessageForUi, handleReturnToMain, roomId, subscribeToLobbyAction]);
+  }, [
+    authUid,
+    clearInitialLobbyRetryTimeout,
+    getErrorMessageForUi,
+    lobbySubscriptionNonce,
+    roomId,
+    subscribeToLobbyAction,
+  ]);
+
+  useEffect(() => {
+    if (
+      !roomId ||
+      !authUid ||
+      currentPlayer ||
+      hadActiveMembershipRef.current ||
+      room?.status === "ended"
+    ) {
+      return undefined;
+    }
+
+    scheduleInitialLobbyRetry();
+    return undefined;
+  }, [
+    authUid,
+    currentPlayer,
+    players.length,
+    room?.status,
+    roomId,
+  ]);
 
   useEffect(() => {
     if (
@@ -496,6 +592,7 @@ export function WannabeAppInner({
     hostPromotionNotice && !dismissedHostPromotionKeys.includes(hostPromotionNotice.key)
       ? hostPromotionNotice
       : null;
+  const entryActionsDisabled = Boolean(pendingAction || authError || !authUid);
 
   useEffect(() => {
     if (!visibleHostPromotionNotice) {
@@ -1009,14 +1106,14 @@ export function WannabeAppInner({
     return (
       <MenuScreen
         authError={authError}
-        createDisabled={Boolean(pendingAction || authError)}
+        createDisabled={entryActionsDisabled}
         createPending={pendingAction === "create"}
         displayName={displayName}
         errorMessage={errorMessage}
         inviteRoomCode={inviteRoomCode}
         isAvatarPickerOpen={isAvatarPickerOpen}
         joinCode={joinCode}
-        joinDisabled={Boolean(pendingAction || authError)}
+        joinDisabled={entryActionsDisabled}
         joinPending={pendingAction === "join"}
         onAvatarPickerClose={() => setIsAvatarPickerOpen(false)}
         onAvatarPickerOpen={() => setIsAvatarPickerOpen(true)}
@@ -1159,14 +1256,14 @@ export function WannabeAppInner({
   return (
     <MenuScreen
       authError={authError}
-      createDisabled={Boolean(pendingAction || authError)}
+      createDisabled={entryActionsDisabled}
       createPending={pendingAction === "create"}
       displayName={displayName}
       errorMessage={errorMessage}
       inviteRoomCode={inviteRoomCode}
       isAvatarPickerOpen={isAvatarPickerOpen}
       joinCode={joinCode}
-      joinDisabled={Boolean(pendingAction || authError)}
+      joinDisabled={entryActionsDisabled}
       joinPending={pendingAction === "join"}
       onAvatarPickerClose={() => setIsAvatarPickerOpen(false)}
       onAvatarPickerOpen={() => setIsAvatarPickerOpen(true)}

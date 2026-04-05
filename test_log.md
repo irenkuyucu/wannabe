@@ -113,3 +113,27 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Expected behavior: The repo should build as a static export, local verification should stay green, and the Firebase deploy dry-run should validate Hosting, Functions, and Firestore indexes successfully against the target project.
 - Observed behavior: Static export and local verification succeeded (`pnpm build`, `pnpm verify`), but the Firebase deploy dry-run failed when enabling required Functions deployment APIs because project `wannabe-game` is not on the Blaze plan. Firebase reported that `cloudbuild.googleapis.com` cannot be enabled until billing is upgraded.
 - Result: `FAIL`
+
+- Date: 2026-04-05
+- Test ID: TEST-012
+- Milestone/task reference: Post-M5 entry auth-readiness guard follow-up
+- Scenario: Agent-owned browser validation after disabling entry actions until anonymous auth resolves, using `pnpm exec playwright test tests/e2e/multiplayer-flow.spec.ts tests/e2e/home.spec.ts`.
+- Expected behavior: The app should keep create/join disabled until auth is ready, and the targeted browser smoke should pass end to end against the local emulator stack.
+- Observed behavior: The new unit regression test passed, but Playwright still failed in `tests/e2e/multiplayer-flow.spec.ts` while waiting for the guest invite flow to reach the lobby heading. The app-level auth gating landed, but the existing invite-join helper still clicks immediately after the button appears and has not yet been updated to wait for the new auth-readiness gate.
+- Result: `FAIL`
+
+- Date: 2026-04-05
+- Test ID: TEST-013
+- Milestone/task reference: Post-M5 Playwright/browser follow-up
+- Scenario: Agent-owned browser validation after updating the E2E helper to wait for enabled entry actions, backend room membership, and a recovered live-room load, using repeated runs of `pnpm exec playwright test tests/e2e/multiplayer-flow.spec.ts tests/e2e/home.spec.ts`.
+- Expected behavior: The multiplayer browser smoke should recover from the auth-gated entry flow, allow the guest invite join to settle onto a hydrated live-room lobby, and then complete the one-round game flow successfully.
+- Observed behavior: The helper changes got past the original stale entry-action race, but Playwright still failed in `tests/e2e/multiplayer-flow.spec.ts`. After invite join, the guest flow can still end up on a live-room shell or loading surface without hydrating the joined player, even after backend membership is observed and the helper retries the live-room load via reload/new-page recovery. Browser validation therefore remains red for a deeper guest live-room hydration issue rather than the original button-readiness race.
+- Result: `FAIL`
+
+- Date: 2026-04-05
+- Test ID: TEST-014
+- Milestone/task reference: Post-M5 browser hydration follow-up
+- Scenario: Agent-owned validation after isolating the live-room hydration loop, stabilizing the lobby subscription effect, and keeping the Playwright helper aligned with the auth-gated entry flow.
+- Expected behavior: The targeted browser smoke should pass against a clean local dev/emulator stack, with both the home-route checks and the one-round multiplayer flow completing without the guest or host lobby getting stuck.
+- Observed behavior: Observed behavior matches expected behavior. `node --import tsx --test tests/live-room-hydration.test.tsx tests/entry-auth-readiness.test.tsx` passed, and `pnpm exec playwright test tests/e2e/multiplayer-flow.spec.ts tests/e2e/home.spec.ts --reporter=line` passed with 4/4 tests green on a clean restart.
+- Result: `PASS`

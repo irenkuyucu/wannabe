@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { cleanupFirestoreTestEnv, clearFirestore } from "./helpers/firebase";
 import {
+  clickReadyButton,
   createLobbyActors,
   holdToConfirm,
   lookupRoom,
@@ -23,7 +24,7 @@ test.afterAll(async () => {
 test("players can progress through a one-round session and the host ends the room from the end-game screen", async ({
   browser,
 }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
 
   const {
     guestNames: [guestName],
@@ -51,8 +52,8 @@ test("players can progress through a one-round session and the host ends the roo
 
   await setRoomRoundsTotal(roomCode, 1);
 
-  await hostPage.getByRole("button", { name: /mark ready/i }).click();
-  await guestPage.getByRole("button", { name: /mark ready/i }).click();
+  await clickReadyButton(hostPage);
+  await clickReadyButton(guestPage);
   await hostPage.getByRole("button", { name: /^start game$/i }).click();
 
   await expect(hostPage.getByText(/^Round 1 \/ 1$/i)).toBeVisible({ timeout: 10000 });

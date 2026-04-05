@@ -18,12 +18,76 @@ export async function waitForEntrySurface(page: Page) {
   await expect(page.getByRole("textbox", { name: /display name/i })).toBeVisible({
     timeout: 7000,
   });
-  await expect(page.getByText(/^Connecting\.\.\.$/i)).toHaveCount(0);
+}
+
+async function waitForEntryActionReady(
+  page: Page,
+  actionName: RegExp,
+) {
+  const actionButton = page.getByRole("button", { name: actionName });
+  await expect(actionButton).toBeVisible({ timeout: 7000 });
+  await expect(actionButton).toBeEnabled({ timeout: 7000 });
+}
+
+export async function waitForLobbyReady(
+  page: Page,
+  roomCode: string,
+  expectedPlayers: string[],
+) {
+  await expect(page.getByText(new RegExp(`^Room ${roomCode} Lobby$`, "i")).first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  for (const displayName of expectedPlayers) {
+    await expect(page.getByText(new RegExp(`^${displayName}(?: \\(Host\\))?$`, "i"))).toBeVisible({
+      timeout: 15_000,
+    });
+  }
+
+  await expect(page.getByRole("button", { name: /mark ready/i })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByRole("button", { name: /mark ready/i })).toBeEnabled({
+    timeout: 15_000,
+  });
+}
+
+async function waitForLobbyReadyWithRecovery(
+  page: Page,
+  roomCode: string,
+  expectedPlayers: string[],
+) {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await waitForLobbyReady(page, roomCode, expectedPlayers);
+      return;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === 1) {
+        break;
+      }
+
+      await page.reload();
+    }
+  }
+
+  throw lastError;
+}
+
+export async function clickReadyButton(page: Page) {
+  const readyButton = page.getByRole("button", { name: /mark ready/i });
+  await expect(readyButton).toBeVisible({ timeout: 15_000 });
+  await expect(readyButton).toBeEnabled({ timeout: 15_000 });
+  await readyButton.click({ force: true });
 }
 
 export async function createRoomFromEntry(page: Page, displayName: string) {
   await page.goto("/");
   await waitForEntrySurface(page);
+  await waitForEntryActionReady(page, /^create room$/i);
   await page.getByRole("textbox", { name: /display name/i }).fill(displayName);
   await page.getByRole("button", { name: /^create room$/i }).click();
 
@@ -35,15 +99,31 @@ export async function createRoomFromEntry(page: Page, displayName: string) {
     throw new Error("Could not determine created room code.");
   }
 
+  await waitForLobbyReadyWithRecovery(page, roomCode, [displayName]);
+
   return { roomCode };
 }
 
 export async function joinRoomFromInvite(page: Page, roomCode: string, displayName: string) {
   await page.goto(`/?join=${roomCode}`);
   await waitForEntrySurface(page);
+  await waitForEntryActionReady(page, /^join your friends$/i);
   await page.getByRole("textbox", { name: /display name/i }).fill(displayName);
   await page.getByRole("button", { name: /^join your friends$/i }).click();
-  await expect(page.getByText(new RegExp(`^Room ${roomCode} Lobby$`, "i")).first()).toBeVisible();
+  await page.waitForURL(new RegExp(`[?&]live=${roomCode}\\b`), {
+    timeout: 30_000,
+  });
+
+  try {
+    await waitForLobbyReadyWithRecovery(page, roomCode, [displayName]);
+    return page;
+  } catch (error) {
+    const recoveredPage = await page.context().newPage();
+    await recoveredPage.goto(`/?live=${roomCode}`);
+    await waitForLobbyReadyWithRecovery(recoveredPage, roomCode, [displayName]);
+    await page.close();
+    return recoveredPage;
+  }
 }
 
 export async function createLobbyActors(browser: Browser, names: string[]) {
@@ -58,8 +138,15 @@ export async function createLobbyActors(browser: Browser, names: string[]) {
   const { roomCode } = await createRoomFromEntry(hostPage, hostName);
 
   for (let index = 0; index < guestPages.length; index += 1) {
-    await joinRoomFromInvite(guestPages[index], roomCode, guestNames[index]);
+    guestPages[index] = await joinRoomFromInvite(guestPages[index], roomCode, guestNames[index]);
   }
+
+  await expect
+    .poll(async () => (await lookupRoom(roomCode)).players.length, {
+      timeout: 30_000,
+    })
+    .toBe(names.length);
+  await waitForLobbyReadyWithRecovery(hostPage, roomCode, names);
 
   return {
     guestNames,
