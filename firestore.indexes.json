@@ -2,20 +2,6 @@
   "indexes": [],
   "fieldOverrides": [
     {
-      "collectionGroup": "players",
-      "fieldPath": "lastSeenAtMs",
-      "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        }
-      ]
-    },
-    {
       "collectionGroup": "presence",
       "fieldPath": "lastSeenAtMs",
       "indexes": [

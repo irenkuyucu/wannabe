@@ -19,14 +19,9 @@ async function setPresenceTimestamp(
   playerId: string,
   lastSeenAtMs: number,
 ) {
-  await Promise.all([
-    store.updatePlayer(roomId, playerId, {
-      lastSeenAtMs,
-    }),
-    store.updatePresence(roomId, playerId, {
-      lastSeenAtMs,
-    }),
-  ]);
+  await store.updatePresence(roomId, playerId, {
+    lastSeenAtMs,
+  });
 }
 
 test("display name validation enforces MVP rules", () => {
@@ -136,6 +131,8 @@ test("create and join allocate matching presence records", async () => {
 
   const hostPresence = await store.getPresence(created.roomId, "host-uid");
   const guestPresence = await store.getPresence(created.roomId, "p2");
+  const hostPlayer = await store.getPlayer(created.roomId, "host-uid");
+  const guestPlayer = await store.getPlayer(created.roomId, "p2");
 
   assert.deepEqual(hostPresence, {
     playerId: "host-uid",
@@ -145,6 +142,8 @@ test("create and join allocate matching presence records", async () => {
     playerId: "p2",
     lastSeenAtMs: now,
   });
+  assert.equal("lastSeenAtMs" in (hostPlayer ?? {}), false);
+  assert.equal("lastSeenAtMs" in (guestPlayer ?? {}), false);
 });
 
 test("start game enforces host/all-ready/joinable constraints", async () => {
@@ -286,11 +285,11 @@ test("heartbeatRoom refreshes the active player's presence timestamp", async () 
     uid: "host-uid",
     roomId: created.roomId,
   });
-  const host = await store.getPlayer(created.roomId, "host-uid");
+  const hostPlayer = await store.getPlayer(created.roomId, "host-uid");
   const hostPresence = await store.getPresence(created.roomId, "host-uid");
 
   assert.deepEqual(heartbeat, { ok: true });
-  assert.equal(host?.lastSeenAtMs, now);
+  assert.equal("lastSeenAtMs" in (hostPlayer ?? {}), false);
   assert.equal(hostPresence?.lastSeenAtMs, now);
 });
 
@@ -307,10 +306,10 @@ test("heartbeatRoom pre-refresh prevents self-eviction after hard timeout", asyn
     uid: "host-uid",
     roomId: created.roomId,
   });
-  const host = await store.getPlayer(created.roomId, "host-uid");
+  const hostPresence = await store.getPresence(created.roomId, "host-uid");
 
   assert.deepEqual(heartbeat, { ok: true });
-  assert.equal(host?.lastSeenAtMs, now);
+  assert.equal(hostPresence?.lastSeenAtMs, now);
 });
 
 test("heartbeatRoom returns not-found after hard eviction already happened", async () => {
@@ -337,9 +336,6 @@ test("cleanupRoomPresence prefers dedicated presence records when present", asyn
   const created = await service.createRoom({ uid: "host-uid", displayName: "Host" });
   await service.joinRoom({ uid: "p2", roomCode: created.roomCode, displayName: "Blake" });
 
-  await store.updatePlayer(created.roomId, "p2", {
-    lastSeenAtMs: now,
-  });
   await store.updatePresence(created.roomId, "p2", {
     lastSeenAtMs: now - HARD_TIMEOUT_MS - 1,
   });

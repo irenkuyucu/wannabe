@@ -52,7 +52,6 @@ export type PlayerDoc = {
   ready: boolean;
   score: number;
   joinedAtMs: number;
-  lastSeenAtMs: number;
 };
 
 export type RoundDoc = {

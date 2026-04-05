@@ -30,14 +30,9 @@ async function setPresenceTimestamp(
   playerId: string,
   lastSeenAtMs: number,
 ) {
-  await Promise.all([
-    store.updatePlayer(roomId, playerId, {
-      lastSeenAtMs,
-    }),
-    store.updatePresence(roomId, playerId, {
-      lastSeenAtMs,
-    }),
-  ]);
+  await store.updatePresence(roomId, playerId, {
+    lastSeenAtMs,
+  });
 }
 
 runWithEmulator("room lifecycle persists records in Firestore emulator", async () => {
@@ -98,8 +93,10 @@ runWithEmulator("room lifecycle persists records in Firestore emulator", async (
   assert.equal(roomSnapshot.get("phase"), "choice");
   assert.equal(roomSnapshot.get("phaseDeadlineAtMs"), now + 60_000);
   assert.equal(hostSnapshot.get("displayName"), "Alex");
+  assert.equal(hostSnapshot.get("lastSeenAtMs"), undefined);
   assert.equal(hostPresenceSnapshot.get("lastSeenAtMs"), 1_710_000_000_000);
   assert.equal(p2Snapshot.get("displayName"), "Alex (2)");
+  assert.equal(p2Snapshot.get("lastSeenAtMs"), undefined);
   assert.equal(p2PresenceSnapshot.get("lastSeenAtMs"), 1_710_000_000_000);
 });
 
@@ -122,19 +119,19 @@ runWithEmulator("heartbeatRoom persists presence timestamps and hard-timeout swe
     roomId: created.roomId,
   });
 
-  const beforeStale = await db
-    .collection("rooms")
-    .doc(created.roomId)
-    .collection("players")
-    .doc("host-uid")
-    .get();
   const beforeStalePresence = await db
     .collection("rooms")
     .doc(created.roomId)
     .collection("presence")
     .doc("host-uid")
     .get();
-  assert.equal(beforeStale.get("lastSeenAtMs"), now);
+  const beforeStalePlayer = await db
+    .collection("rooms")
+    .doc(created.roomId)
+    .collection("players")
+    .doc("host-uid")
+    .get();
+  assert.equal(beforeStalePlayer.get("lastSeenAtMs"), undefined);
   assert.equal(beforeStalePresence.get("lastSeenAtMs"), now);
 
   await setPresenceTimestamp(store, created.roomId, "host-uid", now - HARD_TIMEOUT_MS - 1);

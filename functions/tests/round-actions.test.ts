@@ -66,25 +66,17 @@ async function createStartedGame(params?: {
     playerIds,
     async refreshPresence(activePlayerIds = playerIds) {
       await Promise.all(
-        activePlayerIds.flatMap((playerId) => [
-          store.updatePlayer(created.roomId, playerId, {
-            lastSeenAtMs: now,
-          }),
+        activePlayerIds.map((playerId) =>
           store.updatePresence(created.roomId, playerId, {
             lastSeenAtMs: now,
           }),
-        ]),
+        ),
       );
     },
     async setPresenceTimestamp(playerId: string, lastSeenAtMs: number) {
-      await Promise.all([
-        store.updatePlayer(created.roomId, playerId, {
-          lastSeenAtMs,
-        }),
-        store.updatePresence(created.roomId, playerId, {
-          lastSeenAtMs,
-        }),
-      ]);
+      await store.updatePresence(created.roomId, playerId, {
+        lastSeenAtMs,
+      });
     },
     get now() {
       return now;

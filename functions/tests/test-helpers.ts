@@ -7,7 +7,6 @@ import type {
   RoomLifecycleStore,
   RoomRecord,
   StalePresenceMembership,
-  StalePlayerMembership,
 } from "../src/domain/room-lifecycle";
 
 export class InMemoryRoomStore implements RoomLifecycleStore {
@@ -185,23 +184,6 @@ export class InMemoryRoomStore implements RoomLifecycleStore {
           memberships.push({
             roomId,
             presence: { ...presence },
-          });
-        }
-      }
-    }
-
-    return memberships;
-  }
-
-  async listStalePlayers(cutoffLastSeenAtMs: number): Promise<StalePlayerMembership[]> {
-    const memberships: StalePlayerMembership[] = [];
-
-    for (const [roomId, roomPlayers] of this.players.entries()) {
-      for (const player of roomPlayers.values()) {
-        if (player.lastSeenAtMs <= cutoffLastSeenAtMs) {
-          memberships.push({
-            roomId,
-            player: { ...player },
           });
         }
       }

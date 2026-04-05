@@ -8,7 +8,6 @@ import type {
   RoomLifecycleStore,
   RoomRecord,
   StalePresenceMembership,
-  StalePlayerMembership,
 } from "../domain/room-lifecycle";
 
 if (getApps().length === 0) {
@@ -169,25 +168,6 @@ export class FirestoreRoomStore implements RoomLifecycleStore {
       return [{
         roomId,
         presence: presenceDoc.data() as PresenceRecord,
-      }];
-    });
-  }
-
-  async listStalePlayers(cutoffLastSeenAtMs: number): Promise<StalePlayerMembership[]> {
-    const snapshot = await this.db
-      .collectionGroup("players")
-      .where("lastSeenAtMs", "<=", cutoffLastSeenAtMs)
-      .get();
-
-    return snapshot.docs.flatMap((playerDoc) => {
-      const roomId = playerDoc.ref.parent.parent?.id;
-      if (!roomId) {
-        return [];
-      }
-
-      return [{
-        roomId,
-        player: playerDoc.data() as PlayerRecord,
       }];
     });
   }

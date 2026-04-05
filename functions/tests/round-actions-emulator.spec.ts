@@ -133,14 +133,11 @@ async function createStartedGame(params?: {
     playerIds,
     async refreshPresence(activePlayerIds = playerIds) {
       await Promise.all(
-        activePlayerIds.flatMap((playerId) => [
-          store.updatePlayer(created.roomId, playerId, {
-            lastSeenAtMs: now,
-          }),
+        activePlayerIds.map((playerId) =>
           store.updatePresence(created.roomId, playerId, {
             lastSeenAtMs: now,
           }),
-        ]),
+        ),
       );
     },
     get now() {
@@ -287,14 +284,11 @@ runWithEmulator("round actions persist timed transitions in Firestore emulator",
   const db = getFirestore();
   const refreshPresence = async (playerIds: string[]) => {
     await Promise.all(
-      playerIds.flatMap((playerId) => [
-        store.updatePlayer(created.roomId, playerId, {
-          lastSeenAtMs: now,
-        }),
+      playerIds.map((playerId) =>
         store.updatePresence(created.roomId, playerId, {
           lastSeenAtMs: now,
         }),
-      ]),
+      ),
     );
   };
 
