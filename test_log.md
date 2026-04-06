@@ -145,3 +145,38 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Expected behavior: `pnpm verify`, `pnpm build:release`, and `pnpm deploy:dry-run` should all pass, proving the repo is launch-ready from a clean checkout and the Firebase dry-run still validates the release bundle against `wannabe-game`.
 - Observed behavior: `pnpm verify` passed from a clean checkout after deleting `.next` and `functions/lib`, and `pnpm build:release` passed with production-safe env overrides. `pnpm deploy:dry-run` rebuilt successfully through the new release path but then failed at the Firebase CLI step because the local credentials are expired (`Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth`), so the final deployment validation could not complete.
 - Result: `FAIL`
+
+- Date: 2026-04-06
+- Test ID: TEST-016
+- Milestone/task reference: `M5-T3` gate
+- Scenario: User-owned post-deploy production smoke on the live Firebase Hosting site, focused on the create-room happy path after the first production publish.
+- Expected behavior: After choosing an avatar and display name, the live app should create a room successfully and transition into the lobby.
+- Observed behavior: The live site loaded, but create-room failed immediately with an `internal` toast. Browser inspection showed the callable request reached `https://europe-west1-wannabe-game.cloudfunctions.net/createRoom`, and production logs reported the request as unauthenticated before the handler ran.
+- Result: `FAIL`
+- User feedback: The deployed game is live but currently broken because room creation fails in production.
+
+- Date: 2026-04-06
+- Test ID: TEST-017
+- Milestone/task reference: `M5-T3` gate
+- Scenario: User-owned follow-up production smoke after manually making the callable transport public and retrying room creation on the live site.
+- Expected behavior: Room creation should succeed and the lobby should hydrate with the host player visible.
+- Observed behavior: Room creation started working after the Cloud Run invoker change, but the live lobby remained stuck in its loading skeleton. This matches a Firestore client-read failure; the repo deploy scripts were found to deploy Hosting, Functions, and Firestore indexes without deploying Firestore rules.
+- Result: `FAIL`
+- User feedback: The deployed room can now be created, but the lobby still does not load and likely blocks the rest of the game as well.
+
+- Date: 2026-04-06
+- Test ID: TEST-018
+- Milestone/task reference: `M5-T3` gate
+- Scenario: User-owned production smoke after deploying Firestore rules and reconciling Cloud Run invoker access for all browser-called callable services, then running through a full live round.
+- Expected behavior: The production app should support create-room, lobby hydration, ready/start actions, and a complete round without functional blockers.
+- Observed behavior: Observed behavior matches expected behavior with caveats. The live app now supports room creation, lobby hydration, callable room actions, and completion of an entire round in production. Some visual bugs remain, but the core game flow works.
+- Result: `PASS`
+- User feedback: The game is working end to end in production, though some UI polish issues are still visible.
+
+- Date: 2026-04-06
+- Test ID: TEST-019
+- Milestone/task reference: Post-production-fix repo validation
+- Scenario: Agent-owned repo gate after adding the callable invoker hotfix, corrected deploy target set, and updated production runbook/logs, using `pnpm verify` under the current Node 22 local environment.
+- Expected behavior: The repository verification stack should stay green after the release-fix changes.
+- Observed behavior: `pnpm verify` failed in `pnpm test:web` before reaching the functions/rules/emulator phases. Multiple existing `.test.mjs` files now fail with ESM named-export errors against repo-root `src/lib/*.js` modules (for example `entry-validation.js`, `in-game-ui.js`, `lobby-utils.js`, `prompt-loader.js`, `room-presence.ts`, and `session-summary.js`). This appears to be a broader local web-test/module-interop issue under the current Node 22 setup rather than a failure caused by the production hotfix itself.
+- Result: `FAIL`

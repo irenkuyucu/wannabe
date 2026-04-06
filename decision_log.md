@@ -218,3 +218,27 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: The earlier deployment-readiness pass validated the shipped architecture, but the current release contract still depends on locally generated Functions build artifacts, lacks an enforced production-env guardrail, and allows `pnpm verify` to fail on a clean checkout before `.next/types` exists. These are release-process gaps rather than product-scope gaps, and closing them before first production deploy lowers operational risk materially.
 - Alternatives considered: Treating the remaining issues as acceptable launch caveats and proceeding directly to final user-owned acceptance, or deferring the Functions runtime/tooling upgrade to a post-launch maintenance task.
 - Impacted files/modules: `PLAN.md`, `STATE.md`, `decision_log.md`, `package.json`, `functions/package.json`, `tsconfig.typecheck.json`, `DEPLOYMENT.md`, `README.md`, release-tooling scripts/tests
+
+- Date: 2026-04-06
+- Decision ID: DEC-026
+- Spec/Plan reference: `PLAN.md` M5 release-readiness validation and `SPEC.md` callable API contract
+- Decision: All 2nd-gen HTTPS callable functions explicitly set `invoker: "public"` in their shared runtime options, while keeping Firebase Authentication enforcement inside the callable handler via `request.auth`.
+- Rationale: After the Node 22 / `firebase-functions` upgrade, the live production build reached the Cloud Run service for `createRoom` but was rejected before handler execution with an unauthenticated transport-layer error. Callable functions must remain publicly invokable so the Firebase SDK can deliver the end-user ID token to the callable wrapper, after which the handler's `request.auth` check enforces app-level auth.
+- Alternatives considered: Leaving the invoker implicit and debugging client auth further, or allowing unauthenticated app-level access by weakening the callable auth guard.
+- Impacted files/modules: `functions/src/shared/constants.ts`, `functions/src/shared/callable.ts`, `functions/src/index.ts`, `functions/tests/callable-options.test.ts`
+
+- Date: 2026-04-06
+- Decision ID: DEC-027
+- Spec/Plan reference: `PLAN.md` M5 release contract and `DEPLOYMENT.md`
+- Decision: The supported release deploy target set must include Firestore rules alongside Hosting, Functions, and Firestore indexes.
+- Rationale: The first production publish succeeded for Hosting and Functions but left the live lobby stuck in its loading shell because the deploy scripts omitted `firestore:rules`, so client reads continued to use stale production rules even though server-side room creation worked via the Admin SDK.
+- Alternatives considered: Leaving rules deployment as a separate manual operator step, or relying on Functions/admin writes alone while debugging the client read failures elsewhere.
+- Impacted files/modules: `package.json`, `DEPLOYMENT.md`, `firestore.rules`
+
+- Date: 2026-04-06
+- Decision ID: DEC-028
+- Spec/Plan reference: `PLAN.md` M5 deployed-environment validation and `DEPLOYMENT.md`
+- Decision: The production runbook must explicitly include Cloud Run invoker verification/remediation for browser-called 2nd-gen callable services when production shows `403` preflight/CORS failures.
+- Rationale: In the first live release, the repo-side callable `invoker: "public"` setting was not enough on its own to make existing deployed callable services reachable from the browser. Manual `roles/run.invoker` bindings for `allUsers` were required before lobby/game actions could succeed, so the release process needs to capture that operational check until automatic IAM reconciliation is proven reliable.
+- Alternatives considered: Treating the incident as a one-off console repair with no documentation, or weakening callable auth inside the handlers instead of fixing Cloud Run transport access.
+- Impacted files/modules: `DEPLOYMENT.md`, `functions/src/shared/constants.ts`

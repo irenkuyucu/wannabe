@@ -7,8 +7,8 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M5 — End-to-End Reliability and Release Readiness
-- Task: `M5-T2A` pre-launch release hardening is complete. Deterministic release scripts, production-env preflight, clean-checkout-safe verification, deployment/runbook updates, and the bundled Functions runtime/tooling upgrade are all in place, and the release dry-run now passes again after the Firebase CLI reauth and production-env rerun.
-- Gate status: PASS — `pnpm verify` passes from a clean checkout, `pnpm build:release` passes with production-safe env overrides, and the final `pnpm deploy:dry-run` validation has been rerun successfully against `wannabe-game`.
+- Task: `M5-T3` final deployed-environment acceptance is functionally green for the core multiplayer path after two production-only release issues were remediated: callable endpoints needed explicit Cloud Run invoker access, and the release scripts were omitting Firestore rules entirely. The current hotfix set covers both the callable invoker contract and the deploy target set (`firestore:rules` included).
+- Gate status: PENDING — the user has now completed a successful end-to-end production round, the repo-level `pnpm verify` gate is green again after fixing the Node 22 web-test import shape, and the remaining work is the rest of the user-owned production checklist plus the visible UI bugs.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
@@ -34,6 +34,10 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Playwright now explicitly covers the actual lobby share-link copy action and verifies that a late member can still reload/read an ended room before expiry.
 - Release hardening has been reopened as `M5-T2A` because the current deploy path still depends on locally generated Functions output, the standalone verify path is not clean-checkout-safe, and production env/setup checks are not yet enforced by tooling.
 - `M5-T2A` now adds deterministic release scripts (`build:web`, `build:functions`, `build:release`), a tested production-env preflight, clean-checkout-safe verification, updated deployment/runbook guidance, and the Functions runtime/tooling upgrade to Node 22 + current Firebase packages.
+- The first live production smoke exposed a post-upgrade callable transport regression: browser requests now reach the deployed `createRoom` endpoint with a Firebase ID token, but Cloud Run rejects the callable before handler execution unless the HTTPS invoker is explicitly public.
+- The same production smoke also exposed a release-script gap: Firestore rules were not part of the supported deploy target set, so live client reads stayed blocked by stale rules even after Hosting and Functions were updated.
+- After deploying Firestore rules and reconciling Cloud Run invoker access across the browser-called callable services, the production app completed a full live round successfully; remaining issues are limited to visible UI bugs and the rest of the deferred deployment checklist.
+- The current Node 22 repo gate is clean again: the web `.test.mjs` utility tests now match the loader's default-export shape under `tsx`, so `pnpm verify` is green alongside the production fixes.
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
@@ -53,6 +57,10 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Added `scripts/predeploy-check.mjs` plus regression coverage, split root release scripts into `build:web`, `build:functions`, `build:release`, updated deploy paths to enforce the new contract, removed the web typecheck dependency on `.next/types`, upgraded the Functions package to Node 22 / current Firebase dependencies, and refreshed the README/deployment runbook accordingly.
 - Revalidated the repo from a clean checkout by deleting `.next` and `functions/lib`, then running `pnpm verify` successfully; `pnpm build:release` also passed with explicit production-safe env overrides.
 - The final `pnpm deploy:dry-run` validation has now been rerun successfully after Firebase CLI reauth and production-env injection, closing the temporary external blocker on `M5-T2A`.
+- Investigated the failed live `createRoom` smoke and confirmed the browser is calling the deployed `createRoom` endpoint with a Firebase auth token, but production logs still show the request as unauthenticated at the transport layer; the current hotfix explicitly adds `invoker: "public"` to shared callable runtime options and adds a regression test for that contract.
+- Confirmed that the root deploy scripts were still omitting `firestore:rules`; updated the release scripts/runbook so the supported production path now deploys Hosting, Functions, Firestore rules, and Firestore indexes together.
+- Confirmed in production that a full create/join/start/play round works after manually granting `allUsers` the Cloud Run Invoker role on the browser-called callable services and deploying Firestore rules.
+- Re-ran `pnpm verify` after updating the affected web utility tests to match the current `tsx` loader behavior; the full repo gate is green again and the release-fix changes are now commit-ready.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
@@ -60,10 +68,12 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Presence/disconnect handling should not be treated as fully release-validated until the deferred post-deployment mobile checklist is completed. — Owner: user + team
 - Local Functions commands now warn under Node 20 because the package runtime target moved to Node 22; the team should use Node 22 locally before the next release-validation pass to match the deployed runtime. — Owner: team
 - Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
+- Visual bugs are still present in the live UI and should receive a focused polish pass after the remaining deployment checklist items are confirmed. — Owner: team
+- The release runbook still depends on an explicit Cloud Run invoker verification/remediation step for browser-called callable services until a future deploy proves the repo-side `invoker: "public"` setting reconciles IAM on its own. — Owner: team
 
 ## 6. Blockers (max 5)
 (Define any blockers here. Use "None" if empty.)
 - None
 
 ## 7. Next task (max 1)
-- Resume `M5-T3` final user-owned acceptance: run the consolidated multiplayer acceptance checklist in the deployed environment, then record PASS/FAIL observations in `test_log.md` and close Milestone 5 if the real-session validation passes.
+- Finish `M5-T3` final user-owned acceptance by confirming the remaining production checklist items: share-link/reload behavior, real-device/mobile presence recovery, and whether the current visual bugs are acceptable for launch.

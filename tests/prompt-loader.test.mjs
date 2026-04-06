@@ -1,10 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
+import promptLoaderModule from "../src/lib/prompt-loader.js";
+
+const {
   createSessionPromptDeck,
   loadPromptSeed,
-} from "../src/lib/prompt-loader.js";
+} = promptLoaderModule;
 
 test("loadPromptSeed returns the canonical 50 prompt entries", () => {
   const prompts = loadPromptSeed();

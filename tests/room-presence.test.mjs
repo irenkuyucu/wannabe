@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
+import roomPresenceModule from "../src/lib/room-presence.ts";
+
+const {
   ROOM_DISCONNECTED_MESSAGE,
   shouldEnterPresenceRecovery,
   shouldHandleLostRoomMembership,
   shouldMaintainRoomPresence,
-} from "../src/lib/room-presence.ts";
+} = roomPresenceModule;
 
 test("shouldMaintainRoomPresence only stays active for a current member in a non-ended room", () => {
   assert.equal(

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
+import entryValidationModule from "../src/lib/entry-validation.js";
+
+const {
   getDisplayNameIssue,
   getDisplayNameIssueMessage,
-} from "../src/lib/entry-validation.js";
+} = entryValidationModule;
 
 test("entry display-name validation distinguishes empty and invalid states", () => {
   assert.equal(getDisplayNameIssue(""), "empty");

@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
+import lobbyUtilsModule from "../src/lib/lobby-utils.js";
+
+const {
   buildJoinRoomPath,
   buildLiveRoomPath,
   buildRoomShareLink,
   getLobbyStartState,
   normalizeRoomCodeInput,
   parseRoomRouteState,
-} from "../src/lib/lobby-utils.js";
+} = lobbyUtilsModule;
 
 test("normalizeRoomCodeInput strips non-digits and caps length", () => {
   assert.equal(normalizeRoomCodeInput("A1 2-3/4x567"), "123456");

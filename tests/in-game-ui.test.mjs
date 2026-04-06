@@ -1,14 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
+import inGameUiModule from "../src/lib/in-game-ui.js";
+
+const {
   buildPhaseViewModel,
   getArgumentBudgetSeconds,
   getArgumentTurnOrder,
   getCountdownProgress,
   getCountdownSeconds,
   getPhaseDriverDelayMs,
-} from "../src/lib/in-game-ui.js";
+} = inGameUiModule;
 
 test("argument turn order alternates by round index", () => {
   assert.deepEqual(getArgumentTurnOrder(0), ["A", "B"]);

@@ -1,12 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
+import sessionSummaryModule from "../src/lib/session-summary.js";
+
+const {
   buildGameOverSummary,
   buildResolutionSummary,
   buildScoreboardEntries,
   getRoundScoreDelta,
-} from "../src/lib/session-summary.js";
+} = sessionSummaryModule;
 
 test("round score delta includes the lone-side bonus on a winning side", () => {
   assert.equal(

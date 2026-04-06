@@ -44,6 +44,7 @@ For local emulator work, keep those same web-app values and override the emulato
 4. Confirm Firebase Authentication has the **Anonymous** sign-in provider enabled for `wannabe-game`.
 5. Confirm Blaze billing is enabled before deploying Cloud Functions and the scheduled cleanup job.
 6. Confirm the Functions/Scheduler-related deployment APIs are enabled already, or allow the Firebase CLI to auto-enable them during dry-run/deploy.
+7. If any browser-called callable returns a `403` preflight/CORS error in production, verify the corresponding Cloud Run service grants `roles/run.invoker` to `allUsers`. Existing deployed 2nd-gen callable services may need that IAM binding reconciled manually even when the repo runtime options already declare `invoker: "public"`.
 
 ## Release Checklist
 
@@ -89,17 +90,17 @@ This command:
 2. builds the static frontend export with `pnpm build:web`
 3. rebuilds Functions output with `pnpm build:functions`
 4. validates Firebase Hosting output from `out/`
-5. validates Functions and Firestore index deployment against `wannabe-game`
+5. validates Functions, Firestore rules, and Firestore index deployment against `wannabe-game`
 
 ## Production Deploy
 
-Deploy the frontend, functions, and Firestore indexes together:
+Deploy the frontend, functions, Firestore rules, and Firestore indexes together:
 
 ```bash
 pnpm deploy
 ```
 
-The root deploy scripts pin the Firebase project explicitly with `--project wannabe-game`, and [firebase.json](/Users/irencankuyucu/wannabe/firebase.json) now pins the default Hosting site as `wannabe-game`, so the first production release does not depend on CLI alias inference.
+The root deploy scripts pin the Firebase project explicitly with `--project wannabe-game`, and [firebase.json](/Users/irencankuyucu/wannabe/firebase.json) now pins the default Hosting site as `wannabe-game`, so the first production release does not depend on CLI alias inference. Firestore client reads depend on the deployed [firestore.rules](/Users/irencankuyucu/wannabe/firestore.rules), so omitting `firestore:rules` from the deploy target set leaves the live lobby/game stuck behind permission errors even if Hosting and Functions deploy successfully.
 
 ## Post-Deploy Checks
 
@@ -110,3 +111,4 @@ The root deploy scripts pin the Firebase project explicitly with `--project wann
 4. Confirm callable room actions succeed in the deployed environment: create, join, ready toggle, start game, phase actions, and return-to-main.
 5. Confirm the scheduled cleanup job is present in the Firebase console after deploy.
 6. Run the deferred real-device/mobile presence checklist from `P-T4`, including background/foreground recovery and inactivity removal behavior.
+7. If any callable still fails with a `403` preflight/CORS error after deploy, check the matching Cloud Run service IAM policy and add `allUsers` as `Cloud Run Invoker` before retrying.
