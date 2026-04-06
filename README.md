@@ -1,16 +1,16 @@
 # Wannabe
 
-Wannabe is a playful party game for people who are already in the same room.
+Wannabe is a playful party game for people who are together in the same room.
 
 Each round asks a simple question:
 
 > Would you wanna be **this** or **that**?
 
-Everyone joins on their phone, picks a side, argues for it out loud, and then votes on the winner. The app keeps the game moving with room codes, timers, scoring, and round flow.
+Everyone joins on their phone, picks a side, argues for it out loud, and then votes on the winner. The app keeps the room moving with timers, scoring, and a simple round flow, but the fun still happens face to face.
 
 ## What Kind Of Game Is It
 
-Wannabe is not meant to replace the fun part. It is there to support it.
+Wannabe is not meant to replace the real game. It is there to support it.
 
 The app takes care of:
 - room creation and joining,
@@ -21,14 +21,14 @@ The app takes care of:
 - scorekeeping,
 - and moving the session from lobby to final results.
 
-The real game happens between the players in person.
+The actual debating, convincing, defending, and trash talk all happen in person.
 
 ## How It Works
 
 1. One player creates a room.
 2. Everyone else joins with the room code or share link.
 3. Players mark ready.
-4. Each round starts with a “Would you rather be…” prompt.
+4. Each round starts with a “Would you wanna be…” prompt.
 5. Everyone picks a side.
 6. The two sides make their case in timed speaking turns.
 7. A rebuttal phase follows.
@@ -38,34 +38,23 @@ The real game happens between the players in person.
 
 ## Best For
 
-- friends hanging out in person
-- party settings
-- quick, replayable group sessions
+- 2-6 players
+- Friends hanging out
+- Pregame or after-dinner groups
+- Casual parties
+- Quick, replayable group sessions
 
-## What The Current Version Includes
+## Current Features
 
-The current version is intentionally focused and lightweight:
+- No accounts needed, jump in and play
+- Shared lobby with ready states
+- Fixed-length game sessions with multiple rounds
+- Timed round phases
+- Automatic scoring and game progression
+- Inactivity handling so the room does not get stuck if someone drops out
 
-- 6-digit room codes
-- no account creation
-- shared lobby with ready states
-- fixed-length game sessions with multiple rounds
-- timed round phases
-- automatic scoring and game progression
-- inactivity handling so the room does not get stuck if someone drops out
+## Built With
 
-The goal is a clean, reliable social game loop, not a giant feature list.
-
-## Deployment
-
-The frontend is deployed as a static export on standard Firebase Hosting, while game actions and cleanup logic stay on Firebase Cloud Functions.
-
-Supported release entrypoints:
-- `pnpm predeploy:check` validates the production-safe public Firebase env before any release build.
-- `pnpm build:release` runs the preflight, builds the static frontend export, and rebuilds Functions output deterministically.
-- `pnpm deploy:dry-run` validates the full release bundle against `wannabe-game`.
-- `pnpm deploy` performs the actual production deployment.
-
-Do not rely on raw `firebase deploy` from the shell for production releases; the repo scripts are the supported deploy contract.
-
-See [DEPLOYMENT.md](/Users/irencankuyucu/wannabe/DEPLOYMENT.md) for the environment variables and full deploy runbook.
+- Next.js, React, TypeScript, and Tailwind CSS on the frontend.
+- Real-time game state runs on Firebase — Firestore for sync, Cloud Functions for game logic, and Anonymous Auth so players can jump in without creating an account.
+- Deployed as a static export on Firebase Hosting.
