@@ -1,8 +1,20 @@
-# Wannabe MVP Implementation Plan (Decision-Complete)
+# Wannabe Plan (MVP Shipped)
 
 ## Summary
-Build Wannabe as a Firebase-backed, server-authoritative-lite web app with deterministic game rules from `SPEC.md`, and add a fixed 50-question prompt seed in **Milestone 2** so frontend wiring/testing can start early and reliably.  
-The plan uses high-cadence user-owned validation across UX tasks, an agent-first UI draft with explicit review gates, and makes documentation updates mandatory inside every task rather than as standalone work.
+Milestones **M1-M5** delivered the shipped MVP on production Firebase infrastructure. The completed MVP baseline remains documented below for traceability.  
+New work now continues under **Milestone M6**, which covers post-launch stabilization, gameplay edge cases, production hardening follow-through, and visual refinement.
+
+## Milestone Status Snapshot
+
+| Milestone | Status | Notes |
+|---|---|---|
+| `M1` Foundation and Local Tooling | Complete | Shipped as part of the live MVP baseline |
+| `M2` Prompt Seed Bridge | Complete | Shipped as part of the live MVP baseline |
+| `M3` Authoritative Backend Game Engine | Complete | Shipped as part of the live MVP baseline |
+| `M4` Frontend UX with High-Cadence User Validation | Complete | Shipped as part of the live MVP baseline |
+| `PM5` Presence and Disconnect Handling | Complete | Shipped as part of the live MVP baseline |
+| `M5` End-to-End Reliability and Release Readiness | Complete | MVP shipped to production; remaining caveats move to post-launch work |
+| `M6` Post-Launch Stabilization and Product Refinement | Active | Current chapter |
 
 ## Locked Architecture and Workflow Decisions
 1. Frontend: Next.js App Router (TypeScript, mostly client components).
@@ -134,6 +146,15 @@ Goal: finalize correctness and deployment readiness.
 | M5-T2 | Deployment readiness | standard Firebase Hosting + Functions config, static-export-friendly frontend routing, production env var docs, and deploy/runbook updates | build/export/deploy-dry-run checks | None | PASS on successful dry-run checks |
 | M5-T2A | Pre-launch release hardening | deterministic release scripts (`build:web`, `build:functions`, `build:release`), production-env preflight, clean-checkout-safe `pnpm verify`, deployment runbook/console prerequisites, and Cloud Functions Node 22 + dependency upgrade | clean-checkout `pnpm verify`, preflight regression tests, `pnpm build:release`, `pnpm deploy:dry-run` | None | PASS on green checks |
 | M5-T3 | Final acceptance session | consolidated multiplayer acceptance checklist mapped to spec | re-run `pnpm verify` on final state | Full real-session pass/fail feedback | PENDING until user outcome; then PASS/FAIL |
+
+### Milestone M6 — Post-Launch Stabilization and Product Refinement
+Goal: harden live behavior after MVP launch, close production caveats, and improve fit-and-finish without redefining the shipped baseline casually.
+
+| Task ID | Task | Deliverables | Agent-owned validation | User-owned validation | Gate |
+|---|---|---|---|---|---|
+| M6-T1 | Gameplay edge-case corrections | post-launch fixes for live gameplay correctness issues discovered after ship (starting with stale-player/lone-player semantics and scoreboard retention expectations) plus corresponding spec/behavior updates | targeted unit/integration coverage plus full `pnpm verify` | Focused real-world multiplayer retest of the affected cases | PENDING until implemented and user feedback received |
+| M6-T2 | Production operational hardening follow-through | close remaining release-process caveats discovered during launch, including Cloud Run invoker verification/reconciliation strategy for browser-called callables | release-path checks, targeted deploy validation, and updated runbook coverage | None unless a real production smoke is needed to confirm behavior | PASS on green checks |
+| M6-T3 | Post-launch UX and validation pass | fix visible live UI bugs, confirm share-link/reload behavior, and finish the deferred real-device/mobile presence validation | targeted regressions plus full `pnpm verify` where applicable | Real-device/mobile and browser acceptance checklist | PENDING until user feedback received |
 
 ## Required Automated Test Scenarios (Must Pass by End of M5)
 1. Lobby start gate: start blocked until `playerCount >= 2` and all players are ready.

@@ -180,3 +180,19 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Expected behavior: The repository verification stack should stay green after the release-fix changes.
 - Observed behavior: `pnpm verify` failed in `pnpm test:web` before reaching the functions/rules/emulator phases. Multiple existing `.test.mjs` files now fail with ESM named-export errors against repo-root `src/lib/*.js` modules (for example `entry-validation.js`, `in-game-ui.js`, `lobby-utils.js`, `prompt-loader.js`, `room-presence.ts`, and `session-summary.js`). This appears to be a broader local web-test/module-interop issue under the current Node 22 setup rather than a failure caused by the production hotfix itself.
 - Result: `FAIL`
+
+- Date: 2026-04-06
+- Test ID: TEST-020
+- Milestone/task reference: Post-production-fix repo validation
+- Scenario: Agent-owned revalidation after aligning the affected web utility tests with the current Node 22 `tsx` loader import shape.
+- Expected behavior: `pnpm verify` should return to green so the shipped-production follow-up changes can be committed normally.
+- Observed behavior: Observed behavior matches expected behavior. `pnpm verify` passed again after the web utility test imports were updated to match the loader's default-export behavior.
+- Result: `PASS`
+
+- Date: 2026-04-06
+- Test ID: TEST-021
+- Milestone/task reference: `M5-T3` closure
+- Scenario: Formal project-phase closure after the live production round and production hotfix follow-up.
+- Expected behavior: The MVP should be accepted as shipped, with remaining caveats and refinements explicitly moved into post-launch work rather than keeping `M5` open.
+- Observed behavior: Observed behavior matches expected behavior. The MVP is now treated as shipped, and remaining issues are being tracked as post-launch work under `M6`.
+- Result: `PASS`

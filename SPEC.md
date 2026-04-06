@@ -1,6 +1,8 @@
-# Wannabe MVP Spec
+# Wannabe Product Spec (Shipped MVP Baseline)
 
 ## 1. Overview
+
+Status note: as of 2026-04-06, the MVP defined in this document has been shipped to production on Firebase Hosting / Cloud Functions. This spec now serves as the baseline behavior for the live product. Post-launch changes should be treated as additive refinements or explicit behavior changes relative to this shipped baseline.
 
 **Wannabe** is a synchronous, room-based party game (web app) built around prompts of the form:
 

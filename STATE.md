@@ -6,9 +6,9 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 ---
 
 ## 1. Current status
-- Milestone: M5 — End-to-End Reliability and Release Readiness
-- Task: `M5-T3` final deployed-environment acceptance is functionally green for the core multiplayer path after two production-only release issues were remediated: callable endpoints needed explicit Cloud Run invoker access, and the release scripts were omitting Firestore rules entirely. The current hotfix set covers both the callable invoker contract and the deploy target set (`firestore:rules` included).
-- Gate status: PENDING — the user has now completed a successful end-to-end production round, the repo-level `pnpm verify` gate is green again after fixing the Node 22 web-test import shape, and the remaining work is the rest of the user-owned production checklist plus the visible UI bugs.
+- Milestone: M6 — Post-Launch Stabilization and Product Refinement
+- Task: Phase transition complete. Milestones `M1-M5` are now treated as the shipped MVP baseline, and the repo is ready to begin `M6-T1` post-launch gameplay edge-case corrections when approved.
+- Gate status: PASS — the MVP is shipped, the release-fix follow-up is committed, and the project has formally moved from pre-launch work into post-launch iteration.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
@@ -25,6 +25,7 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Firebase callable foundation is in place with authenticated callable helper utilities.
 - Prompt seed bridge includes canonical seed file and deterministic sampling helper/test coverage.
 - Game domain engine includes deterministic transition/scoring helpers with unit coverage.
+- The MVP is now live in production and has been exercised through a full real production round.
 - Frontend now uses a single root route with explicit query-based URL state for invite join (`/?join=123456`) and active live-room restoration (`/?live=123456`), backed by anonymous auth, Firebase callables, and Firestore room/round subscriptions over the approved dedicated-screen UI system, with shared `MenuScreen`, `Scoreboard`, `Toast`, behavior-only `Button`, `GameSyncScreen`, `Field*`, `ModalShell`, shared game-screen meta/timer structure, and ghost-wireframe loading/fallback surfaces.
 - Presence/disconnect handling now uses dedicated server-owned `presence` documents as the sole liveness source; stable `players` docs no longer carry heartbeat timestamps.
 - Entry create/join actions are auth-gated so they cannot silently no-op before anonymous sign-in resolves.
@@ -38,6 +39,7 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - The same production smoke also exposed a release-script gap: Firestore rules were not part of the supported deploy target set, so live client reads stayed blocked by stale rules even after Hosting and Functions were updated.
 - After deploying Firestore rules and reconciling Cloud Run invoker access across the browser-called callable services, the production app completed a full live round successfully; remaining issues are limited to visible UI bugs and the rest of the deferred deployment checklist.
 - The current Node 22 repo gate is clean again: the web `.test.mjs` utility tests now match the loader's default-export shape under `tsx`, so `pnpm verify` is green alongside the production fixes.
+- Milestones `M1-M5` are now closed as the shipped MVP chapter; remaining issues and improvements move forward under `M6`.
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
@@ -61,11 +63,12 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Confirmed that the root deploy scripts were still omitting `firestore:rules`; updated the release scripts/runbook so the supported production path now deploys Hosting, Functions, Firestore rules, and Firestore indexes together.
 - Confirmed in production that a full create/join/start/play round works after manually granting `allUsers` the Cloud Run Invoker role on the browser-called callable services and deploying Firestore rules.
 - Re-ran `pnpm verify` after updating the affected web utility tests to match the current `tsx` loader behavior; the full repo gate is green again and the release-fix changes are now commit-ready.
+- Closed the MVP phase in the project docs: `M5` is now treated as complete/shipped, and `M6` has been opened for post-launch stabilization and refinement.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
-- Real-device/mobile validation is still outstanding for `P-T4`; the remaining required signal is user confirmation that background/foreground recovery and inactivity removal match the approved presence spec in a deployed environment. — Owner: user + team
-- Presence/disconnect handling should not be treated as fully release-validated until the deferred post-deployment mobile checklist is completed. — Owner: user + team
+- Real-device/mobile validation is still outstanding for the deferred presence checklist; background/foreground recovery and inactivity removal still need explicit live-device confirmation. — Owner: user + team
+- Presence/disconnect behavior has shipped, but the remaining real-device validation and newly discovered stale-player gameplay edge cases now belong to post-launch work under `M6`. — Owner: user + team
 - Local Functions commands now warn under Node 20 because the package runtime target moved to Node 22; the team should use Node 22 locally before the next release-validation pass to match the deployed runtime. — Owner: team
 - Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
 - Visual bugs are still present in the live UI and should receive a focused polish pass after the remaining deployment checklist items are confirmed. — Owner: team
@@ -76,4 +79,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None
 
 ## 7. Next task (max 1)
-- Finish `M5-T3` final user-owned acceptance by confirming the remaining production checklist items: share-link/reload behavior, real-device/mobile presence recovery, and whether the current visual bugs are acceptable for launch.
+- Begin `M6-T1` when approved: specify and implement the first post-launch gameplay edge-case fixes, starting with stale-player/lone-player semantics and scoreboard retention expectations.

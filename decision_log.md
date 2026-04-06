@@ -242,3 +242,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: In the first live release, the repo-side callable `invoker: "public"` setting was not enough on its own to make existing deployed callable services reachable from the browser. Manual `roles/run.invoker` bindings for `allUsers` were required before lobby/game actions could succeed, so the release process needs to capture that operational check until automatic IAM reconciliation is proven reliable.
 - Alternatives considered: Treating the incident as a one-off console repair with no documentation, or weakening callable auth inside the handlers instead of fixing Cloud Run transport access.
 - Impacted files/modules: `DEPLOYMENT.md`, `functions/src/shared/constants.ts`
+
+- Date: 2026-04-06
+- Decision ID: DEC-029
+- Spec/Plan reference: `SPEC.md`, `PLAN.md`, `STATE.md`, and `test_log.md`
+- Decision: Close Milestones `M1-M5` as the shipped MVP chapter and move all remaining caveats, refinements, and newly discovered live issues into a new post-launch milestone, `M6 — Post-Launch Stabilization and Product Refinement`.
+- Rationale: The app is now live in production and has completed a full real round successfully. Keeping the project framed as pre-launch would blur the distinction between shipped baseline behavior and post-launch iteration. A clean milestone transition preserves the MVP boundary and makes subsequent work easier to reason about.
+- Alternatives considered: Leaving M5 nominally open until every caveat was polished away, or continuing to append post-launch fixes to the MVP release-readiness milestone.
+- Impacted files/modules: `SPEC.md`, `PLAN.md`, `STATE.md`, `decision_log.md`
