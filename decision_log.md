@@ -210,3 +210,11 @@ This file is the canonical, append-only record of technical/product decisions ma
 - Rationale: Presence and stable player/game state have different write patterns and responsibilities. Separating them is a cleaner model, prepares the repo for lower Firestore read fanout, and avoids taking unnecessary migration risk by shipping the data-model split before removing the legacy compatibility path.
 - Alternatives considered: Leaving heartbeat timestamps permanently on player docs, or attempting a one-release clean cut directly to the `presence` collection.
 - Impacted files/modules: `SPEC.md`, `PLAN.md`, `STATE.md`, `decision_log.md`, `firestore.rules`, `firestore.indexes.json`, `functions/src/domain/room-lifecycle.ts`, `functions/src/data/firestore-room-store.ts`, `functions/tests/`
+
+- Date: 2026-04-06
+- Decision ID: DEC-025
+- Spec/Plan reference: `PLAN.md` `M5-T2A`, `STATE.md` current status, and `DEPLOYMENT.md`
+- Decision: Reopen Milestone 5 with a dedicated pre-launch release-hardening task that makes release builds deterministic (`build:web`, `build:functions`, `build:release`), enforces production-env preflight before deploy, restores clean-checkout-safe verification, updates the deployment runbook with required Firebase console prerequisites, and bundles the Functions runtime/tooling upgrade into the same launch-blocking pass.
+- Rationale: The earlier deployment-readiness pass validated the shipped architecture, but the current release contract still depends on locally generated Functions build artifacts, lacks an enforced production-env guardrail, and allows `pnpm verify` to fail on a clean checkout before `.next/types` exists. These are release-process gaps rather than product-scope gaps, and closing them before first production deploy lowers operational risk materially.
+- Alternatives considered: Treating the remaining issues as acceptable launch caveats and proceeding directly to final user-owned acceptance, or deferring the Functions runtime/tooling upgrade to a post-launch maintenance task.
+- Impacted files/modules: `PLAN.md`, `STATE.md`, `decision_log.md`, `package.json`, `functions/package.json`, `tsconfig.typecheck.json`, `DEPLOYMENT.md`, `README.md`, release-tooling scripts/tests

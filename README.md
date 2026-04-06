@@ -60,6 +60,12 @@ The goal is a clean, reliable social game loop, not a giant feature list.
 
 The frontend is deployed as a static export on standard Firebase Hosting, while game actions and cleanup logic stay on Firebase Cloud Functions.
 
-Use `pnpm deploy:dry-run` to validate the first release against `wannabe-game`, then `pnpm deploy` for the actual production deployment.
+Supported release entrypoints:
+- `pnpm predeploy:check` validates the production-safe public Firebase env before any release build.
+- `pnpm build:release` runs the preflight, builds the static frontend export, and rebuilds Functions output deterministically.
+- `pnpm deploy:dry-run` validates the full release bundle against `wannabe-game`.
+- `pnpm deploy` performs the actual production deployment.
+
+Do not rely on raw `firebase deploy` from the shell for production releases; the repo scripts are the supported deploy contract.
 
 See [DEPLOYMENT.md](/Users/irencankuyucu/wannabe/DEPLOYMENT.md) for the environment variables and full deploy runbook.

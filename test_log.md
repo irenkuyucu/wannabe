@@ -137,3 +137,11 @@ This file is the canonical, append-only record of validation checks/acceptance t
 - Expected behavior: The targeted browser smoke should pass against a clean local dev/emulator stack, with both the home-route checks and the one-round multiplayer flow completing without the guest or host lobby getting stuck.
 - Observed behavior: Observed behavior matches expected behavior. `node --import tsx --test tests/live-room-hydration.test.tsx tests/entry-auth-readiness.test.tsx` passed, and `pnpm exec playwright test tests/e2e/multiplayer-flow.spec.ts tests/e2e/home.spec.ts --reporter=line` passed with 4/4 tests green on a clean restart.
 - Result: `PASS`
+
+- Date: 2026-04-06
+- Test ID: TEST-015
+- Milestone/task reference: `M5-T2A` gate
+- Scenario: Agent-owned release-hardening validation after adding deterministic release scripts, production-env preflight, clean-checkout-safe verification, and the bundled Functions runtime/tooling upgrade.
+- Expected behavior: `pnpm verify`, `pnpm build:release`, and `pnpm deploy:dry-run` should all pass, proving the repo is launch-ready from a clean checkout and the Firebase dry-run still validates the release bundle against `wannabe-game`.
+- Observed behavior: `pnpm verify` passed from a clean checkout after deleting `.next` and `functions/lib`, and `pnpm build:release` passed with production-safe env overrides. `pnpm deploy:dry-run` rebuilt successfully through the new release path but then failed at the Firebase CLI step because the local credentials are expired (`Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth`), so the final deployment validation could not complete.
+- Result: `FAIL`

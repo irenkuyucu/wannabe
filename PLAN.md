@@ -132,6 +132,7 @@ Goal: finalize correctness and deployment readiness.
 | M5-T1A | Presence data-model split (phase 1) | dedicated `presence` subcollection, true dual-write heartbeat compatibility, presence-aware cleanup/sweep paths, and corresponding docs/rules/index updates | targeted functions/web tests plus full `pnpm verify` | None | PASS on green checks |
 | M5-T1B | Presence data-model cleanup (phase 2) | remove legacy player heartbeat writes, remove legacy fallback cleanup reads, and finalize the stable player/presence boundary after validating phase 1 | targeted functions/web tests plus full `pnpm verify` | None | PASS on green checks |
 | M5-T2 | Deployment readiness | standard Firebase Hosting + Functions config, static-export-friendly frontend routing, production env var docs, and deploy/runbook updates | build/export/deploy-dry-run checks | None | PASS on successful dry-run checks |
+| M5-T2A | Pre-launch release hardening | deterministic release scripts (`build:web`, `build:functions`, `build:release`), production-env preflight, clean-checkout-safe `pnpm verify`, deployment runbook/console prerequisites, and Cloud Functions Node 22 + dependency upgrade | clean-checkout `pnpm verify`, preflight regression tests, `pnpm build:release`, `pnpm deploy:dry-run` | None | PASS on green checks |
 | M5-T3 | Final acceptance session | consolidated multiplayer acceptance checklist mapped to spec | re-run `pnpm verify` on final state | Full real-session pass/fail feedback | PENDING until user outcome; then PASS/FAIL |
 
 ## Required Automated Test Scenarios (Must Pass by End of M5)
@@ -160,6 +161,10 @@ Goal: finalize correctness and deployment readiness.
 23. Recovery gate behavior: when a previously hidden in-room tab returns to foreground, the client awaits a heartbeat result before allowing room actions or phase-driving ticks to proceed; successful recovery resumes play, and failed recovery exits cleanly with the inactivity message.
 24. Post-expiry cleanup trigger is deferred in MVP; no automatic deletion trigger is implemented in this plan.
 25. Presence split migration: phase 1 adds matching `presence` docs plus dual-write compatibility, and phase 2 removes legacy player-doc heartbeat writes and fallback cleanup reads so `presence` is the sole liveness source and hard-removal leaves no orphaned `presence` docs.
+26. Release preflight: release builds fail fast when required public Firebase env vars are missing or placeholder-valued, emulator mode is enabled, emulator host vars are set, or the configured project id differs from `wannabe-game`.
+27. Clean-checkout validation: `pnpm verify` succeeds with no pre-existing `.next` build artifacts or generated `functions/lib` output.
+28. Deterministic release build: `pnpm build:release` always validates production env, builds the static frontend export, and rebuilds Functions output before any deploy command runs.
+29. Runtime/tooling modernization: the Functions package deploys on Node.js 22 with upgraded `firebase-admin` / `firebase-functions` dependencies and no behavior changes to callable names, scheduler wiring, or Firestore schema.
 
 ## Required User-Owned Validation Checklists (Expanded)
 1. Prompt pack review: appropriateness, variety, and fun factor.
@@ -170,6 +175,7 @@ Goal: finalize correctness and deployment readiness.
 6. Resolution/game-over review: scoreboard clarity and winner communication.
 7. Responsive quality review: mobile and desktop usability.
 8. Final full-session playtest: perceived flow, pacing, and enjoyment.
+9. Post-deploy launch checklist: production room creation/join/share-link/callable smoke plus real-device presence recovery validation in deployed environment.
 
 ## Cross-Cutting AGENTS.md Workflow Enforcement
 1. Documentation is not a separate milestone task. Every implementation task must include required updates to `STATE.md`, and append to `decision_log.md`/`test_log.md` when criteria are met per instructions in `AGENTS.md`.

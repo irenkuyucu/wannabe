@@ -7,17 +7,17 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 
 ## 1. Current status
 - Milestone: M5 — End-to-End Reliability and Release Readiness
-- Task: `M5-T3` final acceptance session is pending user-owned validation. The full automated repo gate is green on the current `main` state, and the remaining milestone signal is the final real-session acceptance checklist.
-- Gate status: PENDING — agent-owned validation is green; awaiting user-owned final acceptance results.
+- Task: `M5-T2A` pre-launch release hardening is complete. Deterministic release scripts, production-env preflight, clean-checkout-safe verification, deployment/runbook updates, and the bundled Functions runtime/tooling upgrade are all in place, and the release dry-run now passes again after the Firebase CLI reauth and production-env rerun.
+- Gate status: PASS — `pnpm verify` passes from a clean checkout, `pnpm build:release` passes with production-safe env overrides, and the final `pnpm deploy:dry-run` validation has been rerun successfully against `wannabe-game`.
 - Active branch: main
 
 ## 2. Last commit(s) (max 5)
 (Assume this section might be lagging by one commit when reading to pick up a new session; use `git log` as the source of truth for commit history.)
+- fe26a15 on main — Pin Firebase deploy target and extend browser release coverage.
 - 89168f3 on main — Fix lobby hydration retries and browser entry flow.
 - f4bb026 on main — Make Firestore presence the sole liveness source.
 - 31df531 on main — Split room presence into a dedicated Firestore collection.
 - b1335c5 on main — Checkpoint commit.
-- 914992d on main — Add Firestore emulator full-game verification.
 
 ## 3. Project snapshot (max 5)
 (Brief facts about the working state of the project/codebase. No rationale.)
@@ -32,6 +32,8 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Deployment dry-runs now complete successfully for both `functions` alone and the combined `hosting,functions,firestore:indexes` target set against `wannabe-game`.
 - `pnpm verify` is green on the current `main` state immediately before the final user-owned acceptance handoff.
 - Playwright now explicitly covers the actual lobby share-link copy action and verifies that a late member can still reload/read an ended room before expiry.
+- Release hardening has been reopened as `M5-T2A` because the current deploy path still depends on locally generated Functions output, the standalone verify path is not clean-checkout-safe, and production env/setup checks are not yet enforced by tooling.
+- `M5-T2A` now adds deterministic release scripts (`build:web`, `build:functions`, `build:release`), a tested production-env preflight, clean-checkout-safe verification, updated deployment/runbook guidance, and the Functions runtime/tooling upgrade to Node 22 + current Firebase packages.
 
 ## 4. Changes since last update (max 5)
 (Committed and uncommitted changes made since the last STATE update.)
@@ -47,12 +49,16 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - Re-ran the full repo gate with `pnpm verify`; typecheck, lint, web tests, functions tests, rules tests, and emulator integration tests all passed.
 - Added targeted Playwright coverage for automated scenario `16` (clipboard-backed lobby share-link copy) and `17` (late-member readability of an ended room via refreshed/live route), and the affected browser specs pass.
 - Pinned the root deploy scripts and Hosting site to `wannabe-game`, replaced the stale `next start` script with a Hosting-emulator preview path, and updated the deployment docs to match the static-export Firebase Hosting model more closely.
+- Reopened milestone execution with `M5-T2A` to harden the release contract before launch: deterministic release builds/deploys, production-env preflight, clean-checkout-safe verification, deployment console prerequisites, and the bundled Functions Node 22 / dependency upgrade.
+- Added `scripts/predeploy-check.mjs` plus regression coverage, split root release scripts into `build:web`, `build:functions`, `build:release`, updated deploy paths to enforce the new contract, removed the web typecheck dependency on `.next/types`, upgraded the Functions package to Node 22 / current Firebase dependencies, and refreshed the README/deployment runbook accordingly.
+- Revalidated the repo from a clean checkout by deleting `.next` and `functions/lib`, then running `pnpm verify` successfully; `pnpm build:release` also passed with explicit production-safe env overrides.
+- The final `pnpm deploy:dry-run` validation has now been rerun successfully after Firebase CLI reauth and production-env injection, closing the temporary external blocker on `M5-T2A`.
 
 ## 5. Open items (max 5)
 (Open questions, decisions, caveats, risks, known issues. Use "None" if empty.)
 - Real-device/mobile validation is still outstanding for `P-T4`; the remaining required signal is user confirmation that background/foreground recovery and inactivity removal match the approved presence spec in a deployed environment. — Owner: user + team
 - Presence/disconnect handling should not be treated as fully release-validated until the deferred post-deployment mobile checklist is completed. — Owner: user + team
-- Cloud Functions deploy validation emits non-blocking warnings that Node.js 20 is approaching deprecation and `firebase-functions` is outdated; this should be handled before the runtime cutoff. — Owner: team
+- Local Functions commands now warn under Node 20 because the package runtime target moved to Node 22; the team should use Node 22 locally before the next release-validation pass to match the deployed runtime. — Owner: team
 - Turbopack remains available as `pnpm dev:turbo`, but it is currently known to be unreliable for global CSS invalidation in this repo and should not be used for UI polish until revisited. — Owner: team
 
 ## 6. Blockers (max 5)
@@ -60,4 +66,4 @@ This file is the project’s current operational snapshot. It is agent-maintaine
 - None
 
 ## 7. Next task (max 1)
-- Await the user's `M5-T3` final acceptance results, then record PASS/FAIL in `test_log.md`, update the gate in `STATE.md`, and commit only if the user-owned validation passes.
+- Resume `M5-T3` final user-owned acceptance: run the consolidated multiplayer acceptance checklist in the deployed environment, then record PASS/FAIL observations in `test_log.md` and close Milestone 5 if the real-session validation passes.
